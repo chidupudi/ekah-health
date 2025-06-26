@@ -1,382 +1,700 @@
 // src/components/services/ServicesCatalog/ServicesCatalog.jsx
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Button, Typography, Tag, Modal, Descriptions, Alert } from 'antd';
+import { Card, Row, Col, Button, Typography, Tag, Modal, Descriptions, Alert, Spin } from 'antd';
 import { 
   HeartOutlined, 
   UserOutlined, 
   ClockCircleOutlined,
   DollarOutlined,
   CheckCircleOutlined,
-  StarOutlined
+  StarOutlined,
+  CalendarOutlined,
+  TeamOutlined,
+  MessageOutlined,
+  PlayCircleOutlined,
+  ReloadOutlined
 } from '@ant-design/icons';
 import { Box } from '@mui/material';
 import { useAuth } from '../../../context/AuthContext';
+import { collection, getDocs, onSnapshot, query, where } from 'firebase/firestore';
+import { db } from '../../../services/firebase/config';
 
 const { Title, Text, Paragraph } = Typography;
-const { Meta } = Card;
-
-// Mock data - you'll replace this with Firebase data
-const AVAILABLE_PLANS = [
-  {
-    id: 'wellness-basic',
-    title: 'Basic Wellness Plan',
-    category: 'wellness',
-    price: 49.99,
-    duration: '1 Month',
-    description: 'Essential wellness guidance and basic health monitoring',
-    features: [
-      'Weekly health check-ins',
-      'Basic nutrition guidance',
-      'Exercise recommendations',
-      'Email support'
-    ],
-    practitionerType: 'Wellness Coach',
-    rating: 4.5,
-    image: '/api/placeholder/300/200',
-    popular: false
-  },
-  {
-    id: 'nutrition-premium',
-    title: 'Premium Nutrition Plan',
-    category: 'nutrition',
-    price: 99.99,
-    duration: '1 Month',
-    description: 'Comprehensive nutrition planning with personalized meal plans',
-    features: [
-      'Personalized meal plans',
-      'Grocery shopping lists',
-      'Daily nutrition tracking',
-      'Video consultations (2x/month)',
-      'Recipe recommendations',
-      'Progress monitoring'
-    ],
-    practitionerType: 'Certified Nutritionist',
-    rating: 4.8,
-    image: '/api/placeholder/300/200',
-    popular: true
-  },
-  {
-    id: 'fitness-advanced',
-    title: 'Advanced Fitness Plan',
-    category: 'fitness',
-    price: 79.99,
-    duration: '1 Month',
-    description: 'Complete fitness transformation with personal training',
-    features: [
-      'Custom workout plans',
-      'Form correction videos',
-      'Progress tracking',
-      'Weekly video calls',
-      'Equipment recommendations',
-      'Injury prevention tips'
-    ],
-    practitionerType: 'Personal Trainer',
-    rating: 4.7,
-    image: '/api/placeholder/300/200',
-    popular: false
-  },
-  {
-    id: 'mental-health-premium',
-    title: 'Mental Wellness Plan',
-    category: 'mental-health',
-    price: 129.99,
-    duration: '1 Month',
-    description: 'Professional mental health support and stress management',
-    features: [
-      'Weekly therapy sessions',
-      'Stress management techniques',
-      'Mindfulness exercises',
-      'Crisis support',
-      'Progress assessments',
-      '24/7 chat support'
-    ],
-    practitionerType: 'Licensed Therapist',
-    rating: 4.9,
-    image: '/api/placeholder/300/200',
-    popular: true
-  },
-  {
-    id: 'comprehensive-health',
-    title: 'Comprehensive Health Plan',
-    category: 'comprehensive',
-    price: 199.99,
-    duration: '1 Month',
-    description: 'All-in-one health and wellness solution',
-    features: [
-      'All wellness services included',
-      'Dedicated health coordinator',
-      'Monthly comprehensive review',
-      'Priority scheduling',
-      'Family health planning',
-      'Emergency consultations'
-    ],
-    practitionerType: 'Health Coordinator + Specialists',
-    rating: 5.0,
-    image: '/api/placeholder/300/200',
-    popular: true
-  }
-];
-
-const CATEGORIES = [
-  { key: 'all', label: 'All Plans', icon: '🏥' },
-  { key: 'wellness', label: 'Wellness', icon: '💚' },
-  { key: 'nutrition', label: 'Nutrition', icon: '🥗' },
-  { key: 'fitness', label: 'Fitness', icon: '💪' },
-  { key: 'mental-health', label: 'Mental Health', icon: '🧠' },
-  { key: 'comprehensive', label: 'Comprehensive', icon: '⭐' }
-];
 
 const ServicesCatalog = ({ onSubscribe }) => {
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedPlan, setSelectedPlan] = useState(null);
+  const [programs, setPrograms] = useState([]);
+  const [selectedProgram, setSelectedProgram] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [subscribing, setSubscribing] = useState(false);
+  const [hoveredCard, setHoveredCard] = useState(null);
   const { userProfile } = useAuth();
 
-  const filteredPlans = selectedCategory === 'all' 
-    ? AVAILABLE_PLANS 
-    : AVAILABLE_PLANS.filter(plan => plan.category === selectedCategory);
+  // Load programs from Firebase
+  useEffect(() => {
+    const loadPrograms = async () => {
+      try {
+        // Listen for real-time updates
+        const unsubscribe = onSnapshot(
+          query(
+            collection(db, 'wellness_programs'),
+            where('isActive', '==', true)
+          ),
+          (snapshot) => {
+            const programsData = snapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data(),
+              // Process features and benefits from strings to arrays
+              features: typeof doc.data().features === 'string' 
+                ? doc.data().features.split('\n').filter(f => f.trim())
+                : doc.data().features || [],
+              benefits: typeof doc.data().benefits === 'string'
+                ? doc.data().benefits.split('\n').filter(b => b.trim())
+                : doc.data().benefits || []
+            }));
+            
+            // Sort by popular first, then by creation date
+            programsData.sort((a, b) => {
+              if (a.popular && !b.popular) return -1;
+              if (!a.popular && b.popular) return 1;
+              return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+            });
+            
+            setPrograms(programsData);
+            setLoading(false);
+          },
+          (error) => {
+            console.error('Error loading programs:', error);
+            setLoading(false);
+          }
+        );
 
-  const handleSubscribe = async (plan) => {
-    setLoading(true);
+        return () => unsubscribe();
+      } catch (error) {
+        console.error('Error setting up programs listener:', error);
+        setLoading(false);
+      }
+    };
+
+    loadPrograms();
+  }, []);
+
+  const handleSubscribe = async (program) => {
+    setSubscribing(true);
     try {
-      // Call parent component's subscribe handler
-      await onSubscribe(plan);
+      await onSubscribe(program);
       setModalVisible(false);
     } catch (error) {
       console.error('Subscription error:', error);
     } finally {
-      setLoading(false);
+      setSubscribing(false);
     }
   };
 
-  const getCategoryColor = (category) => {
-    const colors = {
-      wellness: 'green',
-      nutrition: 'orange',
-      fitness: 'blue',
-      'mental-health': 'purple',
-      comprehensive: 'gold'
-    };
-    return colors[category] || 'default';
+  const calculateSavings = (originalPrice, currentPrice) => {
+    if (!originalPrice || originalPrice <= currentPrice) return { savings: 0, percentage: 0 };
+    const savings = originalPrice - currentPrice;
+    const percentage = Math.round((savings / originalPrice) * 100);
+    return { savings, percentage };
   };
 
+  if (loading) {
+    return (
+      <div style={{ textAlign: 'center', padding: '4rem' }}>
+        <Spin size="large" />
+        <div style={{ marginTop: '1rem' }}>
+          <Text>Loading our wellness programs...</Text>
+        </div>
+      </div>
+    );
+  }
+
+  if (programs.length === 0) {
+    return (
+      <div style={{ textAlign: 'center', padding: '4rem' }}>
+        <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🏥</div>
+        <Title level={3}>No Programs Available</Title>
+        <Text type="secondary">
+          Our wellness programs are being updated. Please check back soon!
+        </Text>
+        <div style={{ marginTop: '2rem' }}>
+          <Button 
+            type="primary" 
+            icon={<ReloadOutlined />}
+            onClick={() => window.location.reload()}
+          >
+            Refresh Page
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <Box sx={{ p: 0 }}>
-      {/* Header */}
-      <Box sx={{ mb: 4, textAlign: 'center' }}>
-        <Title level={2} style={{ margin: 0, marginBottom: 8 }}>
-          Choose Your Wellness Plan 🌟
-        </Title>
-        <Paragraph style={{ fontSize: '16px', color: '#666' }}>
-          Select the perfect plan for your health journey. Once subscribed, you'll get access to your dedicated practitioner.
-        </Paragraph>
-      </Box>
+    <div className="services-catalog">
+      <style jsx>{`
+        .services-catalog {
+          padding: 0;
+          background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+          min-height: 100vh;
+        }
 
-      {/* Category Filter */}
-      <Box sx={{ mb: 3 }}>
-        <Row gutter={[8, 8]} justify="center">
-          {CATEGORIES.map(category => (
-            <Col key={category.key}>
-              <Button
-                size="large"
-                type={selectedCategory === category.key ? 'primary' : 'default'}
-                onClick={() => setSelectedCategory(category.key)}
-                style={{ borderRadius: 20 }}
-              >
-                {category.icon} {category.label}
-              </Button>
-            </Col>
-          ))}
-        </Row>
-      </Box>
+        .hero-section {
+          text-align: center;
+          padding: 4rem 2rem;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          margin-bottom: 4rem;
+          position: relative;
+          overflow: hidden;
+        }
 
-      {/* Plans Grid */}
-      <Row gutter={[24, 24]}>
-        {filteredPlans.map(plan => (
-          <Col xs={24} sm={12} lg={8} key={plan.id}>
-            <Card
-              hoverable
-              style={{ 
-                borderRadius: 12,
-                height: '100%',
-                position: 'relative',
-                border: plan.popular ? '2px solid #1890ff' : '1px solid #d9d9d9'
-              }}
-              cover={
-                <div style={{ 
-                  height: 200, 
-                  background: `linear-gradient(135deg, ${getCategoryColor(plan.category) === 'green' ? '#52c41a' : getCategoryColor(plan.category) === 'orange' ? '#fa8c16' : getCategoryColor(plan.category) === 'blue' ? '#1890ff' : getCategoryColor(plan.category) === 'purple' ? '#722ed1' : '#faad14'}, ${getCategoryColor(plan.category) === 'green' ? '#73d13d' : getCategoryColor(plan.category) === 'orange' ? '#ffc53d' : getCategoryColor(plan.category) === 'blue' ? '#40a9ff' : getCategoryColor(plan.category) === 'purple' ? '#9254de' : '#ffd666'})`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'white',
-                  fontSize: '48px'
-                }}>
-                  {CATEGORIES.find(cat => cat.key === plan.category)?.icon}
-                </div>
-              }
-              actions={[
-                <Button 
-                  type="primary" 
-                  size="large"
-                  onClick={() => {
-                    setSelectedPlan(plan);
-                    setModalVisible(true);
-                  }}
-                  style={{ width: '90%', borderRadius: 8 }}
+        .hero-section::before {
+          content: '';
+          position: absolute;
+          top: -50%;
+          left: -50%;
+          width: 200%;
+          height: 200%;
+          background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+          animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-20px) rotate(180deg); }
+        }
+
+        .hero-content {
+          position: relative;
+          z-index: 2;
+        }
+
+        .hero-title {
+          font-size: 3.5rem;
+          font-weight: 800;
+          margin-bottom: 1rem;
+          background: linear-gradient(45deg, #fff, #f0f0f0);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+
+        .hero-subtitle {
+          font-size: 1.4rem;
+          opacity: 0.9;
+          max-width: 600px;
+          margin: 0 auto 2rem;
+          line-height: 1.6;
+        }
+
+        .stats-row {
+          display: flex;
+          justify-content: center;
+          gap: 3rem;
+          margin-top: 3rem;
+        }
+
+        .stat-item {
+          text-align: center;
+        }
+
+        .stat-number {
+          font-size: 2.5rem;
+          font-weight: 700;
+          display: block;
+        }
+
+        .stat-label {
+          font-size: 0.9rem;
+          opacity: 0.8;
+        }
+
+        .programs-grid {
+          max-width: 1400px;
+          margin: 0 auto;
+          padding: 0 2rem;
+        }
+
+        .program-card {
+          background: white;
+          border-radius: 24px;
+          overflow: hidden;
+          box-shadow: 0 8px 40px rgba(0,0,0,0.12);
+          transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+          border: 1px solid rgba(255,255,255,0.2);
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          position: relative;
+        }
+
+        .program-card:hover {
+          transform: translateY(-12px) scale(1.02);
+          box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+
+        .popular-badge {
+          position: absolute;
+          top: 20px;
+          right: 20px;
+          background: linear-gradient(135deg, #FFD700, #FFA500);
+          color: #333;
+          padding: 8px 16px;
+          border-radius: 20px;
+          font-size: 0.8rem;
+          font-weight: 700;
+          z-index: 3;
+          animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.05); }
+          100% { transform: scale(1); }
+        }
+
+        .card-header {
+          height: 200px;
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          text-align: center;
+          overflow: hidden;
+        }
+
+        .card-icon {
+          font-size: 4rem;
+          margin-bottom: 1rem;
+          filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+        }
+
+        .card-body {
+          padding: 2rem;
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .program-title {
+          font-size: 1.5rem;
+          font-weight: 700;
+          margin-bottom: 0.5rem;
+          color: #2c3e50;
+        }
+
+        .program-type {
+          display: inline-block;
+          background: linear-gradient(135deg, #3498db, #2980b9);
+          color: white;
+          padding: 4px 12px;
+          border-radius: 12px;
+          font-size: 0.8rem;
+          margin-bottom: 1rem;
+        }
+
+        .program-description {
+          color: #6c757d;
+          line-height: 1.6;
+          margin-bottom: 1.5rem;
+          flex: 1;
+        }
+
+        .pricing-section {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 1.5rem;
+          padding: 1rem;
+          background: #f8f9fa;
+          border-radius: 12px;
+        }
+
+        .price-main {
+          font-size: 2rem;
+          font-weight: 800;
+          color: #2c3e50;
+        }
+
+        .price-original {
+          text-decoration: line-through;
+          color: #95a5a6;
+          font-size: 1rem;
+        }
+
+        .savings-badge {
+          background: linear-gradient(135deg, #e74c3c, #c0392b);
+          color: white;
+          padding: 6px 12px;
+          border-radius: 20px;
+          font-size: 0.8rem;
+          font-weight: 600;
+        }
+
+        .features-preview {
+          margin-bottom: 1.5rem;
+        }
+
+        .feature-item {
+          display: flex;
+          align-items: center;
+          margin-bottom: 0.5rem;
+          font-size: 0.9rem;
+          color: #6c757d;
+        }
+
+        .feature-icon {
+          color: #27ae60;
+          margin-right: 0.5rem;
+        }
+
+        .benefits-row {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+          margin-bottom: 1.5rem;
+        }
+
+        .benefit-tag {
+          background: linear-gradient(135deg, #3498db, #2980b9);
+          color: white;
+          padding: 4px 8px;
+          border-radius: 8px;
+          font-size: 0.7rem;
+        }
+
+        .action-button {
+          background: linear-gradient(135deg, #e74c3c, #c0392b);
+          border: none;
+          color: white;
+          padding: 16px 24px;
+          border-radius: 12px;
+          font-size: 1rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+        }
+
+        .action-button:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 25px rgba(231, 76, 60, 0.4);
+        }
+
+        .program-details {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 1rem;
+          font-size: 0.9rem;
+          color: #7f8c8d;
+        }
+
+        .rating-section {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+
+        .rating-stars {
+          color: #f39c12;
+        }
+
+        @media (max-width: 768px) {
+          .hero-title {
+            font-size: 2.5rem;
+          }
+          
+          .hero-subtitle {
+            font-size: 1.1rem;
+          }
+          
+          .stats-row {
+            flex-direction: column;
+            gap: 1rem;
+          }
+          
+          .programs-grid {
+            padding: 0 1rem;
+          }
+          
+          .card-body {
+            padding: 1.5rem;
+          }
+          
+          .program-card:hover {
+            transform: translateY(-8px) scale(1.01);
+          }
+        }
+      `}</style>
+
+      {/* Hero Section */}
+      <div className="hero-section">
+        <div className="hero-content">
+          <h1 className="hero-title">Transform Your Health Journey</h1>
+          <p className="hero-subtitle">
+            Discover our carefully crafted wellness programs designed by certified experts 
+            to help you achieve optimal health and vitality.
+          </p>
+          <div className="stats-row">
+            <div className="stat-item">
+              <span className="stat-number">1000+</span>
+              <span className="stat-label">Happy Clients</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-number">98%</span>
+              <span className="stat-label">Success Rate</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-number">4.9</span>
+              <span className="stat-label">Average Rating</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Programs Grid */}
+      <div className="programs-grid">
+        <Row gutter={[32, 32]}>
+          {programs.map(program => {
+            const { savings, percentage } = calculateSavings(program.originalPrice, program.price);
+            
+            return (
+              <Col xs={24} md={12} lg={6} key={program.id}>
+                <div 
+                  className="program-card"
+                  onMouseEnter={() => setHoveredCard(program.id)}
+                  onMouseLeave={() => setHoveredCard(null)}
                 >
-                  View Details & Subscribe
-                </Button>
-              ]}
-            >
-              {plan.popular && (
-                <Tag 
-                  color="gold" 
-                  style={{ 
-                    position: 'absolute', 
-                    top: 10, 
-                    right: 10, 
-                    zIndex: 1,
-                    borderRadius: 12
-                  }}
-                >
-                  <StarOutlined /> Popular
-                </Tag>
-              )}
+                  {program.popular && (
+                    <div className="popular-badge">
+                      ⭐ Most Popular
+                    </div>
+                  )}
+                  
+                  <div 
+                    className="card-header"
+                    style={{ background: program.gradient || 'linear-gradient(135deg, #FF6B35 0%, #F7931E 100%)' }}
+                  >
+                    <div>
+                      <div className="card-icon">{program.icon || '👩‍⚕️'}</div>
+                      <h3 style={{ color: 'white', margin: 0, fontSize: '1.2rem' }}>
+                        {program.type || 'Wellness Program'}
+                      </h3>
+                    </div>
+                  </div>
 
-              <Meta
-                title={
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span>{plan.title}</span>
-                    <Tag color={getCategoryColor(plan.category)}>
-                      {plan.category.replace('-', ' ').toUpperCase()}
-                    </Tag>
-                  </Box>
-                }
-                description={
-                  <Box>
-                    <Paragraph ellipsis={{ rows: 2 }} style={{ marginBottom: 12 }}>
-                      {plan.description}
-                    </Paragraph>
+                  <div className="card-body">
+                    <h3 className="program-title">{program.title}</h3>
                     
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                      <Text strong style={{ fontSize: '20px', color: '#1890ff' }}>
-                        ${plan.price}/month
-                      </Text>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <StarOutlined style={{ color: '#faad14' }} />
-                        <Text>{plan.rating}</Text>
-                      </Box>
-                    </Box>
+                    <div className="program-type">{program.duration}</div>
+                    
+                    <div className="program-details">
+                      <span>
+                        <CalendarOutlined /> {program.duration_details || program.duration}
+                      </span>
+                      <div className="rating-section">
+                        <span className="rating-stars">★</span>
+                        <span>{program.rating || 4.5}</span>
+                      </div>
+                    </div>
 
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <UserOutlined style={{ color: '#666' }} />
-                        <Text type="secondary" style={{ fontSize: '12px' }}>
-                          {plan.practitionerType}
-                        </Text>
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <ClockCircleOutlined style={{ color: '#666' }} />
-                        <Text type="secondary" style={{ fontSize: '12px' }}>
-                          {plan.duration}
-                        </Text>
-                      </Box>
-                    </Box>
-                  </Box>
-                }
-              />
-            </Card>
-          </Col>
-        ))}
-      </Row>
+                    <p className="program-description">{program.description}</p>
 
-      {/* Plan Details Modal */}
+                    <div className="pricing-section">
+                      <div>
+                        <div className="price-main">${program.price}</div>
+                        {program.originalPrice > program.price && (
+                          <div className="price-original">${program.originalPrice}</div>
+                        )}
+                      </div>
+                      {percentage > 0 && (
+                        <div className="savings-badge">
+                          Save {percentage}%
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="features-preview">
+                      {program.features.slice(0, 3).map((feature, index) => (
+                        <div key={index} className="feature-item">
+                          <CheckCircleOutlined className="feature-icon" />
+                          <span>{feature}</span>
+                        </div>
+                      ))}
+                      {program.features.length > 3 && (
+                        <div className="feature-item">
+                          <span style={{ color: '#3498db' }}>
+                            +{program.features.length - 3} more features
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {program.benefits && program.benefits.length > 0 && (
+                      <div className="benefits-row">
+                        {program.benefits.map((benefit, index) => (
+                          <span key={index} className="benefit-tag">
+                            {benefit}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    <button 
+                      className="action-button"
+                      onClick={() => {
+                        setSelectedProgram(program);
+                        setModalVisible(true);
+                      }}
+                    >
+                      Choose This Program
+                    </button>
+                  </div>
+                </div>
+              </Col>
+            );
+          })}
+        </Row>
+      </div>
+
+      {/* Program Details Modal */}
       <Modal
         title={
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <span style={{ fontSize: '24px' }}>
-              {CATEGORIES.find(cat => cat.key === selectedPlan?.category)?.icon}
-            </span>
-            {selectedPlan?.title}
-            {selectedPlan?.popular && (
-              <Tag color="gold">
-                <StarOutlined /> Popular Choice
-              </Tag>
-            )}
-          </Box>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <span style={{ fontSize: '2rem' }}>{selectedProgram?.icon || '👩‍⚕️'}</span>
+            <div>
+              <h2 style={{ margin: 0, color: '#2c3e50' }}>{selectedProgram?.title}</h2>
+              <p style={{ margin: 0, color: '#7f8c8d' }}>{selectedProgram?.type} Program</p>
+            </div>
+          </div>
         }
         open={modalVisible}
         onCancel={() => setModalVisible(false)}
-        width={700}
+        width={800}
         footer={[
-          <Button key="cancel" onClick={() => setModalVisible(false)}>
+          <Button key="cancel" onClick={() => setModalVisible(false)} size="large">
             Cancel
           </Button>,
           <Button 
             key="subscribe" 
             type="primary" 
             size="large"
-            loading={loading}
-            onClick={() => handleSubscribe(selectedPlan)}
-            style={{ borderRadius: 8 }}
+            loading={subscribing}
+            onClick={() => handleSubscribe(selectedProgram)}
+            style={{ 
+              background: selectedProgram?.gradient || 'linear-gradient(135deg, #e74c3c, #c0392b)',
+              border: 'none',
+              borderRadius: '8px',
+              height: '48px',
+              paddingLeft: '32px',
+              paddingRight: '32px'
+            }}
           >
-            Subscribe for ${selectedPlan?.price}/month
+            Start Your Journey - ${selectedProgram?.price}
           </Button>
         ]}
       >
-        {selectedPlan && (
-          <Box>
+        {selectedProgram && (
+          <div>
             <Alert
-              message="🎉 Ready to start your wellness journey?"
-              description="Once you subscribe, we'll create a private consultation room where you can communicate directly with your dedicated practitioner."
-              type="info"
+              message="🎉 Ready to Transform Your Health?"
+              description="Join thousands of satisfied clients who have transformed their lives with our expert-designed programs."
+              type="success"
               showIcon
-              style={{ marginBottom: 24, borderRadius: 8 }}
+              style={{ marginBottom: 24, borderRadius: 12 }}
             />
 
-            <Descriptions bordered column={1} style={{ marginBottom: 24 }}>
-              <Descriptions.Item label="Price">
-                <Text strong style={{ fontSize: '18px', color: '#1890ff' }}>
-                  ${selectedPlan.price} per month
-                </Text>
-              </Descriptions.Item>
-              <Descriptions.Item label="Duration">{selectedPlan.duration}</Descriptions.Item>
-              <Descriptions.Item label="Practitioner">{selectedPlan.practitionerType}</Descriptions.Item>
-              <Descriptions.Item label="Rating">
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <StarOutlined style={{ color: '#faad14' }} />
-                  <Text>{selectedPlan.rating}/5.0</Text>
-                </Box>
-              </Descriptions.Item>
-            </Descriptions>
+            <Row gutter={[24, 24]}>
+              <Col xs={24} md={12}>
+                <Descriptions 
+                  title="Program Details" 
+                  bordered 
+                  column={1}
+                  style={{ marginBottom: 24 }}
+                >
+                  <Descriptions.Item label="Investment">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      <span style={{ fontSize: '1.5rem', fontWeight: '700', color: '#2c3e50' }}>
+                        ${selectedProgram.price}
+                      </span>
+                      {selectedProgram.originalPrice > selectedProgram.price && (
+                        <>
+                          <span style={{ textDecoration: 'line-through', color: '#95a5a6' }}>
+                            ${selectedProgram.originalPrice}
+                          </span>
+                          <Tag color="red">
+                            {calculateSavings(selectedProgram.originalPrice, selectedProgram.price).percentage}% OFF
+                          </Tag>
+                        </>
+                      )}
+                    </div>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Duration">{selectedProgram.duration}</Descriptions.Item>
+                  <Descriptions.Item label="Sessions">{selectedProgram.sessionsIncluded} sessions included</Descriptions.Item>
+                  <Descriptions.Item label="Expert">{selectedProgram.practitionerType}</Descriptions.Item>
+                  <Descriptions.Item label="Rating">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <StarOutlined style={{ color: '#f39c12' }} />
+                      <span>{selectedProgram.rating}/5.0</span>
+                    </div>
+                  </Descriptions.Item>
+                </Descriptions>
+              </Col>
 
-            <Title level={4}>What's Included:</Title>
-            <Box sx={{ mb: 3 }}>
-              {selectedPlan.features.map((feature, index) => (
-                <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                  <CheckCircleOutlined style={{ color: '#52c41a' }} />
-                  <Text>{feature}</Text>
-                </Box>
-              ))}
-            </Box>
+              <Col xs={24} md={12}>
+                <h3 style={{ marginBottom: '1rem', color: '#2c3e50' }}>What You'll Get:</h3>
+                <div style={{ maxHeight: '300px', overflow: 'auto' }}>
+                  {selectedProgram.features.map((feature, index) => (
+                    <div key={index} style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '0.5rem', 
+                      marginBottom: '0.5rem',
+                      padding: '8px',
+                      background: '#f8f9fa',
+                      borderRadius: '8px'
+                    }}>
+                      <CheckCircleOutlined style={{ color: '#27ae60' }} />
+                      <span>{feature}</span>
+                    </div>
+                  ))}
+                </div>
+              </Col>
+            </Row>
 
-            <Box sx={{ p: 2, backgroundColor: '#f6ffed', borderRadius: 8, border: '1px solid #b7eb8f' }}>
-              <Text strong style={{ color: '#52c41a' }}>
-                💬 After subscription, you'll get:
-              </Text>
-              <ul style={{ marginTop: 8, marginBottom: 0 }}>
-                <li>Instant access to your private consultation room</li>
-                <li>Direct messaging with your practitioner</li>
-                <li>Personalized health plan within 24 hours</li>
-                <li>Schedule video calls and appointments</li>
-              </ul>
-            </Box>
-          </Box>
+            {selectedProgram.benefits && selectedProgram.benefits.length > 0 && (
+              <div style={{ 
+                background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+                padding: '1.5rem',
+                borderRadius: '12px',
+                marginTop: '1.5rem'
+              }}>
+                <h4 style={{ color: '#2c3e50', marginBottom: '1rem' }}>🎯 Why Choose This Program?</h4>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  {selectedProgram.benefits.map((benefit, index) => (
+                    <Tag key={index} color="blue" style={{ margin: '2px' }}>
+                      {benefit}
+                    </Tag>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <Alert
+              message="💡 Satisfaction Guarantee"
+              description="Not satisfied with your program? Get a full refund within the first 7 days. Your health journey should be risk-free!"
+              type="info"
+              showIcon
+              style={{ marginTop: 16, borderRadius: 8 }}
+            />
+          </div>
         )}
       </Modal>
-    </Box>
+    </div>
   );
 };
 
