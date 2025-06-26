@@ -5,6 +5,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { ConfigProvider } from 'antd';
 import { CssBaseline } from '@mui/material';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import AdminInitializer from './components/setup/Admininitializer';
 import ProtectedRoute from './components/common/ProtectedRoute/ProtectedRoute';
 
 // Authentication Pages
@@ -15,6 +16,7 @@ import EmailVerificationPage from './pages/auth/EmailVerificationPage';
 
 // Dashboard Pages
 import ClientDashboardPage from './pages/dashboard/ClientDashboardPage';
+import AdminDashboardPage from './pages/dashboard/AdminDashboardPage';
 
 // Consultation Pages
 import ConsultationRoom from './components/consultation/ConsultationRoom/ConsultationRoom';
@@ -98,78 +100,89 @@ function App() {
     <ThemeProvider theme={muiTheme}>
       <ConfigProvider theme={antdTheme}>
         <CssBaseline />
-        <AuthProvider>
-          <Router>
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<Navigate to="/auth/login" replace />} />
-              <Route path="/auth/login" element={<LoginPage />} />
-              <Route path="/auth/register" element={<RegisterPage />} />
-              <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
-              <Route 
-                path="/auth/email-verification" 
-                element={
-                  <ProtectedRoute requireEmailVerification={false}>
-                    <EmailVerificationPage />
-                  </ProtectedRoute>
-                } 
-              />
+        <AdminInitializer>
+          <AuthProvider>
+            <Router>
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/" element={<Navigate to="/auth/login" replace />} />
+                <Route path="/auth/login" element={<LoginPage />} />
+                <Route path="/auth/register" element={<RegisterPage />} />
+                <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
+                <Route 
+                  path="/auth/email-verification" 
+                  element={
+                    <ProtectedRoute requireEmailVerification={false}>
+                      <EmailVerificationPage />
+                    </ProtectedRoute>
+                  } 
+                />
 
-              {/* Protected Routes */}
-              <Route 
-                path="/dashboard" 
-                element={
-                  <ProtectedRoute>
-                    <DashboardRouter />
-                  </ProtectedRoute>
-                } 
-              />
+                {/* Protected Routes */}
+                <Route 
+                  path="/dashboard" 
+                  element={
+                    <ProtectedRoute>
+                      <DashboardRouter />
+                    </ProtectedRoute>
+                  } 
+                />
 
-              {/* Client Dashboard Routes */}
-              <Route 
-                path="/client/dashboard" 
-                element={
-                  <ProtectedRoute allowedRoles={['client']}>
-                    <ClientDashboardPage />
-                  </ProtectedRoute>
-                } 
-              />
+                {/* Client Dashboard Routes */}
+                <Route 
+                  path="/client/dashboard" 
+                  element={
+                    <ProtectedRoute allowedRoles={['client']}>
+                      <ClientDashboardPage />
+                    </ProtectedRoute>
+                  } 
+                />
 
-              {/* Consultation Room Routes */}
-              <Route 
-                path="/client/consultation/:roomId" 
-                element={
-                  <ProtectedRoute allowedRoles={['client']}>
-                    <ConsultationRoom />
-                  </ProtectedRoute>
-                } 
-              />
+                {/* Consultation Room Routes */}
+                <Route 
+                  path="/client/consultation/:roomId" 
+                  element={
+                    <ProtectedRoute allowedRoles={['client']}>
+                      <ConsultationRoom />
+                    </ProtectedRoute>
+                  } 
+                />
 
-              {/* Appointments Route (Coming Soon) */}
-              <Route 
-                path="/client/appointments/:subscriptionId" 
-                element={
-                  <ProtectedRoute allowedRoles={['client']}>
-                    <ComingSoonPage pageType="Appointments" />
-                  </ProtectedRoute>
-                } 
-              />
+                {/* Appointments Route (Coming Soon) */}
+                <Route 
+                  path="/client/appointments/:subscriptionId" 
+                  element={
+                    <ProtectedRoute allowedRoles={['client']}>
+                      <ComingSoonPage pageType="Appointments" />
+                    </ProtectedRoute>
+                  } 
+                />
 
-              {/* Admin Routes - Coming Soon */}
-              <Route 
-                path="/admin/*" 
-                element={
-                  <ProtectedRoute allowedRoles={['admin']}>
-                    <ComingSoonPage pageType="Admin Dashboard" />
-                  </ProtectedRoute>
-                } 
-              />
+                {/* Admin Routes */}
+                <Route 
+                  path="/admin/dashboard" 
+                  element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminDashboardPage />
+                    </ProtectedRoute>
+                  } 
+                />
+                
+                <Route 
+                  path="/admin/*" 
+                  element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminDashboardPage />
+                    </ProtectedRoute>
+                  } 
+                />
 
-              {/* 404 Page */}
-              <Route path="*" element={<NotFoundPage />} />
-            </Routes>
-          </Router>
-        </AuthProvider>
+                {/* 404 Page */}
+                <Route path="*" element={<NotFoundPage />} />
+              </Routes>
+            </Router>
+          </AuthProvider>
+        </AdminInitializer>
       </ConfigProvider>
     </ThemeProvider>
   );
