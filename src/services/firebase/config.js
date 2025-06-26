@@ -1,7 +1,7 @@
 // src/services/firebase/config.js
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { initializeFirestore, CACHE_SIZE_UNLIMITED } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getAnalytics } from "firebase/analytics";
 
@@ -20,8 +20,17 @@ const app = initializeApp(firebaseConfig);
 
 // Initialize Firebase services
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+
+// Initialize Firestore with improved settings
+export const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true, // Forces long polling instead of WebSocket
+  useFetchStreams: false, // Disables fetch streams
+  cacheSizeBytes: CACHE_SIZE_UNLIMITED, // Unlimited cache
+});
+
 export const storage = getStorage(app);
-export const analytics = getAnalytics(app);
+
+// Only initialize analytics in production
+export const analytics = typeof window !== 'undefined' ? getAnalytics(app) : null;
 
 export default app;

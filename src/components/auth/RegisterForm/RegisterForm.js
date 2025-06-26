@@ -12,10 +12,6 @@ import {
   IconButton,
   CircularProgress,
   Divider,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Grid,
   Stepper,
   Step,
@@ -34,7 +30,7 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../../context/AuthContext';
 
-const steps = ['Basic Info', 'Account Details', 'Role Selection'];
+const steps = ['Basic Info', 'Account Details', 'Personal Details'];
 
 const RegisterForm = () => {
   const [activeStep, setActiveStep] = useState(0);
@@ -45,7 +41,7 @@ const RegisterForm = () => {
     phone: '',
     password: '',
     confirmPassword: '',
-    role: 'client',
+    role: 'client', // Fixed to client only
     dateOfBirth: '',
     address: ''
   });
@@ -75,6 +71,7 @@ const RegisterForm = () => {
 
   const handleBack = () => {
     setActiveStep((prevStep) => prevStep - 1);
+    setError(''); // Clear error when going back
   };
 
   const validateStep = (step) => {
@@ -82,23 +79,47 @@ const RegisterForm = () => {
     
     switch (step) {
       case 0: // Basic Info
-        if (!formData.firstName || !formData.lastName) {
-          setError('Please enter your first and last name');
+        if (!formData.firstName.trim()) {
+          setError('Please enter your first name');
           return false;
         }
-        if (!formData.phone) {
+        if (!formData.lastName.trim()) {
+          setError('Please enter your last name');
+          return false;
+        }
+        if (!formData.phone.trim()) {
           setError('Please enter your phone number');
+          return false;
+        }
+        // Basic phone validation
+        const phoneRegex = /^[+]?[\d\s\-()]{10,}$/;
+        if (!phoneRegex.test(formData.phone.trim())) {
+          setError('Please enter a valid phone number');
           return false;
         }
         return true;
         
       case 1: // Account Details
-        if (!formData.email) {
+        if (!formData.email.trim()) {
           setError('Please enter your email address');
           return false;
         }
-        if (!formData.password || formData.password.length < 6) {
+        // Email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formData.email.trim())) {
+          setError('Please enter a valid email address');
+          return false;
+        }
+        if (!formData.password) {
+          setError('Please enter a password');
+          return false;
+        }
+        if (formData.password.length < 6) {
           setError('Password must be at least 6 characters');
+          return false;
+        }
+        if (!formData.confirmPassword) {
+          setError('Please confirm your password');
           return false;
         }
         if (formData.password !== formData.confirmPassword) {
@@ -107,11 +128,7 @@ const RegisterForm = () => {
         }
         return true;
         
-      case 2: // Role Selection
-        if (!formData.role) {
-          setError('Please select your role');
-          return false;
-        }
+      case 2: // Personal Details - optional step, always valid
         return true;
         
       default:
@@ -128,14 +145,16 @@ const RegisterForm = () => {
     setError('');
 
     try {
-      await register(formData.email, formData.password, {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        phone: formData.phone,
-        role: formData.role,
-        dateOfBirth: formData.dateOfBirth,
-        address: formData.address
-      });
+      const userData = {
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        phone: formData.phone.trim(),
+        role: 'client', // Always client
+        dateOfBirth: formData.dateOfBirth || '',
+        address: formData.address.trim() || ''
+      };
+
+      await register(formData.email.trim(), formData.password, userData);
       
       navigate('/auth/email-verification');
     } catch (error) {
@@ -149,7 +168,10 @@ const RegisterForm = () => {
           setError('Invalid email address');
           break;
         case 'auth/weak-password':
-          setError('Password is too weak');
+          setError('Password is too weak. Please use at least 6 characters');
+          break;
+        case 'auth/network-request-failed':
+          setError('Network error. Please check your connection');
           break;
         default:
           setError('Registration failed. Please try again');
@@ -173,6 +195,8 @@ const RegisterForm = () => {
                 onChange={handleChange}
                 variant="outlined"
                 disabled={loading}
+                required
+                placeholder="Enter first name"
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -196,6 +220,8 @@ const RegisterForm = () => {
                 onChange={handleChange}
                 variant="outlined"
                 disabled={loading}
+                required
+                placeholder="Enter last name"
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 2,
@@ -212,32 +238,14 @@ const RegisterForm = () => {
                 onChange={handleChange}
                 variant="outlined"
                 disabled={loading}
+                required
+                placeholder="Enter phone number"
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
                       <Phone color="action" />
                     </InputAdornment>
                   ),
-                }}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                  },
-                }}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Date of Birth"
-                name="dateOfBirth"
-                type="date"
-                value={formData.dateOfBirth}
-                onChange={handleChange}
-                variant="outlined"
-                disabled={loading}
-                InputLabelProps={{
-                  shrink: true,
                 }}
                 sx={{
                   '& .MuiOutlinedInput-root': {
@@ -262,6 +270,8 @@ const RegisterForm = () => {
                 onChange={handleChange}
                 variant="outlined"
                 disabled={loading}
+                required
+                placeholder="Enter email address"
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -286,6 +296,8 @@ const RegisterForm = () => {
                 onChange={handleChange}
                 variant="outlined"
                 disabled={loading}
+                required
+                placeholder="Create password (min 6 characters)"
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -298,6 +310,7 @@ const RegisterForm = () => {
                         onClick={() => setShowPassword(!showPassword)}
                         edge="end"
                         disabled={loading}
+                        aria-label="toggle password visibility"
                       >
                         {showPassword ? <VisibilityOff /> : <Visibility />}
                       </IconButton>
@@ -321,6 +334,8 @@ const RegisterForm = () => {
                 onChange={handleChange}
                 variant="outlined"
                 disabled={loading}
+                required
+                placeholder="Confirm your password"
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -333,6 +348,7 @@ const RegisterForm = () => {
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                         edge="end"
                         disabled={loading}
+                        aria-label="toggle confirm password visibility"
                       >
                         {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
                       </IconButton>
@@ -353,36 +369,34 @@ const RegisterForm = () => {
         return (
           <Grid container spacing={2}>
             <Grid item xs={12}>
-              <FormControl fullWidth variant="outlined">
-                <InputLabel>I am a...</InputLabel>
-                <Select
-                  name="role"
-                  value={formData.role}
-                  onChange={handleChange}
-                  label="I am a..."
-                  disabled={loading}
-                  sx={{
+              <Alert severity="info" sx={{ mb: 2, borderRadius: 2 }}>
+                <Typography variant="body2">
+                  <strong>Account Type:</strong> Client Account
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 0.5 }}>
+                  You're signing up as a client to access wellness services and consultations.
+                </Typography>
+              </Alert>
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Date of Birth (Optional)"
+                name="dateOfBirth"
+                type="date"
+                value={formData.dateOfBirth}
+                onChange={handleChange}
+                variant="outlined"
+                disabled={loading}
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
                     borderRadius: 2,
-                  }}
-                >
-                  <MenuItem value="client">
-                    <Box>
-                      <Typography variant="subtitle1">Client</Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Looking for wellness services and consultations
-                      </Typography>
-                    </Box>
-                  </MenuItem>
-                  <MenuItem value="admin">
-                    <Box>
-                      <Typography variant="subtitle1">Healthcare Provider / Admin</Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Providing healthcare and wellness services
-                      </Typography>
-                    </Box>
-                  </MenuItem>
-                </Select>
-              </FormControl>
+                  },
+                }}
+              />
             </Grid>
             <Grid item xs={12}>
               <TextField
@@ -395,6 +409,7 @@ const RegisterForm = () => {
                 onChange={handleChange}
                 variant="outlined"
                 disabled={loading}
+                placeholder="Enter your address"
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 2,
@@ -482,7 +497,11 @@ const RegisterForm = () => {
             disabled={activeStep === 0 || loading}
             onClick={handleBack}
             startIcon={<ArrowBack />}
-            sx={{ borderRadius: 2 }}
+            sx={{ 
+              borderRadius: 2,
+              textTransform: 'none',
+              fontWeight: 500
+            }}
           >
             Back
           </Button>
@@ -495,10 +514,26 @@ const RegisterForm = () => {
               sx={{
                 borderRadius: 2,
                 px: 3,
+                py: 1,
+                textTransform: 'none',
+                fontWeight: 600,
                 background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #1565c0 0%, #0d47a1 100%)',
+                },
+                '&:disabled': {
+                  background: '#e0e0e0',
+                },
               }}
             >
-              {loading ? <CircularProgress size={24} /> : 'Create Account'}
+              {loading ? (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <CircularProgress size={20} color="inherit" />
+                  Creating Account...
+                </Box>
+              ) : (
+                'Create Account'
+              )}
             </Button>
           ) : (
             <Button
@@ -508,7 +543,13 @@ const RegisterForm = () => {
               sx={{
                 borderRadius: 2,
                 px: 3,
+                py: 1,
+                textTransform: 'none',
+                fontWeight: 600,
                 background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #1565c0 0%, #0d47a1 100%)',
+                },
               }}
             >
               Next

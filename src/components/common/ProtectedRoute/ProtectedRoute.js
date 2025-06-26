@@ -11,6 +11,10 @@ const ProtectedRoute = ({ children, requireEmailVerification = true, allowedRole
   const { currentUser, userProfile, loading } = useAuth();
   const location = useLocation();
 
+  console.log('ProtectedRoute - Current User:', currentUser?.uid);
+  console.log('ProtectedRoute - User Profile:', userProfile);
+  console.log('ProtectedRoute - Loading:', loading);
+
   // Show loading spinner while checking authentication
   if (loading) {
     return (
@@ -36,16 +40,25 @@ const ProtectedRoute = ({ children, requireEmailVerification = true, allowedRole
 
   // Redirect to login if not authenticated
   if (!currentUser) {
+    console.log('No current user, redirecting to login');
     return <Navigate to="/auth/login" state={{ from: location }} replace />;
   }
 
   // Redirect to email verification if email is not verified
   if (requireEmailVerification && !currentUser.emailVerified) {
+    console.log('Email not verified, redirecting to email verification');
     return <Navigate to="/auth/email-verification" replace />;
   }
 
-  // Check if user profile exists
+  // If user exists but no profile, show a different loading state with timeout
   if (!userProfile) {
+    console.log('User exists but no profile found');
+    
+    // For email verification page, allow access without profile
+    if (location.pathname === '/auth/email-verification') {
+      return children;
+    }
+
     return (
       <Layout style={{ minHeight: '100vh' }}>
         <Content
@@ -54,12 +67,35 @@ const ProtectedRoute = ({ children, requireEmailVerification = true, allowedRole
             justifyContent: 'center',
             alignItems: 'center',
             flexDirection: 'column',
+            padding: '20px',
           }}
         >
           <Spin size="large" />
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="h6" color="text.secondary">
-              Loading profile...
+          <Box sx={{ mt: 2, textAlign: 'center' }}>
+            <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
+              Setting up your profile...
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              This should only take a moment
+            </Typography>
+          </Box>
+          
+          {/* Fallback button after 10 seconds */}
+          <Box sx={{ mt: 4 }}>
+            <Typography variant="body2" color="text.secondary">
+              Taking too long?{' '}
+              <button 
+                onClick={() => window.location.reload()} 
+                style={{ 
+                  background: 'none', 
+                  border: 'none', 
+                  color: '#1976d2', 
+                  cursor: 'pointer',
+                  textDecoration: 'underline'
+                }}
+              >
+                Refresh page
+              </button>
             </Typography>
           </Box>
         </Content>
