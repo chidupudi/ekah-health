@@ -11,6 +11,7 @@ function App() {
     minHeight: 'calc(100vh - 80px)',
     color: colors.lightSlateGray
   };
+  
 
   return (
     <div style={{ backgroundColor: colors.ghostWhite, minHeight: '100vh' }}>
