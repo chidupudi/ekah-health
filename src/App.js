@@ -1,7 +1,6 @@
 // src/App.js
 import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
-import Sidebar from './components/Sidebar';
 import MainContent from './components/MainContent';
 import { colors } from './styles/colors';
 
@@ -98,6 +97,12 @@ function App() {
       max-width: 100%;
       overflow-x: hidden;
     }
+    
+    /* Prevent layout shift */
+    #root {
+      position: relative;
+      min-height: 100vh;
+    }
   `;
 
   return (
@@ -107,12 +112,6 @@ function App() {
       <Header 
         onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         isMobileMenuOpen={isMobileMenuOpen}
-      />
-      
-      <Sidebar 
-        isMobile={isMobile}
-        isOpen={isMobileMenuOpen}
-        onClose={() => setIsMobileMenuOpen(false)}
       />
       
       <MainContent isMobile={isMobile} />

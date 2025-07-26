@@ -104,25 +104,40 @@ const Header = ({ onMenuToggle, isMobileMenuOpen }) => {
     display: 'none'
   };
 
+  // Navigation items
+  const navItems = [
+    { icon: Home, text: 'Home', href: '#home' },
+    { icon: Info, text: 'About Us', href: '#about' },
+    { icon: Phone, text: 'Contact', href: '#contact' }
+  ];
+
+  // Dropdown menu items
+  const dropdownItems = [
+    { icon: User, text: 'My Profile' },
+    { icon: Settings, text: 'Settings' },
+    { icon: BookOpen, text: 'My Courses' },
+    { icon: LogOut, text: 'Logout', color: '#e74c3c' }
+  ];
+
   // Handle nav item hover
   const handleNavItemHover = (e, isEntering) => {
     if (isEntering) {
-      e.target.style.background = colors.celadon;
-      e.target.style.transform = 'translateY(-2px)';
-      e.target.style.boxShadow = '0 6px 20px rgba(0,0,0,0.15)';
+      e.currentTarget.style.background = colors.celadon;
+      e.currentTarget.style.transform = 'translateY(-2px)';
+      e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.15)';
     } else {
-      e.target.style.background = colors.whiteTransparent;
-      e.target.style.transform = 'translateY(0)';
-      e.target.style.boxShadow = 'none';
+      e.currentTarget.style.background = colors.whiteTransparent;
+      e.currentTarget.style.transform = 'translateY(0)';
+      e.currentTarget.style.boxShadow = 'none';
     }
   };
 
   // Handle dropdown item hover
   const handleDropdownItemHover = (e, isEntering) => {
     if (isEntering) {
-      e.target.style.backgroundColor = colors.celadon;
+      e.currentTarget.style.backgroundColor = colors.celadon;
     } else {
-      e.target.style.backgroundColor = 'transparent';
+      e.currentTarget.style.backgroundColor = 'transparent';
     }
   };
 
@@ -148,78 +163,46 @@ const Header = ({ onMenuToggle, isMobileMenuOpen }) => {
         </div>
         
         <nav style={navStyle} className="nav-desktop">
-          <a 
-            href="#home" 
-            style={navItemStyle}
-            onMouseEnter={(e) => handleNavItemHover(e, true)}
-            onMouseLeave={(e) => handleNavItemHover(e, false)}
-          >
-            <Home size={18} />
-            Home
-          </a>
-          <a 
-            href="#about" 
-            style={navItemStyle}
-            onMouseEnter={(e) => handleNavItemHover(e, true)}
-            onMouseLeave={(e) => handleNavItemHover(e, false)}
-          >
-            <Info size={18} />
-            About Us
-          </a>
-          <a 
-            href="#contact" 
-            style={navItemStyle}
-            onMouseEnter={(e) => handleNavItemHover(e, true)}
-            onMouseLeave={(e) => handleNavItemHover(e, false)}
-          >
-            <Phone size={18} />
-            Contact
-          </a>
+          {navItems.map((item, index) => (
+            <a 
+              key={index}
+              href={item.href}
+              style={navItemStyle}
+              onMouseEnter={(e) => handleNavItemHover(e, true)}
+              onMouseLeave={(e) => handleNavItemHover(e, false)}
+            >
+              <item.icon size={18} />
+              {item.text}
+            </a>
+          ))}
           
           <div style={profileContainerStyle}>
             <div 
               style={profileIconStyle} 
               onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-              onMouseEnter={(e) => e.target.style.transform = 'scale(1.1)'}
-              onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+              onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
             >
               <User size={20} />
             </div>
             
             {isProfileDropdownOpen && (
               <div style={dropdownStyle}>
-                <div 
-                  style={dropdownItemStyle}
-                  onMouseEnter={(e) => handleDropdownItemHover(e, true)}
-                  onMouseLeave={(e) => handleDropdownItemHover(e, false)}
-                >
-                  <User size={16} />
-                  My Profile
-                </div>
-                <div 
-                  style={dropdownItemStyle}
-                  onMouseEnter={(e) => handleDropdownItemHover(e, true)}
-                  onMouseLeave={(e) => handleDropdownItemHover(e, false)}
-                >
-                  <Settings size={16} />
-                  Settings
-                </div>
-                <div 
-                  style={dropdownItemStyle}
-                  onMouseEnter={(e) => handleDropdownItemHover(e, true)}
-                  onMouseLeave={(e) => handleDropdownItemHover(e, false)}
-                >
-                  <BookOpen size={16} />
-                  My Courses
-                </div>
-                <div 
-                  style={{...dropdownItemStyle, color: '#e74c3c', borderBottom: 'none'}}
-                  onMouseEnter={(e) => handleDropdownItemHover(e, true)}
-                  onMouseLeave={(e) => handleDropdownItemHover(e, false)}
-                >
-                  <LogOut size={16} />
-                  Logout
-                </div>
+                {dropdownItems.map((item, index) => (
+                  <div 
+                    key={index}
+                    style={{
+                      ...dropdownItemStyle,
+                      color: item.color || colors.lightSlateGray,
+                      borderBottom: index < dropdownItems.length - 1 ? `1px solid ${colors.celadon}` : 'none'
+                    }}
+                    onMouseEnter={(e) => handleDropdownItemHover(e, true)}
+                    onMouseLeave={(e) => handleDropdownItemHover(e, false)}
+                  >
+                    <item.icon size={16} />
+                    {item.text}
+                  </div>
+                ))}
               </div>
             )}
           </div>
