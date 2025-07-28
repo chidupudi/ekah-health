@@ -1,122 +1,49 @@
-// src/App.js
-import React, { useState, useEffect } from 'react';
-import Header from './components/Header';
-import MainContent from './components/MainContent';
-import { colors } from './styles/colors';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { ConfigProvider } from 'antd';
+import Layout from './components/Layout';
+import Welcome from './pages/Welcome';
+import WelcomeNew from './pages/WelcomeNew';
+import About from './pages/About';
+import MainHeader from './components/MainHeader';
+import { ThemeProvider } from './components/ParticleBackground';
 
-function App() {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [windowWidth, setWindowWidth] = useState(
-    typeof window !== 'undefined' ? window.innerWidth : 1024
-  );
-
-  useEffect(() => {
-    const handleResize = () => setWindowWidth(window.innerWidth);
-    
-    if (typeof window !== 'undefined') {
-      window.addEventListener('resize', handleResize);
-      return () => window.removeEventListener('resize', handleResize);
-    }
-  }, []);
-
-  // Close mobile menu when window becomes desktop size
-  useEffect(() => {
-    if (windowWidth > 768 && isMobileMenuOpen) {
-      setIsMobileMenuOpen(false);
-    }
-  }, [windowWidth, isMobileMenuOpen]);
-
-  const isMobile = windowWidth <= 768;
-
-  const appStyle = {
-    background: colors.accentGradient,
-    minHeight: '100vh',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
-  };
-
-  const globalStyles = `
-    * {
-      box-sizing: border-box;
-    }
-    
-    body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      overflow-x: hidden;
-    }
-    
-    @media (max-width: 768px) {
-      .nav-desktop {
-        display: none !important;
-      }
-      .mobile-menu-btn {
-        display: flex !important;
-      }
-    }
-    
-    /* Custom scrollbar */
-    ::-webkit-scrollbar {
-      width: 8px;
-    }
-    
-    ::-webkit-scrollbar-track {
-      background: ${colors.ghostWhite};
-    }
-    
-    ::-webkit-scrollbar-thumb {
-      background: ${colors.celadon};
-      border-radius: 4px;
-    }
-    
-    ::-webkit-scrollbar-thumb:hover {
-      background: ${colors.softGoldenYellow};
-    }
-    
-    /* Smooth animations */
-    * {
-      transition: all 0.3s ease;
-    }
-    
-    /* Focus styles for accessibility */
-    button:focus,
-    a:focus {
-      outline: 2px solid ${colors.softGoldenYellow};
-      outline-offset: 2px;
-    }
-    
-    /* Ensure text remains readable with gradients */
-    .gradient-text {
-      background: ${colors.primaryGradient};
-      background-clip: text;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    
-    /* Disable horizontal scroll on mobile */
-    html, body {
-      max-width: 100%;
-      overflow-x: hidden;
-    }
-    
-    /* Prevent layout shift */
-    #root {
-      position: relative;
-      min-height: 100vh;
-    }
-  `;
-
-  return (
-    <div style={appStyle}>
-      <style>{globalStyles}</style>
-      
-      <Header 
-        onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        isMobileMenuOpen={isMobileMenuOpen}
-      />
-      
-      <MainContent isMobile={isMobile} />
+const PageWrapper = ({ children }) => (
+  <>
+    <MainHeader />
+    <div style={{ paddingTop: '64px', minHeight: '100vh' }}>
+      <Layout>
+        {children}
+      </Layout>
     </div>
+  </>
+);
+
+const App = () => {
+  return (
+    <ThemeProvider defaultTheme="light">
+      <ConfigProvider
+        theme={{
+          token: {
+            colorPrimary: '#2563eb',
+            borderRadius: 8,
+          },
+        }}
+      >
+        <Router>
+          <Routes>
+            <Route path="/" element={<WelcomeNew />} />
+            <Route path="/welcome-old" element={<PageWrapper><Welcome /></PageWrapper>} />
+            <Route path="/about" element={<PageWrapper><About /></PageWrapper>} />
+            <Route path="/services" element={<PageWrapper><div style={{ padding: '64px 32px', textAlign: 'center' }}><h2>Services Page - Coming Soon</h2></div></PageWrapper>} />
+            <Route path="/booking" element={<PageWrapper><div style={{ padding: '64px 32px', textAlign: 'center' }}><h2>Booking Page - Coming Soon</h2></div></PageWrapper>} />
+            <Route path="/contact" element={<PageWrapper><div style={{ padding: '64px 32px', textAlign: 'center' }}><h2>Contact Page - Coming Soon</h2></div></PageWrapper>} />
+            <Route path="/profile" element={<PageWrapper><div style={{ padding: '64px 32px', textAlign: 'center' }}><h2>Profile Page - Coming Soon</h2></div></PageWrapper>} />
+          </Routes>
+        </Router>
+      </ConfigProvider>
+    </ThemeProvider>
   );
-}
+};
 
 export default App;
