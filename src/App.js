@@ -22,13 +22,6 @@ const PageWrapper = ({ children }) => (
   </>
 );
 
-// Wrapper for sign-in page without header/layout - completely isolated
-const AuthWrapper = ({ children }) => (
-  <div style={{ minHeight: '100vh' }}>
-    {children}
-  </div>
-);
-
 const App = () => {
   return (
     <ThemeProvider defaultTheme="light">
@@ -42,9 +35,9 @@ const App = () => {
       >
         <Router>
           <Routes>
-            {/* Auth routes - completely isolated, no global styles */}
-            <Route path="/signin" element={<AuthWrapper><AnimatedSignIn /></AuthWrapper>} />
-            <Route path="/signup" element={<AuthWrapper><AnimatedSignIn /></AuthWrapper>} />
+            {/* Auth routes - now with their own header and footer */}
+            <Route path="/signin" element={<AnimatedSignIn />} />
+            <Route path="/signup" element={<AnimatedSignIn />} />
             
             {/* Regular routes - with header and layout */}
             <Route path="/" element={<PageWrapper><WelcomeNew /></PageWrapper>} />
