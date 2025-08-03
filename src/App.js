@@ -32,7 +32,8 @@ const App = () => {
       >
         <Router>
           <Routes>
-            <Route path="/" element={<WelcomeNew />} />
+            {/* Use consistent header for all pages */}
+            <Route path="/" element={<PageWrapper><WelcomeNew /></PageWrapper>} />
             <Route path="/welcome-old" element={<PageWrapper><Welcome /></PageWrapper>} />
             <Route path="/about" element={<PageWrapper><About /></PageWrapper>} />
             <Route path="/services" element={<PageWrapper><div style={{ padding: '64px 32px', textAlign: 'center' }}><h2>Services Page - Coming Soon</h2></div></PageWrapper>} />

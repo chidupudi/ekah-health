@@ -31,9 +31,15 @@ const Layout = ({ children }) => {
       flexDirection: 'column',
       background: themeStyles.background,
       color: themeStyles.textColor,
-      transition: 'all 0.3s ease'
+      transition: 'all 0.3s ease',
+      position: 'relative'
     }}>
-      <div style={{ flex: 1, position: 'relative' }}>
+      {/* Main content area */}
+      <div style={{ 
+        flex: 1, 
+        position: 'relative',
+        zIndex: 1
+      }}>
         <ParticleBackground 
           quantity={30}
           ease={50}
@@ -41,10 +47,23 @@ const Layout = ({ children }) => {
           staticity={70}
           particleColor={themeStyles.particleColor}
         >
-          {children}
+          <div style={{ 
+            minHeight: '100vh',
+            position: 'relative',
+            zIndex: 2
+          }}>
+            {children}
+          </div>
         </ParticleBackground>
       </div>
-      <Footer />
+      
+      {/* Footer - always at the bottom, never fixed */}
+      <div style={{ 
+        position: 'relative',
+        zIndex: 3
+      }}>
+        <Footer />
+      </div>
     </div>
   );
 };

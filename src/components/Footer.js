@@ -5,10 +5,7 @@ import {
   FacebookOutlined,
   InstagramOutlined,
   LinkedinOutlined,
-  TwitterOutlined,
-  PhoneOutlined,
-  MailOutlined,
-  EnvironmentOutlined
+  TwitterOutlined
 } from '@ant-design/icons';
 import { useTheme } from './ParticleBackground';
 
@@ -18,7 +15,7 @@ const Footer = ({
     title: "EkahHealth"
   },
   sections = null,
-  description = "Professional mental health therapy services providing compassionate care and evidence-based treatment for your wellness journey.",
+  description = "Professional mental health therapy services providing compassionate care for your wellness journey.",
   socialLinks = null,
   copyright = "© 2024 EkahHealth. All rights reserved.",
   legalLinks = null
@@ -57,47 +54,36 @@ const Footer = ({
         { name: "Individual Therapy", href: "/services" },
         { name: "Group Therapy", href: "/services" },
         { name: "Couples Counseling", href: "/services" },
-        { name: "Family Therapy", href: "/services" },
-      ],
-    },
-    {
-      title: "Resources",
-      links: [
-        { name: "About Us", href: "/about" },
-        { name: "Our Team", href: "/about" },
-        { name: "Blog", href: "/blog" },
-        { name: "Support", href: "/contact" },
       ],
     },
     {
       title: "Support",
       links: [
+        { name: "About Us", href: "/about" },
         { name: "Contact Us", href: "/contact" },
         { name: "Book Session", href: "/booking" },
-        { name: "Emergency Help", href: "/contact" },
-        { name: "FAQ", href: "/contact" },
       ],
     },
   ];
 
   const defaultSocialLinks = [
     { 
-      icon: <InstagramOutlined style={{ fontSize: '20px' }} />, 
+      icon: <InstagramOutlined style={{ fontSize: '18px' }} />, 
       href: "#", 
       label: "Instagram" 
     },
     { 
-      icon: <FacebookOutlined style={{ fontSize: '20px' }} />, 
+      icon: <FacebookOutlined style={{ fontSize: '18px' }} />, 
       href: "#", 
       label: "Facebook" 
     },
     { 
-      icon: <TwitterOutlined style={{ fontSize: '20px' }} />, 
+      icon: <TwitterOutlined style={{ fontSize: '18px' }} />, 
       href: "#", 
       label: "Twitter" 
     },
     { 
-      icon: <LinkedinOutlined style={{ fontSize: '20px' }} />, 
+      icon: <LinkedinOutlined style={{ fontSize: '18px' }} />, 
       href: "#", 
       label: "LinkedIn" 
     },
@@ -123,7 +109,7 @@ const Footer = ({
 
   return (
     <section style={{
-      padding: '80px 0',
+      padding: '32px 0', // Reduced from 80px to 32px
       background: themeStyles.background,
       borderTop: `1px solid ${themeStyles.borderColor}`
     }}>
@@ -137,23 +123,23 @@ const Footer = ({
           width: '100%',
           flexDirection: 'column',
           justifyContent: 'space-between',
-          gap: '40px'
+          gap: '24px' // Reduced from 40px
         }}>
           <div style={{
             display: 'flex',
             width: '100%',
             flexDirection: 'row',
             justifyContent: 'space-between',
-            gap: '40px',
+            gap: '32px', // Reduced from 40px
             flexWrap: 'wrap'
-          }}>
+                      }}>
             {/* Logo and Description Section */}
             <div style={{
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
-              gap: '24px',
-              minWidth: '300px',
+              gap: '16px', // Reduced from 24px
+              minWidth: '280px', // Reduced from 300px
               flex: '1'
             }}>
               {/* Logo */}
@@ -166,11 +152,11 @@ const Footer = ({
               onClick={() => handleNavigation(logo.url)}
               >
                 <HeartOutlined style={{
-                  fontSize: '32px',
+                  fontSize: '28px', // Reduced from 32px
                   color: themeStyles.logoColor
                 }} />
                 <h2 style={{
-                  fontSize: '24px',
+                  fontSize: '20px', // Reduced from 24px
                   fontWeight: '600',
                   color: themeStyles.textColor,
                   margin: 0
@@ -180,58 +166,20 @@ const Footer = ({
               </div>
 
               <p style={{
-                maxWidth: '350px',
+                maxWidth: '320px', // Reduced from 350px
                 fontSize: '14px',
                 color: themeStyles.mutedTextColor,
-                lineHeight: '1.6',
+                lineHeight: '1.5', // Reduced from 1.6
                 margin: 0
               }}>
                 {description}
               </p>
 
-              {/* Contact Info */}
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '8px'
-              }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  color: themeStyles.mutedTextColor,
-                  fontSize: '14px'
-                }}>
-                  <PhoneOutlined />
-                  <span>(555) 123-4567</span>
-                </div>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  color: themeStyles.mutedTextColor,
-                  fontSize: '14px'
-                }}>
-                  <MailOutlined />
-                  <span>info@ekahhealth.com</span>
-                </div>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  color: themeStyles.mutedTextColor,
-                  fontSize: '14px'
-                }}>
-                  <EnvironmentOutlined />
-                  <span>123 Wellness St, Health City, HC 12345</span>
-                </div>
-              </div>
-
               {/* Social Links */}
               <ul style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '24px',
+                gap: '20px', // Reduced from 24px
                 color: themeStyles.mutedTextColor,
                 listStyle: 'none',
                 padding: 0,
@@ -256,27 +204,27 @@ const Footer = ({
             {/* Links Sections */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-              gap: '40px',
-              flex: '2',
-              minWidth: '400px'
+              gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', // Reduced from 150px
+              gap: '32px',
+              flex: '1.5', // Reduced from 2
+              minWidth: '300px' // Reduced from 400px
             }}>
               {finalSections.map((section, sectionIdx) => (
                 <div key={sectionIdx}>
                   <h3 style={{
-                    marginBottom: '16px',
+                    marginBottom: '12px', // Reduced from 16px
                     fontWeight: 'bold',
                     color: themeStyles.textColor,
-                    fontSize: '16px',
-                    margin: '0 0 16px 0'
+                    fontSize: '15px', // Reduced from 16px
+                    margin: '0 0 12px 0'
                   }}>
                     {section.title}
                   </h3>
                   <ul style={{
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '12px',
-                    fontSize: '14px',
+                    gap: '8px', // Reduced from 12px
+                    fontSize: '13px', // Reduced from 14px
                     color: themeStyles.mutedTextColor,
                     listStyle: 'none',
                     padding: 0,
@@ -303,14 +251,14 @@ const Footer = ({
 
           {/* Bottom Section */}
           <div style={{
-            marginTop: '32px',
+            marginTop: '20px', // Reduced from 32px
             display: 'flex',
             flexDirection: 'row',
             justifyContent: 'space-between',
             alignItems: 'center',
             gap: '16px',
             borderTop: `1px solid ${themeStyles.borderColor}`,
-            paddingTop: '32px',
+            paddingTop: '20px', // Reduced from 32px
             fontSize: '12px',
             fontWeight: '500',
             color: themeStyles.mutedTextColor,
@@ -321,7 +269,7 @@ const Footer = ({
             </p>
             <ul style={{
               display: 'flex',
-              gap: '24px',
+              gap: '20px', // Reduced from 24px
               listStyle: 'none',
               padding: 0,
               margin: 0,
