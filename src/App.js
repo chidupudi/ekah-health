@@ -1,3 +1,5 @@
+// File: src/App.js
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ConfigProvider } from 'antd';
@@ -7,6 +9,7 @@ import WelcomeNew from './pages/WelcomeNew';
 import About from './pages/About';
 import MainHeader from './components/MainHeader';
 import { ThemeProvider } from './components/ParticleBackground';
+import { AnimatedSignIn } from './components/ui/sign-in';
 
 const PageWrapper = ({ children }) => (
   <>
@@ -17,6 +20,13 @@ const PageWrapper = ({ children }) => (
       </Layout>
     </div>
   </>
+);
+
+// Wrapper for sign-in page without header/layout - completely isolated
+const AuthWrapper = ({ children }) => (
+  <div style={{ minHeight: '100vh' }}>
+    {children}
+  </div>
 );
 
 const App = () => {
@@ -32,7 +42,11 @@ const App = () => {
       >
         <Router>
           <Routes>
-            {/* Use consistent header for all pages */}
+            {/* Auth routes - completely isolated, no global styles */}
+            <Route path="/signin" element={<AuthWrapper><AnimatedSignIn /></AuthWrapper>} />
+            <Route path="/signup" element={<AuthWrapper><AnimatedSignIn /></AuthWrapper>} />
+            
+            {/* Regular routes - with header and layout */}
             <Route path="/" element={<PageWrapper><WelcomeNew /></PageWrapper>} />
             <Route path="/welcome-old" element={<PageWrapper><Welcome /></PageWrapper>} />
             <Route path="/about" element={<PageWrapper><About /></PageWrapper>} />

@@ -1,6 +1,9 @@
+// File: src/components/MainHeader.js
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { HeartOutlined, UserOutlined } from '@ant-design/icons';
+import { HeartOutlined, UserOutlined, LoginOutlined } from '@ant-design/icons';
+import { Button } from 'antd';
 import { useTheme } from './ParticleBackground';
 import ThemeToggle from './ThemeToggle';
 import { ExpandableTabs } from './ui/expandable-tabs';
@@ -44,7 +47,9 @@ const MainHeader = () => {
         logo: { color: '#60a5fa' },
         brand: { color: '#f3f4f6' },
         profileBg: 'rgba(55, 65, 81, 0.6)',
-        profileHover: 'rgba(75, 85, 99, 0.8)'
+        profileHover: 'rgba(75, 85, 99, 0.8)',
+        signInBg: '#60a5fa',
+        signInHover: '#3b82f6'
       };
     } else {
       return {
@@ -56,7 +61,9 @@ const MainHeader = () => {
         logo: { color: '#2563eb' },
         brand: { color: '#1f2937' },
         profileBg: 'rgba(243, 244, 246, 0.8)',
-        profileHover: 'rgba(229, 231, 235, 0.9)'
+        profileHover: 'rgba(229, 231, 235, 0.9)',
+        signInBg: '#2563eb',
+        signInHover: '#1d4ed8'
       };
     }
   };
@@ -106,7 +113,7 @@ const MainHeader = () => {
           </span>
         </div>
 
-        {/* Right Side - Navigation + Theme Toggle + Profile */}
+        {/* Right Side - Navigation + Theme Toggle + Sign In + Profile */}
         <div style={{ 
           display: 'flex', 
           alignItems: 'center', 
@@ -120,6 +127,35 @@ const MainHeader = () => {
           />
           
           <ThemeToggle />
+          
+          {/* Sign In Button using Ant Design Button */}
+          <Button
+            type="primary"
+            icon={<LoginOutlined />}
+            style={{
+              backgroundColor: themeStyles.signInBg,
+              borderColor: themeStyles.signInBg,
+              borderRadius: '8px',
+              height: '36px',
+              fontWeight: '600',
+              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = themeStyles.signInHover;
+              e.target.style.borderColor = themeStyles.signInHover;
+              e.target.style.transform = 'translateY(-1px)';
+              e.target.style.boxShadow = '0 4px 12px rgba(37, 99, 235, 0.3)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = themeStyles.signInBg;
+              e.target.style.borderColor = themeStyles.signInBg;
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
+            }}
+            onClick={() => navigate('/signin')}
+          >
+            Sign In
+          </Button>
           
           <button
             style={{
