@@ -43,7 +43,7 @@ const ParticleBackground = ({
     if (particleColor) {
       setColor(particleColor);
     } else {
-      // Auto theme color
+      // Auto theme color - pure black and white
       setColor(theme === 'dark' ? '#ffffff' : '#000000');
     }
   }, [theme, particleColor]);

@@ -23,25 +23,25 @@ const About = () => {
   const getThemeStyles = () => {
     if (theme === 'dark') {
       return {
-        titleColor: '#f8fafc',
-        textColor: '#cbd5e1',
-        subtitleColor: '#94a3b8',
-        cardBg: 'rgba(30, 41, 59, 0.8)',
-        cardBorder: 'rgba(71, 85, 105, 0.3)',
-        heroBg: 'linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.9) 100%)',
-        sectionBg: 'rgba(15, 23, 42, 0.5)',
-        accentColor: '#60a5fa'
+        titleColor: '#ffffff',
+        textColor: '#cccccc',
+        subtitleColor: '#a0a0a0',
+        cardBg: 'rgba(20, 20, 20, 0.8)',
+        cardBorder: 'rgba(255, 255, 255, 0.2)',
+        heroBg: 'linear-gradient(135deg, rgba(0, 0, 0, 0.9) 0%, rgba(40, 40, 40, 0.9) 100%)',
+        sectionBg: 'rgba(0, 0, 0, 0.5)',
+        accentColor: '#ffffff'
       };
     } else {
       return {
-        titleColor: '#1e293b',
-        textColor: '#475569',
-        subtitleColor: '#64748b',
+        titleColor: '#000000',
+        textColor: '#333333',
+        subtitleColor: '#666666',
         cardBg: 'rgba(255, 255, 255, 0.9)',
-        cardBorder: 'rgba(226, 232, 240, 0.6)',
-        heroBg: 'linear-gradient(135deg, rgba(248, 250, 252, 0.9) 0%, rgba(241, 245, 249, 0.9) 100%)',
+        cardBorder: 'rgba(0, 0, 0, 0.1)',
+        heroBg: 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(240, 240, 240, 0.9) 100%)',
         sectionBg: 'rgba(248, 250, 252, 0.5)',
-        accentColor: '#2563eb'
+        accentColor: '#000000'
       };
     }
   };
@@ -405,58 +405,7 @@ const About = () => {
         </Row>
       </div>
 
-      {/* CTA Section */}
-      <div style={{
-        background: `linear-gradient(135deg, ${themeStyles.accentColor}, ${themeStyles.accentColor}CC)`,
-        padding: '80px 24px',
-        textAlign: 'center'
-      }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-          <Title level={2} style={{ color: 'white', marginBottom: '24px' }}>
-            Ready to Begin Your Healing Journey?
-          </Title>
-          <Paragraph style={{
-            color: 'white',
-            fontSize: '18px',
-            marginBottom: '32px',
-            opacity: 0.9
-          }}>
-            Take the first step towards better mental health. Our experienced team is here to support you.
-          </Paragraph>
-          <Space size="large" wrap>
-            <Button
-              type="primary"
-              size="large"
-              style={{
-                backgroundColor: 'white',
-                borderColor: 'white',
-                color: themeStyles.accentColor,
-                padding: '12px 32px',
-                height: 'auto',
-                fontSize: '16px',
-                fontWeight: '600'
-              }}
-              onClick={() => navigate('/booking')}
-            >
-              Schedule Consultation
-            </Button>
-            <Button
-              size="large"
-              style={{
-                borderColor: 'white',
-                color: 'white',
-                background: 'transparent',
-                padding: '12px 32px',
-                height: 'auto',
-                fontSize: '16px'
-              }}
-              onClick={() => navigate('/contact')}
-            >
-              Contact Us
-            </Button>
-          </Space>
-        </div>
-      </div>
+      
     </div>
   );
 };

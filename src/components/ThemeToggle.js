@@ -12,7 +12,7 @@ const ThemeToggle = ({ style = {} }) => {
       icon={theme === 'light' ? <BulbOutlined /> : <BulbFilled />}
       onClick={toggleTheme}
       style={{
-        color: theme === 'light' ? '#374151' : '#f3f4f6',
+        color: theme === 'light' ? '#000000' : '#ffffff',
         ...style
       }}
       title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}

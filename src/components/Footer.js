@@ -26,21 +26,21 @@ const Footer = ({
   const getThemeStyles = () => {
     if (theme === 'dark') {
       return {
-        background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-        textColor: '#f8fafc',
-        mutedTextColor: '#94a3b8',
-        borderColor: 'rgba(71, 85, 105, 0.3)',
-        hoverColor: '#60a5fa',
-        logoColor: '#60a5fa'
+        background: '#000000',
+        textColor: '#ffffff',
+        mutedTextColor: '#a0a0a0',
+        borderColor: 'rgba(255, 255, 255, 0.2)',
+        hoverColor: '#ffffff',
+        logoColor: '#ffffff'
       };
     } else {
       return {
-        background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-        textColor: '#1e293b',
-        mutedTextColor: '#64748b',
-        borderColor: 'rgba(226, 232, 240, 0.6)',
-        hoverColor: '#2563eb',
-        logoColor: '#2563eb'
+        background: '#ffffff',
+        textColor: '#000000',
+        mutedTextColor: '#666666',
+        borderColor: 'rgba(0, 0, 0, 0.1)',
+        hoverColor: '#000000',
+        logoColor: '#000000'
       };
     }
   };

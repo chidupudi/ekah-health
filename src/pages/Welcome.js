@@ -14,22 +14,22 @@ const Welcome = () => {
     if (theme === 'dark') {
       return {
         containerBg: 'transparent',
-        titleColor: '#f8fafc',
-        textColor: '#cbd5e1',
-        cardBg: 'rgba(30, 41, 59, 0.8)',
-        cardBorder: 'rgba(71, 85, 105, 0.3)',
-        ctaBg: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
-        ctaTextColor: '#f8fafc'
+        titleColor: '#ffffff',
+        textColor: '#cccccc',
+        cardBg: 'rgba(20, 20, 20, 0.8)',
+        cardBorder: 'rgba(255, 255, 255, 0.2)',
+        ctaBg: '#000000',
+        ctaTextColor: '#ffffff'
       };
     } else {
       return {
         containerBg: 'transparent',
-        titleColor: '#1e293b',
-        textColor: '#475569',
+        titleColor: '#000000',
+        textColor: '#333333',
         cardBg: 'rgba(255, 255, 255, 0.9)',
-        cardBorder: 'rgba(226, 232, 240, 0.6)',
-        ctaBg: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        ctaTextColor: 'white'
+        cardBorder: 'rgba(0, 0, 0, 0.1)',
+        ctaBg: '#000000',
+        ctaTextColor: '#ffffff'
       };
     }
   };

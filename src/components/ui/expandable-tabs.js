@@ -57,39 +57,39 @@ const ExpandableTabs = ({
     if (theme === 'dark') {
       return {
         container: {
-          backgroundColor: 'rgba(17, 24, 39, 0.95)',
-          borderColor: 'rgba(75, 85, 99, 0.3)',
+          backgroundColor: 'rgba(0, 0, 0, 0.95)',
+          borderColor: 'rgba(255, 255, 255, 0.2)',
           backdropFilter: 'blur(12px)'
         },
         tab: {
-          color: '#e5e7eb',
-          hoverBg: 'rgba(55, 65, 81, 0.6)'
+          color: '#ffffff',
+          hoverBg: 'rgba(255, 255, 255, 0.1)'
         },
         activeTab: {
-          color: activeColor || '#60a5fa',
-          bg: 'rgba(59, 130, 246, 0.1)'
+          color: activeColor || '#ffffff',
+          bg: 'rgba(255, 255, 255, 0.2)'
         },
         separator: {
-          backgroundColor: 'rgba(75, 85, 99, 0.4)'
+          backgroundColor: 'rgba(255, 255, 255, 0.3)'
         }
       };
     } else {
       return {
         container: {
           backgroundColor: 'rgba(255, 255, 255, 0.95)',
-          borderColor: 'rgba(229, 231, 235, 0.6)',
+          borderColor: 'rgba(0, 0, 0, 0.1)',
           backdropFilter: 'blur(12px)'
         },
         tab: {
-          color: '#374151',
-          hoverBg: 'rgba(243, 244, 246, 0.8)'
+          color: '#000000',
+          hoverBg: 'rgba(0, 0, 0, 0.05)'
         },
         activeTab: {
-          color: activeColor || '#2563eb',
-          bg: 'rgba(37, 99, 235, 0.1)'
+          color: activeColor || '#000000',
+          bg: 'rgba(0, 0, 0, 0.1)'
         },
         separator: {
-          backgroundColor: 'rgba(229, 231, 235, 0.6)'
+          backgroundColor: 'rgba(0, 0, 0, 0.1)'
         }
       };
     }

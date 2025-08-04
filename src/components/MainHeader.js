@@ -40,30 +40,32 @@ const MainHeader = () => {
     if (theme === 'dark') {
       return {
         header: {
-          background: 'rgba(17, 24, 39, 0.95)',
-          borderBottom: '1px solid rgba(75, 85, 99, 0.3)',
+          background: 'rgba(0, 0, 0, 0.95)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
           backdropFilter: 'blur(12px)'
         },
-        logo: { color: '#60a5fa' },
-        brand: { color: '#f3f4f6' },
-        profileBg: 'rgba(55, 65, 81, 0.6)',
-        profileHover: 'rgba(75, 85, 99, 0.8)',
-        signInBg: '#60a5fa',
-        signInHover: '#3b82f6'
+        logo: { color: '#ffffff' },
+        brand: { color: '#ffffff' },
+        profileBg: 'rgba(255, 255, 255, 0.2)',
+        profileHover: 'rgba(255, 255, 255, 0.3)',
+        signInBg: '#ffffff',
+        signInText: '#000000',
+        signInHover: '#f0f0f0'
       };
     } else {
       return {
         header: {
           background: 'rgba(255, 255, 255, 0.95)',
-          borderBottom: '1px solid rgba(229, 231, 235, 0.6)',
+          borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
           backdropFilter: 'blur(12px)'
         },
-        logo: { color: '#2563eb' },
-        brand: { color: '#1f2937' },
-        profileBg: 'rgba(243, 244, 246, 0.8)',
-        profileHover: 'rgba(229, 231, 235, 0.9)',
-        signInBg: '#2563eb',
-        signInHover: '#1d4ed8'
+        logo: { color: '#000000' },
+        brand: { color: '#000000' },
+        profileBg: 'rgba(0, 0, 0, 0.1)',
+        profileHover: 'rgba(0, 0, 0, 0.2)',
+        signInBg: '#000000',
+        signInText: '#ffffff',
+        signInHover: '#333333'
       };
     }
   };
@@ -123,7 +125,7 @@ const MainHeader = () => {
         }}>
           <ExpandableTabs 
             tabs={navigationTabs}
-            activeColor={theme === 'dark' ? '#60a5fa' : '#2563eb'}
+            activeColor={theme === 'dark' ? '#ffffff' : '#000000'}
           />
           
           <ThemeToggle />
@@ -135,6 +137,7 @@ const MainHeader = () => {
             style={{
               backgroundColor: themeStyles.signInBg,
               borderColor: themeStyles.signInBg,
+              color: themeStyles.signInText,
               borderRadius: '8px',
               height: '36px',
               fontWeight: '600',
@@ -144,7 +147,7 @@ const MainHeader = () => {
               e.target.style.backgroundColor = themeStyles.signInHover;
               e.target.style.borderColor = themeStyles.signInHover;
               e.target.style.transform = 'translateY(-1px)';
-              e.target.style.boxShadow = '0 4px 12px rgba(37, 99, 235, 0.3)';
+              e.target.style.boxShadow = theme === 'dark' ? '0 4px 12px rgba(255, 255, 255, 0.2)' : '0 4px 12px rgba(0, 0, 0, 0.2)';
             }}
             onMouseLeave={(e) => {
               e.target.style.backgroundColor = themeStyles.signInBg;
@@ -154,7 +157,7 @@ const MainHeader = () => {
             }}
             onClick={() => navigate('/signin')}
           >
-            Sign In
+            Login
           </Button>
           
           <button
