@@ -1,6 +1,7 @@
 // src/components/ui/display-cards.js
 import React from 'react';
 import { Heart, Shield, Users, Award } from 'lucide-react';
+import { useTheme } from '../ParticleBackground';
 
 const cn = (...classes) => {
   return classes.filter(Boolean).join(' ');
@@ -16,6 +17,35 @@ const DisplayCard = ({
   titleClassName = "text-blue-500",
   style = {}
 }) => {
+  const { theme } = useTheme();
+  
+  // Get theme-specific colors for cards
+  const getCardColors = () => {
+    if (theme === 'dark') {
+      return {
+        background: 'rgba(255, 255, 255, 0.08)',
+        border: 'rgba(255, 255, 255, 0.15)',
+        titleColor: '#ffffff',
+        descriptionColor: 'rgba(255, 255, 255, 0.8)',
+        dateColor: 'rgba(255, 255, 255, 0.6)',
+        gradientOverlay: 'linear-gradient(to left, rgba(0, 0, 0, 0.4) 0%, transparent 100%)',
+        iconBg: 'rgba(255, 255, 255, 0.15)'
+      };
+    } else {
+      return {
+        background: 'rgba(0, 0, 0, 0.08)',
+        border: 'rgba(0, 0, 0, 0.15)',
+        titleColor: '#000000',
+        descriptionColor: 'rgba(0, 0, 0, 0.8)',
+        dateColor: 'rgba(0, 0, 0, 0.6)',
+        gradientOverlay: 'linear-gradient(to left, rgba(255, 255, 255, 0.4) 0%, transparent 100%)',
+        iconBg: 'rgba(0, 0, 0, 0.15)'
+      };
+    }
+  };
+
+  const cardColors = getCardColors();
+
   return (
     <div
       className={cn(
@@ -33,8 +63,8 @@ const DisplayCard = ({
         justifyContent: 'space-between',
         borderRadius: '12px',
         borderWidth: '2px',
-        borderColor: 'rgba(255, 255, 255, 0.2)',
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        borderColor: cardColors.border,
+        backgroundColor: cardColors.background,
         backdropFilter: 'blur(8px)',
         padding: '12px 16px',
         transition: 'all 0.7s ease',
@@ -49,7 +79,7 @@ const DisplayCard = ({
         top: '-5%',
         height: '110%',
         width: '20rem',
-        background: 'linear-gradient(to left, rgba(0, 0, 0, 0.3) 0%, transparent 100%)',
+        background: cardColors.gradientOverlay,
         content: '""',
         pointerEvents: 'none'
       }} />
@@ -65,7 +95,7 @@ const DisplayCard = ({
           position: 'relative',
           display: 'inline-block',
           borderRadius: '50%',
-          backgroundColor: 'rgba(30, 64, 175, 0.8)',
+          backgroundColor: cardColors.iconBg,
           padding: '4px'
         }}>
           {icon}
@@ -73,7 +103,7 @@ const DisplayCard = ({
         <p style={{
           fontSize: '18px',
           fontWeight: '500',
-          color: 'white',
+          color: cardColors.titleColor,
           margin: 0
         }}>
           {title}
@@ -83,7 +113,7 @@ const DisplayCard = ({
       <p style={{
         whiteSpace: 'nowrap',
         fontSize: '18px',
-        color: 'rgba(255, 255, 255, 0.9)',
+        color: cardColors.descriptionColor,
         margin: 0,
         position: 'relative',
         zIndex: 1
@@ -92,7 +122,7 @@ const DisplayCard = ({
       </p>
       
       <p style={{
-        color: 'rgba(255, 255, 255, 0.7)',
+        color: cardColors.dateColor,
         fontSize: '14px',
         margin: 0,
         position: 'relative',
@@ -105,6 +135,8 @@ const DisplayCard = ({
 };
 
 const DisplayCards = ({ cards }) => {
+  const { theme } = useTheme();
+  
   const defaultCards = [
     {
       className: "card-1",
@@ -161,17 +193,20 @@ const DisplayCards = ({ cards }) => {
             transform: translateY(-40px) skewY(-8deg) !important;
             filter: grayscale(0%) !important;
             z-index: 3;
+            border-color: ${theme === 'dark' ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.4)'} !important;
           }
           
           .card-2:hover {
             transform: translateX(64px) translateY(-4px) skewY(-8deg) !important;
             filter: grayscale(0%) !important;
             z-index: 2;
+            border-color: ${theme === 'dark' ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.4)'} !important;
           }
           
           .card-3:hover {
             transform: translateX(128px) translateY(40px) skewY(-8deg) !important;
             z-index: 1;
+            border-color: ${theme === 'dark' ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.4)'} !important;
           }
         `}
       </style>
