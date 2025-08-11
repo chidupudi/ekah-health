@@ -13,7 +13,7 @@ import { useAuth } from '../contexts/AuthContext';
 const IconWrapper = ({ AntIcon, ...props }) => {
   return <AntIcon {...props} style={{ fontSize: '18px', ...props.style }} />;
 };
-
+ 
 const MainHeader = () => {
   const { theme } = useTheme();
   const navigate = useNavigate();
