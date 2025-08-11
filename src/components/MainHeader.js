@@ -2,11 +2,12 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { HeartOutlined, UserOutlined, LoginOutlined } from '@ant-design/icons';
-import { Button } from 'antd';
-import { useTheme } from './ParticleBackground';
+import { HeartOutlined, UserOutlined, LoginOutlined, LogoutOutlined } from '@ant-design/icons';
+import { Button, Avatar, Dropdown, Menu, Tooltip } from 'antd';
+import { useTheme } from './ParticleBackground'; // Corrected import path
 import ThemeToggle from './ThemeToggle';
 import { ExpandableTabs } from './ui/expandable-tabs';
+import { useAuth } from '../contexts/AuthContext';
 
 // Convert Ant Design icons to work with our component
 const IconWrapper = ({ AntIcon, ...props }) => {
@@ -16,22 +17,36 @@ const IconWrapper = ({ AntIcon, ...props }) => {
 const MainHeader = () => {
   const { theme } = useTheme();
   const navigate = useNavigate();
+  const { currentUser, logout } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/');
+    } catch (error) {
+      console.error("Failed to log out", error);
+    }
+  };
 
   const navigationTabs = [
     { 
       title: "About", 
+      value: "about",
       icon: (props) => <IconWrapper AntIcon={UserOutlined} {...props} />
     },
     { 
       title: "Services", 
+      value: "services",
       icon: (props) => <IconWrapper AntIcon={HeartOutlined} {...props} />
     },
     { 
       title: "Booking", 
+      value: "booking",
       icon: (props) => <IconWrapper AntIcon={HeartOutlined} {...props} />
     },
     { 
       title: "Contact", 
+      value: "contact",
       icon: (props) => <IconWrapper AntIcon={HeartOutlined} {...props} />
     }
   ];
@@ -40,37 +55,58 @@ const MainHeader = () => {
     if (theme === 'dark') {
       return {
         header: {
-          background: 'rgba(0, 0, 0, 0.95)',
+          background: 'rgba(0, 0, 0, 0.85)',
           borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
           backdropFilter: 'blur(12px)'
         },
-        logo: { color: '#ffffff' },
-        brand: { color: '#ffffff' },
-        profileBg: 'rgba(255, 255, 255, 0.2)',
-        profileHover: 'rgba(255, 255, 255, 0.3)',
+        logoColor: '#ffffff',
+        brandColor: '#ffffff',
         signInBg: '#ffffff',
         signInText: '#000000',
-        signInHover: '#f0f0f0'
+        signInHover: '#f0f0f0',
+        menuBg: '#1f1f1f',
+        menuText: '#ffffff'
       };
     } else {
       return {
         header: {
-          background: 'rgba(255, 255, 255, 0.95)',
+          background: 'rgba(255, 255, 255, 0.85)',
           borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
           backdropFilter: 'blur(12px)'
         },
-        logo: { color: '#000000' },
-        brand: { color: '#000000' },
-        profileBg: 'rgba(0, 0, 0, 0.1)',
-        profileHover: 'rgba(0, 0, 0, 0.2)',
+        logoColor: '#000000',
+        brandColor: '#000000',
         signInBg: '#000000',
         signInText: '#ffffff',
-        signInHover: '#333333'
+        signInHover: '#333333',
+        menuBg: '#ffffff',
+        menuText: '#000000'
       };
     }
   };
 
   const themeStyles = getThemeStyles();
+
+  const profileMenu = (
+    <Menu style={{ background: themeStyles.menuBg, border: '1px solid rgba(128, 128, 128, 0.2)' }}>
+      <Menu.Item 
+        key="profile" 
+        icon={<UserOutlined style={{ color: themeStyles.menuText }} />} 
+        onClick={() => navigate('/profile')}
+        style={{ color: themeStyles.menuText }}
+      >
+        Profile
+      </Menu.Item>
+      <Menu.Item 
+        key="logout" 
+        icon={<LogoutOutlined style={{ color: themeStyles.menuText }} />} 
+        onClick={handleLogout}
+        style={{ color: themeStyles.menuText }}
+      >
+        Logout
+      </Menu.Item>
+    </Menu>
+  );
 
   return (
     <div style={{
@@ -89,7 +125,9 @@ const MainHeader = () => {
         justifyContent: 'space-between',
         width: '100%',
         height: '64px',
-        padding: '0 24px'
+        padding: '0 24px',
+        maxWidth: '1400px',
+        margin: '0 auto'
       }}>
         {/* Left Side - Brand */}
         <div 
@@ -101,91 +139,118 @@ const MainHeader = () => {
           }}
           onClick={() => navigate('/')}
         >
-          <HeartOutlined style={{ 
-            fontSize: '24px', 
+          <div style={{
+            width: '40px',
+            height: '40px',
+            borderRadius: '12px',
+            background: themeStyles.logoColor,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
             marginRight: '12px',
-            ...themeStyles.logo
-          }} />
-          <span style={{ 
-            fontSize: '20px', 
-            fontWeight: 'bold',
-            ...themeStyles.brand
+            transition: 'transform 0.3s ease'
+          }}>
+            <HeartOutlined style={{ 
+              fontSize: '22px',
+              color: theme === 'dark' ? '#000000' : '#ffffff'
+            }} />
+          </div>
+          <span style={{
+            fontSize: '22px',
+            fontWeight: '700',
+            color: themeStyles.brandColor,
+            letterSpacing: '-0.5px'
           }}>
             EkahHealth
           </span>
         </div>
-
-        {/* Right Side - Navigation + Theme Toggle + Sign In + Profile */}
+        
+        {/* Center - Navigation */}
+        <div style={{ 
+          flex: 1, 
+          display: 'flex', 
+          justifyContent: 'center',
+          maxWidth: '600px',
+          margin: '0 auto'
+        }}>
+          <ExpandableTabs
+            tabs={navigationTabs}
+            onTabClick={(tab) => navigate(`/${tab.value}`)}
+            activeColor={themeStyles.brandColor}
+          />
+        </div>
+        
+        {/* Right Side - Actions */}
         <div style={{ 
           display: 'flex', 
-          alignItems: 'center', 
+          alignItems: 'center',
           gap: '16px',
-          flex: 1,
+          minWidth: '200px',
           justifyContent: 'flex-end'
         }}>
-          <ExpandableTabs 
-            tabs={navigationTabs}
-            activeColor={theme === 'dark' ? '#ffffff' : '#000000'}
-          />
-          
           <ThemeToggle />
           
-          {/* Sign In Button using Ant Design Button */}
-          <Button
-            type="primary"
-            icon={<LoginOutlined />}
-            style={{
-              backgroundColor: themeStyles.signInBg,
-              borderColor: themeStyles.signInBg,
-              color: themeStyles.signInText,
-              borderRadius: '8px',
-              height: '36px',
-              fontWeight: '600',
-              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.backgroundColor = themeStyles.signInHover;
-              e.target.style.borderColor = themeStyles.signInHover;
-              e.target.style.transform = 'translateY(-1px)';
-              e.target.style.boxShadow = theme === 'dark' ? '0 4px 12px rgba(255, 255, 255, 0.2)' : '0 4px 12px rgba(0, 0, 0, 0.2)';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.backgroundColor = themeStyles.signInBg;
-              e.target.style.borderColor = themeStyles.signInBg;
-              e.target.style.transform = 'translateY(0)';
-              e.target.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
-            }}
-            onClick={() => navigate('/signin')}
-          >
-            Login
-          </Button>
-          
-          <button
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '40px',
-              height: '40px',
-              borderRadius: '50%',
-              border: 'none',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              backgroundColor: themeStyles.profileBg,
-              color: themeStyles.brand.color
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.backgroundColor = themeStyles.profileHover;
-              e.target.style.transform = 'scale(1.05)';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.backgroundColor = themeStyles.profileBg;
-              e.target.style.transform = 'scale(1)';
-            }}
-            onClick={() => navigate('/profile')}
-          >
-            <UserOutlined style={{ fontSize: '18px' }} />
-          </button>
+          {currentUser ? (
+            <Dropdown overlay={profileMenu} trigger={['click']} placement="bottomRight">
+              <Tooltip title={currentUser.displayName || currentUser.email}>
+                <Avatar 
+                  style={{
+                    backgroundColor: themeStyles.signInBg,
+                    color: themeStyles.signInText,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'scale(1.1)';
+                    e.currentTarget.style.boxShadow = theme === 'dark' ? '0 4px 12px rgba(255, 255, 255, 0.2)' : '0 4px 12px rgba(0, 0, 0, 0.2)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
+                  }}
+                >
+                  {currentUser.photoURL ? (
+                    <img src={currentUser.photoURL} alt="profile" />
+                  ) : (
+                    currentUser.displayName 
+                      ? currentUser.displayName.charAt(0).toUpperCase()
+                      : currentUser.email.charAt(0).toUpperCase()
+                  )}
+                </Avatar>
+              </Tooltip>
+            </Dropdown>
+          ) : (
+            <Button
+              type="primary"
+              icon={<LoginOutlined />}
+              style={{
+                backgroundColor: themeStyles.signInBg,
+                borderColor: themeStyles.signInBg,
+                color: themeStyles.signInText,
+                borderRadius: '8px',
+                height: '36px',
+                fontWeight: '600',
+                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                transition: 'all 0.2s ease-in-out'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = themeStyles.signInHover;
+                e.currentTarget.style.borderColor = themeStyles.signInHover;
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.boxShadow = theme === 'dark' ? '0 4px 12px rgba(255, 255, 255, 0.2)' : '0 4px 12px rgba(0, 0, 0, 0.2)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = themeStyles.signInBg;
+                e.currentTarget.style.borderColor = themeStyles.signInBg;
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
+              }}
+              onClick={() => navigate('/signin')}
+            >
+              Login
+            </Button>
+          )}
         </div>
       </div>
     </div>

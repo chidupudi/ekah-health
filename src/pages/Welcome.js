@@ -38,22 +38,22 @@ const Welcome = () => {
 
   const features = [
     {
-      icon: <HeartOutlined style={{ fontSize: '48px', color: theme === 'dark' ? '#60a5fa' : '#3b82f6' }} />,
+      icon: <HeartOutlined style={{ fontSize: '48px', color: theme === 'dark' ? '#ffffff' : '#000000' }} />,
       title: 'Mental Wellness',
       description: 'Professional mental health support tailored to your needs'
     },
     {
-      icon: <SafetyOutlined style={{ fontSize: '48px', color: theme === 'dark' ? '#34d399' : '#10b981' }} />,
+      icon: <SafetyOutlined style={{ fontSize: '48px', color: theme === 'dark' ? '#ffffff' : '#000000' }} />,
       title: 'Safe Space',
       description: 'Confidential and secure environment for your therapy sessions'
     },
     {
-      icon: <TeamOutlined style={{ fontSize: '48px', color: theme === 'dark' ? '#a78bfa' : '#8b5cf6' }} />,
+      icon: <TeamOutlined style={{ fontSize: '48px', color: theme === 'dark' ? '#ffffff' : '#000000' }} />,
       title: 'Expert Therapists',
       description: 'Licensed professionals dedicated to your mental health journey'
     },
     {
-      icon: <CalendarOutlined style={{ fontSize: '48px', color: theme === 'dark' ? '#fbbf24' : '#f59e0b' }} />,
+      icon: <CalendarOutlined style={{ fontSize: '48px', color: theme === 'dark' ? '#ffffff' : '#000000' }} />,
       title: 'Flexible Scheduling',
       description: 'Book sessions that fit your schedule and lifestyle'
     }

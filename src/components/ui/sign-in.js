@@ -17,10 +17,12 @@ import {
   EyeTwoTone
 } from '@ant-design/icons';
 import { Heart, Shield, Users } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import DisplayCards from './display-cards';
 import MainHeader from '../MainHeader';
 import Footer from '../Footer';
 import { useTheme } from '../ParticleBackground';
+import { useAuth } from '../../contexts/AuthContext';
 
 const { Title, Text, Link } = Typography;
 
@@ -36,10 +38,15 @@ const AnimatedSignIn = () => {
   });
 
   const { theme } = useTheme();
+  const { login, loginWithGoogle, register, error, clearError, forgotPassword } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    
+    // Clear any previous auth errors when component mounts
+    clearError();
+  }, [clearError]);
 
   // Therapy-themed cards for the display
   const therapyCards = [
@@ -404,11 +411,63 @@ const AnimatedSignIn = () => {
 
   const handleSubmit = async () => {
     if (!validateForm()) return;
+    
     setLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setLoading(false);
-    message.success(isLogin ? 'Welcome back!' : 'Account created successfully!');
-    // reset form, or route, etc.
+    try {
+      if (isLogin) {
+        // Login with email and password
+        await login(formData.email, formData.password);
+        message.success('Welcome back!');
+        navigate('/'); // Redirect to home page after login
+      } else {
+        // Register with email and password
+        await register(formData.email, formData.password, formData.name);
+        message.success('Account created successfully!');
+        navigate('/'); // Redirect to home page after registration
+      }
+    } catch (error) {
+      // Error is handled by the AuthContext and set to the error state
+      message.error(error.message || 'An error occurred during authentication');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      setLoading(true);
+      await loginWithGoogle();
+      message.success('Signed in with Google successfully!');
+      navigate('/'); // Redirect to home page after Google sign-in
+    } catch (error) {
+      // Error is handled by the AuthContext and set to the error state
+      message.error(error.message || 'An error occurred during Google sign-in');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!formData.email) {
+      message.error('Please enter your email address');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      message.error('Please enter a valid email address');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await forgotPassword(formData.email);
+      message.success('Password reset email sent. Please check your inbox.');
+    } catch (error) {
+      message.error(error.message || 'Failed to send password reset email');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -550,11 +609,25 @@ const AnimatedSignIn = () => {
               {/* Forgot Password (Login Only) */}
               {isLogin && (
                 <div style={{ textAlign: 'right', marginBottom: '18px' }}>
-                  <Link href="#" style={{ fontSize: '14px', color: signInStyles.inputFocusBorder }}>
+                  <Link onClick={handleForgotPassword} style={{ fontSize: '14px', color: signInStyles.inputFocusBorder }}>
                     Forgot the password?
                   </Link>
                 </div>
               )}
+              {/* Error display */}
+              {error && (
+                <div style={{
+                  padding: '12px',
+                  marginBottom: '18px',
+                  borderRadius: '8px',
+                  backgroundColor: theme === 'dark' ? 'rgba(254, 226, 226, 0.1)' : 'rgba(254, 226, 226, 0.5)',
+                  borderLeft: '4px solid #ef4444',
+                  color: theme === 'dark' ? '#fca5a5' : '#b91c1c'
+                }}>
+                  {error}
+                </div>
+              )}
+              
               {/* Submit Button */}
               <Button
                 type="primary"
@@ -574,6 +647,8 @@ const AnimatedSignIn = () => {
                 icon={<GoogleOutlined />}
                 className="signin-social-button"
                 style={{ ...styles.socialButton, width: '100%', marginBottom: '18px' }}
+                onClick={handleGoogleSignIn}
+                loading={loading}
               >
                 Continue with Google
               </Button>

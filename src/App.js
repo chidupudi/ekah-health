@@ -10,6 +10,7 @@ import About from './pages/About';
 import MainHeader from './components/MainHeader';
 import { ThemeProvider } from './components/ParticleBackground';
 import { AnimatedSignIn } from './components/ui/sign-in';
+import { AuthProvider } from './contexts/AuthContext';
 
 const PageWrapper = ({ children }) => (
   <>
@@ -33,8 +34,9 @@ const App = () => {
           },
         }}
       >
-        <Router>
-          <Routes>
+        <AuthProvider>
+          <Router>
+            <Routes>
             {/* Auth routes - now with their own header and footer */}
             <Route path="/signin" element={<AnimatedSignIn />} />
             <Route path="/signup" element={<AnimatedSignIn />} />
@@ -49,6 +51,7 @@ const App = () => {
             <Route path="/profile" element={<PageWrapper><div style={{ padding: '64px 32px', textAlign: 'center' }}><h2>Profile Page - Coming Soon</h2></div></PageWrapper>} />
           </Routes>
         </Router>
+      </AuthProvider>
       </ConfigProvider>
     </ThemeProvider>
   );
