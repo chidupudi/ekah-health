@@ -7,6 +7,7 @@ import Layout from './components/Layout';
 import Welcome from './pages/Welcome';
 import WelcomeNew from './pages/WelcomeNew';
 import About from './pages/About';
+import Services from './pages/Services/index'; // Updated import for new modular Services
 import MainHeader from './components/MainHeader';
 import { ThemeProvider } from './components/ParticleBackground';
 import { AnimatedSignIn } from './components/ui/sign-in';
@@ -29,29 +30,119 @@ const App = () => {
       <ConfigProvider
         theme={{
           token: {
-            colorPrimary: '#2563eb',
-            borderRadius: 8,
+            colorPrimary: '#667eea', // Updated to match Services page gradient
+            borderRadius: 12, // Increased for modern look
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          },
+          components: {
+            // Custom component styling to match Services page
+            Card: {
+              borderRadiusLG: 16,
+              paddingLG: 24,
+            },
+            Button: {
+              borderRadius: 8,
+              fontWeight: 600,
+            },
+            Modal: {
+              borderRadiusLG: 16,
+            },
+            Tabs: {
+              borderRadius: 12,
+            },
           },
         }}
       >
         <AuthProvider>
           <Router>
             <Routes>
-            {/* Auth routes - now with their own header and footer */}
-            <Route path="/signin" element={<AnimatedSignIn />} />
-            <Route path="/signup" element={<AnimatedSignIn />} />
-            
-            {/* Regular routes - with header and layout */}
-            <Route path="/" element={<PageWrapper><WelcomeNew /></PageWrapper>} />
-            <Route path="/welcome-old" element={<PageWrapper><Welcome /></PageWrapper>} />
-            <Route path="/about" element={<PageWrapper><About /></PageWrapper>} />
-            <Route path="/services" element={<PageWrapper><div style={{ padding: '64px 32px', textAlign: 'center' }}><h2>Services Page - Coming Soon</h2></div></PageWrapper>} />
-            <Route path="/booking" element={<PageWrapper><div style={{ padding: '64px 32px', textAlign: 'center' }}><h2>Booking Page - Coming Soon</h2></div></PageWrapper>} />
-            <Route path="/contact" element={<PageWrapper><div style={{ padding: '64px 32px', textAlign: 'center' }}><h2>Contact Page - Coming Soon</h2></div></PageWrapper>} />
-            <Route path="/profile" element={<PageWrapper><div style={{ padding: '64px 32px', textAlign: 'center' }}><h2>Profile Page - Coming Soon</h2></div></PageWrapper>} />
-          </Routes>
-        </Router>
-      </AuthProvider>
+              {/* Auth routes - now with their own header and footer */}
+              <Route path="/signin" element={<AnimatedSignIn />} />
+              <Route path="/signup" element={<AnimatedSignIn />} />
+              
+              {/* Regular routes - with header and layout */}
+              <Route path="/" element={<PageWrapper><WelcomeNew /></PageWrapper>} />
+              <Route path="/welcome-old" element={<PageWrapper><Welcome /></PageWrapper>} />
+              <Route path="/about" element={<PageWrapper><About /></PageWrapper>} />
+              <Route path="/services" element={<PageWrapper><Services /></PageWrapper>} />
+              <Route path="/booking" element={
+                <PageWrapper>
+                  <div style={{ 
+                    padding: '64px 32px', 
+                    textAlign: 'center',
+                    background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #f8fafc 100%)',
+                    minHeight: '80vh',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexDirection: 'column'
+                  }}>
+                    <h2 style={{ 
+                      fontSize: '2.5rem',
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      marginBottom: '16px'
+                    }}>
+                      Booking Page
+                    </h2>
+                    <p style={{ color: '#6b7280', fontSize: '1.2rem' }}>Coming Soon</p>
+                  </div>
+                </PageWrapper>
+              } />
+              <Route path="/contact" element={
+                <PageWrapper>
+                  <div style={{ 
+                    padding: '64px 32px', 
+                    textAlign: 'center',
+                    background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #f8fafc 100%)',
+                    minHeight: '80vh',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexDirection: 'column'
+                  }}>
+                    <h2 style={{ 
+                      fontSize: '2.5rem',
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      marginBottom: '16px'
+                    }}>
+                      Contact Page
+                    </h2>
+                    <p style={{ color: '#6b7280', fontSize: '1.2rem' }}>Coming Soon</p>
+                  </div>
+                </PageWrapper>
+              } />
+              <Route path="/profile" element={
+                <PageWrapper>
+                  <div style={{ 
+                    padding: '64px 32px', 
+                    textAlign: 'center',
+                    background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #f8fafc 100%)',
+                    minHeight: '80vh',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexDirection: 'column'
+                  }}>
+                    <h2 style={{ 
+                      fontSize: '2.5rem',
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      marginBottom: '16px'
+                    }}>
+                      Profile Page
+                    </h2>
+                    <p style={{ color: '#6b7280', fontSize: '1.2rem' }}>Coming Soon</p>
+                  </div>
+                </PageWrapper>
+              } />
+            </Routes>
+          </Router>
+        </AuthProvider>
       </ConfigProvider>
     </ThemeProvider>
   );

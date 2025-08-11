@@ -1,0 +1,267 @@
+/* pages/Services/Services.css */
+
+.services-page {
+  min-height: 100vh;
+  position: relative;
+}
+
+.services-container {
+  padding: 0 20px 80px;
+}
+
+.services-tabs-wrapper {
+  margin-bottom: 40px;
+}
+
+/* Custom Tab Styles */
+.services-tabs.light-tabs .ant-tabs-tab {
+  border-radius: 12px !important;
+  margin: 0 4px !important;
+  padding: 12px 20px !important;
+  border: 1px solid rgba(102, 126, 234, 0.15) !important;
+  background: rgba(255, 255, 255, 0.8) !important;
+  transition: all 0.3s ease !important;
+  color: #6b7280 !important;
+}
+
+.services-tabs.light-tabs .ant-tabs-tab:hover {
+  background: rgba(102, 126, 234, 0.1) !important;
+  border-color: rgba(102, 126, 234, 0.3) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15) !important;
+}
+
+.services-tabs.light-tabs .ant-tabs-tab.ant-tabs-tab-active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  border-color: transparent !important;
+  color: #ffffff !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3) !important;
+}
+
+.services-tabs.dark-tabs .ant-tabs-tab {
+  border-radius: 12px !important;
+  margin: 0 4px !important;
+  padding: 12px 20px !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  transition: all 0.3s ease !important;
+  color: rgba(255, 255, 255, 0.75) !important;
+}
+
+.services-tabs.dark-tabs .ant-tabs-tab:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 25px rgba(255, 255, 255, 0.1) !important;
+}
+
+.services-tabs.dark-tabs .ant-tabs-tab.ant-tabs-tab-active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  border-color: transparent !important;
+  color: #ffffff !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3) !important;
+}
+
+/* Tab Label Styles */
+.custom-tab-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.tab-icon {
+  font-size: 18px;
+}
+
+.tab-title {
+  white-space: nowrap;
+}
+
+.tab-count {
+  background: rgba(255, 255, 255, 0.2);
+  color: inherit;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  min-width: 18px;
+  text-align: center;
+}
+
+.services-tabs.light-tabs .ant-tabs-tab.ant-tabs-tab-active .tab-count {
+  background: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+}
+
+.services-tabs.dark-tabs .ant-tabs-tab.ant-tabs-tab-active .tab-count {
+  background: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+}
+
+/* Remove default tab bar styles */
+.services-tabs .ant-tabs-nav::before {
+  display: none !important;
+}
+
+.services-tabs .ant-tabs-ink-bar {
+  display: none !important;
+}
+
+.services-tabs .ant-tabs-nav-wrap {
+  justify-content: center;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .services-container {
+    padding: 0 10px 60px;
+  }
+  
+  .services-tabs-wrapper {
+    padding: 20px;
+  }
+  
+  .custom-tab-label {
+    flex-direction: column;
+    gap: 4px;
+    font-size: 12px;
+  }
+  
+  .tab-icon {
+    font-size: 16px;
+  }
+  
+  .services-tabs .ant-tabs-tab {
+    padding: 8px 12px !important;
+    margin: 0 2px !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .custom-tab-label .tab-title {
+    display: none;
+  }
+  
+  .services-tabs .ant-tabs-tab {
+    padding: 8px 8px !important;
+    min-width: 60px;
+  }
+}
+
+/* Animation Classes */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.slide-in-left {
+  animation: slideInLeft 0.6s ease-out;
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.scale-in {
+  animation: scaleIn 0.4s ease-out;
+}
+
+/* Modal Enhancements */
+.ant-modal-content {
+  border-radius: 16px !important;
+  overflow: hidden;
+}
+
+.ant-modal-header {
+  border-radius: 16px 16px 0 0 !important;
+  padding: 24px 24px 16px !important;
+}
+
+.ant-modal-body {
+  padding: 0 24px 24px !important;
+}
+
+.ant-modal-footer {
+  border-radius: 0 0 16px 16px !important;
+  padding: 16px 24px 24px !important;
+}
+
+/* Custom Scrollbar */
+.services-tabs-wrapper::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.services-tabs-wrapper::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+.services-tabs-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(102, 126, 234, 0.3);
+  border-radius: 4px;
+}
+
+.services-tabs-wrapper::-webkit-scrollbar-thumb:hover {
+  background: rgba(102, 126, 234, 0.5);
+}
+
+/* Loading States */
+.loading-skeleton {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .services-page {
+    background: white !important;
+  }
+  
+  .services-tabs-wrapper {
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+  }
+}
