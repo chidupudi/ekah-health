@@ -106,77 +106,11 @@ const ServicesHero = ({ theme }) => {
             natural healing solutions tailored just for you.
           </Paragraph>
 
-          <div style={{
-            display: 'inline-flex',
-            gap: '12px',
-            flexWrap: 'wrap',
-            justifyContent: 'center',
-            marginTop: '32px'
-          }}>
-            {['Naturopathy', 'Yoga Therapy', 'Ayurveda', 'Holistic Healing'].map((tag, index) => (
-              <span
-                key={index}
-                style={{
-                  padding: '8px 16px',
-                  background: themeStyles.cardBg,
-                  border: `1px solid ${themeStyles.cardBorder}`,
-                  borderRadius: '20px',
-                  color: themeStyles.textSecondary,
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  backdropFilter: 'blur(10px)',
-                }}
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
+          
         </div>
 
-        {/* Stats Section */}
-        <Row gutter={[24, 24]} justify="center">
-          {stats.map((stat, index) => (
-            <Col key={index} xs={12} sm={6}>
-              <div style={{
-                background: themeStyles.cardBg,
-                border: `1px solid ${themeStyles.cardBorder}`,
-                borderRadius: '16px',
-                padding: '24px 16px',
-                textAlign: 'center',
-                backdropFilter: 'blur(10px)',
-                transition: 'all 0.3s ease',
-                cursor: 'default',
-              }}>
-                <div style={{
-                  fontSize: '2rem',
-                  color: themeStyles.gradientPrimary.split(' ')[2].replace(')', ''),
-                  marginBottom: '12px',
-                  background: themeStyles.gradientPrimary,
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                }}>
-                  {stat.icon}
-                </div>
-                <div style={{
-                  fontSize: '1.8rem',
-                  fontWeight: '700',
-                  color: themeStyles.textPrimary,
-                  marginBottom: '4px',
-                }}>
-                  {stat.number}
-                </div>
-                <div style={{
-                  fontSize: '0.9rem',
-                  color: themeStyles.textSecondary,
-                  fontWeight: '500',
-                }}>
-                  {stat.label}
-                </div>
-              </div>
-            </Col>
-          ))}
-        </Row>
+       
+        
       </div>
     </div>
   );

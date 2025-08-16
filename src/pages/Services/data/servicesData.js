@@ -1,4 +1,3 @@
-
 // pages/Services/data/servicesData.js
 import { 
   HeartOutlined, 
@@ -10,7 +9,8 @@ import {
   TeamOutlined,
   PhoneOutlined,
   BookOutlined,
-  ExperimentOutlined
+  ExperimentOutlined,
+  ThunderboltOutlined
 } from '@ant-design/icons';
 
 export const servicesData = [
@@ -59,7 +59,7 @@ export const servicesData = [
       { type: "Complete Program", price: "3500", duration: "1 Month" },
       { type: "Specific Diet/Yoga", price: "1199", duration: "1 Month" }
     ],
-    category: "General Health",
+    category: "Programs",
     description: "Holistic health program combining personalized diet and yoga for overall wellness.",
     benefits: [
       "Improved overall health and immunity",
@@ -86,7 +86,7 @@ export const servicesData = [
     options: [
       { type: "Complete Program", price: "999", duration: "1 Month" }
     ],
-    category: "Pregnancy Care",
+    category: "Women & Pregnancy",
     description: "Specialized yoga and wellness program for expecting mothers in their third trimester.",
     benefits: [
       "Easier labor and delivery",
@@ -115,7 +115,7 @@ export const servicesData = [
     options: [
       { type: "Complete Journey", price: "Contact", duration: "12 Months" }
     ],
-    category: "Pregnancy Journey",
+    category: "Women & Pregnancy",
     description: "Complete journey from pre-conception preparation to delivery with comprehensive care.",
     benefits: [
       "Optimal health for conception",
@@ -144,7 +144,7 @@ export const servicesData = [
     options: [
       { type: "Complete Classes", price: "499", duration: "7 Days" }
     ],
-    category: "Education",
+    category: "Women & Pregnancy",
     description: "Comprehensive educational program on women's health and natural wellness methods.",
     benefits: [
       "Better understanding of body cycles",
@@ -199,7 +199,7 @@ export const servicesData = [
     options: [
       { type: "Complete Package", price: "1499", duration: "1 Month" }
     ],
-    category: "Consultation Plus",
+    category: "Consultation",
     description: "Comprehensive consultation with personalized diet charts and ongoing monthly support.",
     benefits: [
       "Customized nutrition plan",
@@ -226,7 +226,7 @@ export const servicesData = [
     options: [
       { type: "Diagnostic Session", price: "199", duration: "20 mins" }
     ],
-    category: "Diagnosis",
+    category: "Consultation",
     description: "Natural diagnostic methods using traditional techniques for health assessment.",
     benefits: [
       "Non-invasive health assessment",
@@ -253,7 +253,7 @@ export const servicesData = [
     options: [
       { type: "Complete Course", price: "999", duration: "7 Sessions (25 min each)" }
     ],
-    category: "Alternative Therapy",
+    category: "Programs",
     description: "Traditional acupuncture therapy with initial assessment and multiple sessions.",
     benefits: [
       "Natural pain relief",
@@ -267,7 +267,7 @@ export const servicesData = [
   {
     id: 10,
     title: "WEEKEND SPECIALS",
-    icon: <PhoneOutlined style={{ fontSize: '24px', color: '#8bc34a' }} />,
+    icon: <ThunderboltOutlined style={{ fontSize: '24px', color: '#8bc34a' }} />,
     duration: "1 HOUR",
     includes: [
       "Pranayama Sessions",
@@ -280,7 +280,7 @@ export const servicesData = [
     options: [
       { type: "Weekend Session", price: "99", duration: "1 Hour" }
     ],
-    category: "Special Programs",
+    category: "Specials",
     description: "Special weekend sessions focusing on breathing, meditation, and energizing yoga practices.",
     benefits: [
       "Weekend stress relief",
@@ -293,52 +293,11 @@ export const servicesData = [
   }
 ];
 
+// Updated service groups based on your requirements
 export const serviceGroups = [
   {
-    id: 'womens-health',
-    title: "Women's Health",
-    icon: '🌸',
-    description: "Specialized programs designed for women's unique health needs, focusing on hormonal balance, menstrual health, and overall feminine wellness.",
-    services: [1, 5], // YONI AROGYA, NARI AROGYA CLASSES
-    features: [
-      {
-        title: "Hormonal Balance",
-        description: "Natural methods to regulate hormones and improve menstrual health"
-      },
-      {
-        title: "Holistic Approach",
-        description: "Combining diet, yoga, and lifestyle modifications for complete wellness"
-      },
-      {
-        title: "Expert Guidance",
-        description: "Personalized care from experienced women's health specialists"
-      }
-    ]
-  },
-  {
-    id: 'pregnancy-care',
-    title: "Pregnancy & Maternity",
-    icon: '🤱',
-    description: "Comprehensive care for expecting mothers and couples planning to conceive, ensuring a healthy pregnancy journey.",
-    services: [3, 4], // GARBHINI AROGYA, GARBHA SANSKAR
-    features: [
-      {
-        title: "Safe Practices",
-        description: "Pregnancy-safe yoga and exercises designed for each trimester"
-      },
-      {
-        title: "Complete Journey",
-        description: "Support from pre-conception to postpartum recovery"
-      },
-      {
-        title: "Baby Bonding",
-        description: "Techniques to enhance mother-child connection during pregnancy"
-      }
-    ]
-  },
-  {
-    id: 'consultations',
-    title: "Consultations & Diagnosis",
+    id: 'consultation',
+    title: "Consultation",
     icon: '🩺',
     description: "Professional health consultations using traditional and modern diagnostic methods for personalized treatment plans.",
     services: [6, 7, 8], // DR CONSULTATION, DR CONSULTATION WITH DIET CHART, NATUROPATHY DIAGNOSIS
@@ -352,29 +311,71 @@ export const serviceGroups = [
         description: "Customized treatment and diet plans based on individual needs"
       },
       {
-        title: "Ongoing Support",
-        description: "Regular follow-ups and adjustments to ensure optimal results"
+        title: "Expert Guidance",
+        description: "Professional medical guidance with natural healing approaches"
       }
     ]
   },
   {
-    id: 'therapies-specials',
-    title: "Therapies & Specials",
-    icon: '🌿',
-    description: "Alternative healing therapies and special wellness programs for comprehensive health improvement.",
-    services: [2, 9, 10], // SWASTHA AROGYA, ACUPUNCTURE, WEEKEND SPECIALS
+    id: 'specials',
+    title: "Specials",
+    icon: '⚡',
+    description: "Special wellness programs and weekend sessions designed for community wellness and stress relief.",
+    services: [10], // WEEKEND SPECIALS
     features: [
       {
-        title: "Alternative Healing",
-        description: "Traditional therapies like acupuncture for natural pain relief"
-      },
-      {
-        title: "Flexible Options",
-        description: "Various program durations to fit different lifestyles and needs"
-      },
-      {
         title: "Community Wellness",
-        description: "Group sessions and special programs for social wellness"
+        description: "Group sessions for social connection and shared healing"
+      },
+      {
+        title: "Stress Relief",
+        description: "Quick and effective stress-busting techniques"
+      },
+      {
+        title: "Affordable Options",
+        description: "Budget-friendly wellness solutions for everyone"
+      }
+    ]
+  },
+  {
+    id: 'women-pregnancy',
+    title: "Women & Pregnancy",
+    icon: '🌸',
+    description: "Comprehensive care for women's health, pregnancy, and maternity needs with specialized programs.",
+    services: [1, 3, 4, 5], // YONI AROGYA, GARBHINI AROGYA, GARBHA SANSKAR, NARI AROGYA CLASSES
+    features: [
+      {
+        title: "Hormonal Balance",
+        description: "Natural methods to regulate hormones and improve menstrual health"
+      },
+      {
+        title: "Pregnancy Care",
+        description: "Complete support from pre-conception to postpartum recovery"
+      },
+      {
+        title: "Women's Education",
+        description: "Comprehensive education on women's health and wellness"
+      }
+    ]
+  },
+  {
+    id: 'programs',
+    title: "Programs",
+    icon: '🌿',
+    description: "Comprehensive wellness programs combining traditional therapies with modern health approaches.",
+    services: [2, 9], // SWASTHA AROGYA, ACUPUNCTURE
+    features: [
+      {
+        title: "Holistic Approach",
+        description: "Complete wellness programs addressing mind, body, and spirit"
+      },
+      {
+        title: "Traditional Therapies",
+        description: "Ancient healing methods combined with modern techniques"
+      },
+      {
+        title: "Long-term Wellness",
+        description: "Sustainable programs for lasting health improvements"
       }
     ]
   }

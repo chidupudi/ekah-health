@@ -13,93 +13,57 @@
   margin-bottom: 40px;
 }
 
-/* Custom Tab Styles */
+/* Custom Tab Styles with New Color Scheme */
 .services-tabs.light-tabs .ant-tabs-tab {
   border-radius: 12px !important;
   margin: 0 4px !important;
   padding: 12px 20px !important;
-  border: 1px solid rgba(102, 126, 234, 0.15) !important;
-  background: rgba(255, 255, 255, 0.8) !important;
+  border: 1px solid rgba(67, 127, 151, 0.2) !important;
+  background: rgba(255, 255, 255, 0.9) !important;
   transition: all 0.3s ease !important;
   color: #6b7280 !important;
 }
 
 .services-tabs.light-tabs .ant-tabs-tab:hover {
-  background: rgba(102, 126, 234, 0.1) !important;
-  border-color: rgba(102, 126, 234, 0.3) !important;
+  background: rgba(67, 127, 151, 0.1) !important;
+  border-color: rgba(67, 127, 151, 0.3) !important;
   transform: translateY(-2px) !important;
-  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15) !important;
+  box-shadow: 0 8px 25px rgba(67, 127, 151, 0.15) !important;
 }
 
 .services-tabs.light-tabs .ant-tabs-tab.ant-tabs-tab-active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  background: linear-gradient(135deg, #437F97 0%, #EEE1B3 100%) !important;
   border-color: transparent !important;
-  color: #ffffff !important;
+  color: #1f2937 !important;
+  font-weight: 600 !important;
   transform: translateY(-2px) !important;
-  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3) !important;
+  box-shadow: 0 8px 25px rgba(67, 127, 151, 0.3) !important;
 }
 
 .services-tabs.dark-tabs .ant-tabs-tab {
   border-radius: 12px !important;
   margin: 0 4px !important;
   padding: 12px 20px !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(67, 127, 151, 0.25) !important;
+  background: rgba(67, 127, 151, 0.08) !important;
   transition: all 0.3s ease !important;
   color: rgba(255, 255, 255, 0.75) !important;
 }
 
 .services-tabs.dark-tabs .ant-tabs-tab:hover {
-  background: rgba(255, 255, 255, 0.1) !important;
-  border-color: rgba(255, 255, 255, 0.25) !important;
+  background: rgba(67, 127, 151, 0.15) !important;
+  border-color: rgba(67, 127, 151, 0.4) !important;
   transform: translateY(-2px) !important;
-  box-shadow: 0 8px 25px rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 8px 25px rgba(67, 127, 151, 0.2) !important;
 }
 
 .services-tabs.dark-tabs .ant-tabs-tab.ant-tabs-tab-active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  background: linear-gradient(135deg, #437F97 0%, #EEE1B3 100%) !important;
   border-color: transparent !important;
-  color: #ffffff !important;
+  color: #1f2937 !important;
+  font-weight: 600 !important;
   transform: translateY(-2px) !important;
-  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3) !important;
-}
-
-/* Tab Label Styles */
-.custom-tab-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 600;
-  font-size: 14px;
-}
-
-.tab-icon {
-  font-size: 18px;
-}
-
-.tab-title {
-  white-space: nowrap;
-}
-
-.tab-count {
-  background: rgba(255, 255, 255, 0.2);
-  color: inherit;
-  padding: 2px 6px;
-  border-radius: 10px;
-  font-size: 11px;
-  font-weight: 700;
-  min-width: 18px;
-  text-align: center;
-}
-
-.services-tabs.light-tabs .ant-tabs-tab.ant-tabs-tab-active .tab-count {
-  background: rgba(255, 255, 255, 0.3);
-  color: #ffffff;
-}
-
-.services-tabs.dark-tabs .ant-tabs-tab.ant-tabs-tab-active .tab-count {
-  background: rgba(255, 255, 255, 0.3);
-  color: #ffffff;
+  box-shadow: 0 8px 25px rgba(67, 127, 151, 0.3) !important;
 }
 
 /* Remove default tab bar styles */
@@ -115,48 +79,120 @@
   justify-content: center;
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-  .services-container {
-    padding: 0 10px 60px;
+/* Course Card Animations */
+.course-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.course-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.course-card.selected {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 35px rgba(102, 126, 234, 0.25);
+}
+
+/* Selection indicator animation */
+.selection-indicator {
+  animation: selectionPulse 0.3s ease-in-out;
+}
+
+@keyframes selectionPulse {
+  0% {
+    transform: scale(0);
+    opacity: 0;
   }
-  
-  .services-tabs-wrapper {
-    padding: 20px;
+  50% {
+    transform: scale(1.2);
+    opacity: 0.8;
   }
-  
-  .custom-tab-label {
-    flex-direction: column;
-    gap: 4px;
-    font-size: 12px;
-  }
-  
-  .tab-icon {
-    font-size: 16px;
-  }
-  
-  .services-tabs .ant-tabs-tab {
-    padding: 8px 12px !important;
-    margin: 0 2px !important;
+  100% {
+    transform: scale(1);
+    opacity: 1;
   }
 }
 
-@media (max-width: 576px) {
-  .custom-tab-label .tab-title {
-    display: none;
-  }
-  
-  .services-tabs .ant-tabs-tab {
-    padding: 8px 8px !important;
-    min-width: 60px;
-  }
+/* Course details section */
+.course-details {
+  background: rgba(102, 126, 234, 0.05);
+  border-radius: 12px;
+  padding: 16px;
+  margin: 16px 0;
+  border: 1px solid rgba(102, 126, 234, 0.1);
 }
 
-/* Animation Classes */
-@keyframes fadeInUp {
+.course-details.dark {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Price display */
+.price-display {
+  font-size: 18px;
+  font-weight: 700;
+  color: #059669;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.price-display.dark {
+  color: #4ade80;
+}
+
+.price-original {
+  text-decoration: line-through;
+  color: #9ca3af;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+/* Features list styling */
+.features-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 0;
+}
+
+.feature-icon {
+  color: #059669;
+  font-size: 14px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.feature-icon.dark {
+  color: #4ade80;
+}
+
+/* Selection summary with new gradient colors */
+.selection-summary {
+  background: linear-gradient(135deg, rgba(67, 127, 151, 0.15) 0%, rgba(238, 225, 179, 0.1) 100%);
+  border: 2px solid rgba(67, 127, 151, 0.25);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 24px;
+  animation: slideIn 0.3s ease-out;
+}
+
+.selection-summary.dark {
+  background: linear-gradient(135deg, rgba(67, 127, 151, 0.2) 0%, rgba(238, 225, 179, 0.08) 100%);
+  border-color: rgba(238, 225, 179, 0.3);
+}
+
+@keyframes slideIn {
   from {
     opacity: 0;
-    transform: translateY(30px);
+    transform: translateY(-10px);
   }
   to {
     opacity: 1;
@@ -164,41 +200,49 @@
   }
 }
 
-.fade-in-up {
-  animation: fadeInUp 0.6s ease-out;
-}
-
-@keyframes slideInLeft {
-  from {
-    opacity: 0;
-    transform: translateX(-30px);
+/* Responsive Design */
+@media (max-width: 768px) {
+  .services-container {
+    padding: 0 10px 60px;
   }
-  to {
-    opacity: 1;
-    transform: translateX(0);
+  
+  .services-tabs-wrapper {
+    padding: 16px;
   }
-}
-
-.slide-in-left {
-  animation: slideInLeft 0.6s ease-out;
-}
-
-@keyframes scaleIn {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
+  
+  .services-tabs .ant-tabs-tab {
+    padding: 8px 12px !important;
+    margin: 0 2px !important;
+    font-size: 12px;
   }
-  to {
-    opacity: 1;
-    transform: scale(1);
+  
+  .course-card {
+    margin-bottom: 16px;
+  }
+  
+  .selection-summary {
+    padding: 16px;
+    flex-direction: column;
+    gap: 12px;
   }
 }
 
-.scale-in {
-  animation: scaleIn 0.4s ease-out;
+@media (max-width: 576px) {
+  .services-tabs .ant-tabs-tab {
+    padding: 6px 8px !important;
+    font-size: 11px;
+  }
+  
+  .course-card {
+    margin-bottom: 12px;
+  }
+  
+  .price-display {
+    font-size: 16px;
+  }
 }
 
-/* Modal Enhancements */
+/* Modal enhancements */
 .ant-modal-content {
   border-radius: 16px !important;
   overflow: hidden;
@@ -218,27 +262,7 @@
   padding: 16px 24px 24px !important;
 }
 
-/* Custom Scrollbar */
-.services-tabs-wrapper::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-.services-tabs-wrapper::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 4px;
-}
-
-.services-tabs-wrapper::-webkit-scrollbar-thumb {
-  background: rgba(102, 126, 234, 0.3);
-  border-radius: 4px;
-}
-
-.services-tabs-wrapper::-webkit-scrollbar-thumb:hover {
-  background: rgba(102, 126, 234, 0.5);
-}
-
-/* Loading States */
+/* Loading states */
 .loading-skeleton {
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
   background-size: 200% 100%;
@@ -254,7 +278,18 @@
   }
 }
 
-/* Print Styles */
+/* Accessibility improvements */
+.course-card:focus {
+  outline: 2px solid #667eea;
+  outline-offset: 2px;
+}
+
+.course-card[aria-selected="true"] {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+/* Print styles */
 @media print {
   .services-page {
     background: white !important;
@@ -263,5 +298,10 @@
   .services-tabs-wrapper {
     box-shadow: none !important;
     border: 1px solid #ddd !important;
+  }
+  
+  .course-card {
+    break-inside: avoid;
+    margin-bottom: 1rem;
   }
 }
