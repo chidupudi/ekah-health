@@ -12,6 +12,9 @@ import MainHeader from './components/MainHeader';
 import { ThemeProvider } from './components/ParticleBackground';
 import { AnimatedSignIn } from './components/ui/sign-in';
 import { AuthProvider } from './contexts/AuthContext';
+import { AdminAuthProvider } from './contexts/AdminAuthContext';
+import AdminLogin from './pages/AdminLogin';
+import AdminDashboard from './pages/AdminDashboard';
 
 const PageWrapper = ({ children }) => (
   <>
@@ -54,11 +57,16 @@ const App = () => {
         }}
       >
         <AuthProvider>
-          <Router>
-            <Routes>
+          <AdminAuthProvider>
+            <Router>
+              <Routes>
               {/* Auth routes - now with their own header and footer */}
               <Route path="/signin" element={<AnimatedSignIn />} />
               <Route path="/signup" element={<AnimatedSignIn />} />
+              
+              {/* Admin routes */}
+              <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="/admin" element={<AdminDashboard />} />
               
               {/* Regular routes - with header and layout */}
               <Route path="/" element={<PageWrapper><WelcomeNew /></PageWrapper>} />
@@ -142,6 +150,7 @@ const App = () => {
               } />
             </Routes>
           </Router>
+          </AdminAuthProvider>
         </AuthProvider>
       </ConfigProvider>
     </ThemeProvider>
