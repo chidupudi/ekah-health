@@ -1,6 +1,6 @@
 // pages/Services/index.js
-import React, { useState } from 'react';
-import { Tabs, Row, Col, Typography, Card, Button, Badge, Empty } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Tabs, Row, Col, Typography, Card, Button, Badge, Empty, Spin, Alert } from 'antd';
 import { 
   CheckCircleOutlined,
   ArrowRightOutlined,
@@ -10,12 +10,13 @@ import {
   MedicineBoxOutlined,
   ThunderboltOutlined,
   WomanOutlined,
-  InfoCircleOutlined
+  InfoCircleOutlined,
+  LoadingOutlined
 } from '@ant-design/icons';
 import { useTheme } from '../../components/ParticleBackground';
 import ServicesHero from './components/ServicesHero';
 import CallToAction from './components/CallToAction';
-import { servicesData, serviceGroups } from './data/servicesData';
+import { servicesDB, categoriesDB } from '../../services/firebase/database';
 import './Services.css';
 
 const { Title, Text, Paragraph } = Typography;
@@ -25,6 +26,63 @@ const Services = () => {
   const [activeTab, setActiveTab] = useState('consultation');
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [selectedCourses, setSelectedCourses] = useState([]);
+  const [servicesData, setServicesData] = useState([]);
+  const [serviceGroups, setServiceGroups] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const getServiceIcon = (service) => {
+    // Map service titles to icons since we can't store React elements in Firestore
+    const iconMap = {
+      'YONI AROGYA': <WomanOutlined style={{ fontSize: '24px', color: '#e91e63' }} />,
+      'SWASTHA AROGYA': <HeartOutlined style={{ fontSize: '24px', color: '#2196f3' }} />,
+      'GARBHINI AROGYA': <UserOutlined style={{ fontSize: '24px', color: '#ff9800' }} />,
+      'GARBHA SANSKAR': <UserOutlined style={{ fontSize: '24px', color: '#9c27b0' }} />,
+      'NARI AROGYA CLASSES': <UserOutlined style={{ fontSize: '24px', color: '#4caf50' }} />,
+      'DR CONSULTATION': <MedicineBoxOutlined style={{ fontSize: '24px', color: '#795548' }} />,
+      'DR CONSULTATION WITH DIET CHART': <CalendarOutlined style={{ fontSize: '24px', color: '#607d8b' }} />,
+      'NATUROPATHY DIAGNOSIS': <UserOutlined style={{ fontSize: '24px', color: '#ff5722' }} />,
+      'ACUPUNCTURE': <UserOutlined style={{ fontSize: '24px', color: '#3f51b5' }} />,
+      'WEEKEND SPECIALS': <ThunderboltOutlined style={{ fontSize: '24px', color: '#8bc34a' }} />
+    };
+    return iconMap[service.title] || <UserOutlined style={{ fontSize: '24px', color: '#666' }} />;
+  };
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const [services, categories] = await Promise.all([
+        servicesDB.getAll(),
+        categoriesDB.getAll()
+      ]);
+
+      // Transform services data to match expected format
+      const transformedServices = services.map(service => ({
+        ...service,
+        id: parseInt(service.id) || service.id,
+        icon: getServiceIcon(service) // Add back the icon
+      }));
+
+      setServicesData(transformedServices);
+      setServiceGroups(categories);
+
+      // Set default active tab to first category
+      if (categories.length > 0) {
+        setActiveTab(categories[0].id);
+      }
+    } catch (err) {
+      console.error('Error loading data:', err);
+      setError('Failed to load services data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
 
   const getThemeStyles = () => {
     if (theme === 'dark') {
@@ -483,7 +541,7 @@ const Services = () => {
         {getTabIcon(group.id)}
         <span>{group.title}</span>
         <Badge 
-          count={group.services.length} 
+          count={group.services?.length || 0} 
           style={{ 
             background: themeStyles.gradientAccent,
             fontSize: '10px',
@@ -495,10 +553,56 @@ const Services = () => {
     ),
     children: (
       <TabContent 
-        groupServices={group.services.map(id => servicesData.find(s => s.id === id))}
+        groupServices={group.services?.map(id => servicesData.find(s => s.id === id)).filter(Boolean) || []}
       />
     )
   }));
+
+  if (loading) {
+    return (
+      <div style={{ 
+        background: themeStyles.background, 
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <Spin 
+          size="large" 
+          indicator={<LoadingOutlined style={{ fontSize: 48, color: themeStyles.priceColor }} spin />}
+        />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ 
+        background: themeStyles.background, 
+        minHeight: '100vh',
+      }}>
+        <ServicesHero theme={theme} />
+        <div style={{ 
+          maxWidth: '1400px', 
+          margin: '0 auto', 
+          padding: '40px 20px'
+        }}>
+          <Alert
+            message="Error Loading Services"
+            description={error}
+            type="error"
+            showIcon
+            action={
+              <Button size="small" danger onClick={loadData}>
+                Try Again
+              </Button>
+            }
+            style={{ borderRadius: '12px' }}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ 
@@ -524,25 +628,32 @@ const Services = () => {
             ? '0 20px 60px rgba(0, 0, 0, 0.3)' 
             : '0 20px 60px rgba(0, 0, 0, 0.1)',
         }}>
-          <Tabs
-            activeKey={activeTab}
-            onChange={(key) => {
-              setActiveTab(key);
-              setSelectedCourse(null); // Reset selection when switching tabs
-              setSelectedCourses([]);
-            }}
-            items={tabItems}
-            className={`services-tabs ${theme === 'dark' ? 'dark-tabs' : 'light-tabs'}`}
-            tabBarStyle={{
-              background: themeStyles.cardBg,
-              borderRadius: '16px',
-              padding: '8px',
-              marginBottom: '32px',
-              border: `1px solid ${themeStyles.cardBorder}`,
-            }}
-            size="large"
-            centered
-          />
+          {serviceGroups.length > 0 ? (
+            <Tabs
+              activeKey={activeTab}
+              onChange={(key) => {
+                setActiveTab(key);
+                setSelectedCourse(null); // Reset selection when switching tabs
+                setSelectedCourses([]);
+              }}
+              items={tabItems}
+              className={`services-tabs ${theme === 'dark' ? 'dark-tabs' : 'light-tabs'}`}
+              tabBarStyle={{
+                background: themeStyles.cardBg,
+                borderRadius: '16px',
+                padding: '8px',
+                marginBottom: '32px',
+                border: `1px solid ${themeStyles.cardBorder}`,
+              }}
+              size="large"
+              centered
+            />
+          ) : (
+            <Empty 
+              description="No services available"
+              style={{ padding: '60px 0' }}
+            />
+          )}
         </div>
       </div>
 

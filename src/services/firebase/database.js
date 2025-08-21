@@ -1,0 +1,262 @@
+// src/services/firebase/database.js
+import { 
+  collection, 
+  doc, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  getDocs, 
+  getDoc,
+  setDoc,
+  query,
+  where,
+  orderBy
+} from 'firebase/firestore';
+import { db } from './config';
+
+// Collections
+const COLLECTIONS = {
+  SERVICES: 'services',
+  CATEGORIES: 'categories',
+  USERS: 'users',
+  BOOKINGS: 'bookings'
+};
+
+// Services CRUD Operations
+export const servicesDB = {
+  // Get all services
+  getAll: async () => {
+    try {
+      const querySnapshot = await getDocs(collection(db, COLLECTIONS.SERVICES));
+      const services = querySnapshot.docs.map(doc => ({ 
+        id: doc.id, 
+        ...doc.data() 
+      }));
+      return services;
+    } catch (error) {
+      console.error('Error fetching services:', error);
+      throw error;
+    }
+  },
+
+  // Get service by ID
+  getById: async (id) => {
+    try {
+      const docRef = doc(db, COLLECTIONS.SERVICES, id);
+      const docSnap = await getDoc(docRef);
+      return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } : null;
+    } catch (error) {
+      console.error('Error fetching service:', error);
+      throw error;
+    }
+  },
+
+  // Add new service
+  add: async (serviceData) => {
+    try {
+      const docRef = await addDoc(collection(db, COLLECTIONS.SERVICES), {
+        ...serviceData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+      return docRef.id;
+    } catch (error) {
+      console.error('Error adding service:', error);
+      throw error;
+    }
+  },
+
+  // Update service
+  update: async (id, serviceData) => {
+    try {
+      const docRef = doc(db, COLLECTIONS.SERVICES, id);
+      await updateDoc(docRef, {
+        ...serviceData,
+        updatedAt: new Date()
+      });
+      return true;
+    } catch (error) {
+      console.error('Error updating service:', error);
+      throw error;
+    }
+  },
+
+  // Delete service
+  delete: async (id) => {
+    try {
+      await deleteDoc(doc(db, COLLECTIONS.SERVICES, id));
+      return true;
+    } catch (error) {
+      console.error('Error deleting service:', error);
+      throw error;
+    }
+  },
+
+  // Get services by category
+  getByCategory: async (category) => {
+    try {
+      const q = query(
+        collection(db, COLLECTIONS.SERVICES),
+        where('category', '==', category)
+      );
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error) {
+      console.error('Error fetching services by category:', error);
+      throw error;
+    }
+  }
+};
+
+// Categories CRUD Operations
+export const categoriesDB = {
+  // Get all categories
+  getAll: async () => {
+    try {
+      const querySnapshot = await getDocs(collection(db, COLLECTIONS.CATEGORIES));
+      const categories = querySnapshot.docs.map(doc => ({ 
+        id: doc.id, 
+        ...doc.data() 
+      }));
+      return categories;
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      throw error;
+    }
+  },
+
+  // Add new category
+  add: async (categoryData) => {
+    try {
+      const docRef = await addDoc(collection(db, COLLECTIONS.CATEGORIES), {
+        ...categoryData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+      return docRef.id;
+    } catch (error) {
+      console.error('Error adding category:', error);
+      throw error;
+    }
+  },
+
+  // Update category
+  update: async (id, categoryData) => {
+    try {
+      const docRef = doc(db, COLLECTIONS.CATEGORIES, id);
+      await updateDoc(docRef, {
+        ...categoryData,
+        updatedAt: new Date()
+      });
+      return true;
+    } catch (error) {
+      console.error('Error updating category:', error);
+      throw error;
+    }
+  },
+
+  // Delete category
+  delete: async (id) => {
+    try {
+      await deleteDoc(doc(db, COLLECTIONS.CATEGORIES, id));
+      return true;
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      throw error;
+    }
+  }
+};
+
+// Data seeding function
+export const seedDatabase = async () => {
+  try {
+    // Import the static data
+    const { servicesData, serviceGroups } = await import('../../pages/Services/data/servicesData.js');
+    
+    // Check if data already exists
+    const existingServices = await servicesDB.getAll();
+    const existingCategories = await categoriesDB.getAll();
+    
+    if (existingServices.length > 0 || existingCategories.length > 0) {
+      // Clear existing data
+      const deletePromises = [];
+      
+      // Delete existing services
+      for (const service of existingServices) {
+        deletePromises.push(servicesDB.delete(service.id));
+      }
+      
+      // Delete existing categories  
+      for (const category of existingCategories) {
+        deletePromises.push(categoriesDB.delete(category.id));
+      }
+      
+      await Promise.all(deletePromises);
+    }
+    
+    // Seed categories first
+    const categoryPromises = serviceGroups.map(async (category) => {
+      const docRef = doc(db, COLLECTIONS.CATEGORIES, category.id);
+      const categoryData = {
+        ...category,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      await setDoc(docRef, categoryData);
+    });
+    
+    await Promise.all(categoryPromises);
+    
+    // Seed services
+    const servicePromises = servicesData.map(async (service) => {
+      try {
+        const docRef = doc(db, COLLECTIONS.SERVICES, service.id.toString());
+        // Remove the React icon element as it can't be serialized
+        const { icon, ...serviceWithoutIcon } = service;
+        
+        // Clean the service data to ensure it's serializable
+        const serviceData = {
+          id: service.id,
+          title: service.title,
+          duration: service.duration,
+          category: service.category,
+          description: service.description,
+          rating: service.rating,
+          includes: service.includes || [],
+          options: service.options || [],
+          benefits: service.benefits || [],
+          iconType: service.title, // Store a reference instead
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+        
+        await setDoc(docRef, serviceData);
+      } catch (error) {
+        console.error('Error seeding service:', service.title, error);
+        throw error;
+      }
+    });
+    
+    await Promise.all(servicePromises);
+    
+    return { 
+      success: true, 
+      message: `Seeded ${serviceGroups.length} categories and ${servicesData.length} services` 
+    };
+    
+  } catch (error) {
+    console.error('Error seeding database:', error);
+    throw error;
+  }
+};
+
+// Initialize database (call this once to seed data)
+export const initializeDatabase = async () => {
+  try {
+    const result = await seedDatabase();
+    return result;
+  } catch (error) {
+    console.error('Database initialization failed:', error);
+    throw error;
+  }
+};

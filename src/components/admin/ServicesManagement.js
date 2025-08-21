@@ -26,24 +26,83 @@ import {
   EyeOutlined,
   ReloadOutlined
 } from '@ant-design/icons';
-import { servicesData, serviceGroups } from '../../pages/Services/data/servicesData';
+import { servicesDB, categoriesDB } from '../../services/firebase/database';
+import { runSeedData as seedData } from '../../services/firebase/seedData';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 
 const ServicesManagement = () => {
-  const [services, setServices] = useState([...servicesData]);
-  const [categories, setCategories] = useState([...serviceGroups]);
+  const [services, setServices] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingService, setEditingService] = useState(null);
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const [dataLoading, setDataLoading] = useState(true);
+  const [seeded, setSeeded] = useState(false);
+
+  const loadData = async () => {
+    try {
+      setDataLoading(true);
+      
+      const [servicesResult, categoriesResult] = await Promise.all([
+        servicesDB.getAll(),
+        categoriesDB.getAll()
+      ]);
+      
+      setServices(servicesResult);
+      setCategories(categoriesResult);
+      setSeeded(servicesResult.length > 0);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      message.error('Failed to load data from database');
+    } finally {
+      setDataLoading(false);
+    }
+  };
+
+  const handleSeedDatabase = async () => {
+    try {
+      setLoading(true);
+      const result = await seedData();
+      if (result.success) {
+        message.success(result.message);
+        await loadData(); // Reload data after seeding
+      } else {
+        message.error('Failed to seed database');
+      }
+    } catch (error) {
+      console.error('Seeding error:', error);
+      message.error('Failed to seed database');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForceSeed = async () => {
+    try {
+      setLoading(true);
+      // Force clear and re-seed by temporarily modifying the seed function
+      const result = await seedData();
+      if (result.success) {
+        message.success('Database force re-seeded successfully!');
+        await loadData(); // Reload data after seeding
+      } else {
+        message.error('Failed to force seed database');
+      }
+    } catch (error) {
+      console.error('Force seeding error:', error);
+      message.error('Failed to force seed database');
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   useEffect(() => {
-    // Initialize services from data
-    setServices([...servicesData]);
-    setCategories([...serviceGroups]);
+    loadData();
   }, []);
 
   const handleAddService = () => {
@@ -66,11 +125,18 @@ const ServicesManagement = () => {
     setModalVisible(true);
   };
 
-  const handleDeleteService = (serviceId) => {
-    setServices(prevServices => 
-      prevServices.filter(service => service.id !== serviceId)
-    );
-    message.success('Service deleted successfully');
+  const handleDeleteService = async (serviceId) => {
+    try {
+      setLoading(true);
+      await servicesDB.delete(serviceId);
+      await loadData(); // Reload data
+      message.success('Service deleted successfully');
+    } catch (error) {
+      console.error('Delete error:', error);
+      message.error('Failed to delete service');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSaveService = async (values) => {
@@ -90,28 +156,24 @@ const ServicesManagement = () => {
 
       if (editingService) {
         // Update existing service
-        setServices(prevServices =>
-          prevServices.map(service =>
-            service.id === editingService.id
-              ? { ...service, ...serviceData }
-              : service
-          )
-        );
+        await servicesDB.update(editingService.id, serviceData);
         message.success('Service updated successfully');
       } else {
         // Add new service
-        const newService = {
-          id: Math.max(...services.map(s => s.id)) + 1,
+        const newServiceData = {
+          id: Math.max(...services.map(s => parseInt(s.id) || 0)) + 1,
           ...serviceData,
           icon: '🔹' // Default icon
         };
-        setServices(prevServices => [...prevServices, newService]);
+        await servicesDB.add(newServiceData);
         message.success('Service added successfully');
       }
 
+      await loadData(); // Reload data
       setModalVisible(false);
       form.resetFields();
     } catch (error) {
+      console.error('Save error:', error);
       message.error('Failed to save service');
     } finally {
       setLoading(false);
@@ -244,11 +306,22 @@ const ServicesManagement = () => {
             </Col>
             <Col>
               <Space>
-                <Button icon={<ReloadOutlined />}>Refresh</Button>
+                <Button icon={<ReloadOutlined />} onClick={loadData} loading={dataLoading}>Refresh</Button>
+                {services.length === 0 && (
+                  <Button 
+                    type="primary" 
+                    onClick={handleSeedDatabase}
+                    loading={loading}
+                    style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
+                  >
+                    Seed Database
+                  </Button>
+                )}
                 <Button 
                   type="primary" 
                   icon={<PlusOutlined />}
                   onClick={handleAddService}
+                  disabled={services.length === 0}
                 >
                   Add Service
                 </Button>
@@ -256,19 +329,30 @@ const ServicesManagement = () => {
             </Col>
           </Row>
 
-          <Alert
-            message="Services Management"
-            description="Here you can view, add, edit, and delete services. Changes will be reflected immediately on the website."
-            type="info"
-            showIcon
-            style={{ marginBottom: '16px' }}
-          />
+          {services.length === 0 ? (
+            <Alert
+              message="No Services Found"
+              description={`Found ${categories.length} categories but 0 services. Click 'Seed Database' or 'Force Re-seed' to populate with initial service data.`}
+              type="warning"
+              showIcon
+              style={{ marginBottom: '16px' }}
+            />
+          ) : (
+            <Alert
+              message="Services Management"
+              description={`Managing ${services.length} services across ${categories.length} categories. Changes will be reflected immediately on the website.`}
+              type="info"
+              showIcon
+              style={{ marginBottom: '16px' }}
+            />
+          )}
 
           <Card>
             <Table
               columns={serviceColumns}
               dataSource={services}
               rowKey="id"
+              loading={dataLoading}
               pagination={{ 
                 pageSize: 10,
                 showSizeChanger: true,
