@@ -14,6 +14,7 @@ import { ThemeProvider } from './components/ParticleBackground';
 import { AnimatedSignIn } from './components/ui/sign-in';
 import { AuthProvider } from './contexts/AuthContext';
 import { AdminAuthProvider } from './contexts/AdminAuthContext';
+import TermsConditions from './pages/TermsConditions';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 
@@ -75,6 +76,7 @@ const App = () => {
               <Route path="/about" element={<PageWrapper><About /></PageWrapper>} />
               <Route path="/services" element={<PageWrapper><Services /></PageWrapper>} />
               <Route path="/privacy" element={<PageWrapper><PrivacyPolicy /></PageWrapper>} />
+              <Route path="/terms" element={<PageWrapper><TermsConditions /></PageWrapper>} />
               <Route path="/privacy-policy" element={<PageWrapper><PrivacyPolicy /></PageWrapper>} />
               <Route path="/booking" element={
                 <PageWrapper>
