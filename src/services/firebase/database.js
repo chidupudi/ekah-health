@@ -54,19 +54,28 @@ export const servicesDB = {
   // Add new service
   add: async (serviceData) => {
     try {
+      // Validate required fields
+      if (!serviceData.title || serviceData.title.trim() === '') {
+        throw new Error('Service title is required');
+      }
+      if (!serviceData.category || serviceData.category.trim() === '') {
+        throw new Error('Service category is required');
+      }
+      
       // Clean the service data to ensure it's serializable
       const cleanServiceData = {
-        title: serviceData.title,
-        duration: serviceData.duration,
-        category: serviceData.category,
-        description: serviceData.description,
-        rating: serviceData.rating,
-        includes: serviceData.includes || [],
-        options: serviceData.options || [],
-        benefits: serviceData.benefits || [],
+        title: serviceData.title.trim(),
+        duration: serviceData.duration || 'Not specified',
+        category: serviceData.category.trim(),
+        description: serviceData.description || '',
+        rating: parseFloat(serviceData.rating) || 0,
+        includes: Array.isArray(serviceData.includes) ? serviceData.includes : [],
+        options: Array.isArray(serviceData.options) ? serviceData.options : [],
+        benefits: Array.isArray(serviceData.benefits) ? serviceData.benefits : [],
         createdAt: new Date(),
         updatedAt: new Date()
       };
+      
       const docRef = await addDoc(collection(db, COLLECTIONS.SERVICES), cleanServiceData);
       return docRef.id;
     } catch (error) {
@@ -78,6 +87,14 @@ export const servicesDB = {
   // Update service
   update: async (id, serviceData) => {
     try {
+      // Validate required fields
+      if (!serviceData.title || serviceData.title.trim() === '') {
+        throw new Error('Service title is required');
+      }
+      if (!serviceData.category || serviceData.category.trim() === '') {
+        throw new Error('Service category is required');
+      }
+      
       // Get the current service to check if category changed
       const currentService = await servicesDB.getById(id);
       
@@ -85,22 +102,22 @@ export const servicesDB = {
       // Clean the service data to ensure it's serializable
       // Don't include 'id' field as it's stored as document ID
       const cleanServiceData = {
-        title: serviceData.title,
-        duration: serviceData.duration,
-        category: serviceData.category,
-        description: serviceData.description,
-        rating: serviceData.rating,
-        includes: serviceData.includes || [],
-        options: serviceData.options || [],
-        benefits: serviceData.benefits || [],
+        title: serviceData.title.trim(),
+        duration: serviceData.duration || 'Not specified',
+        category: serviceData.category.trim(),
+        description: serviceData.description || '',
+        rating: parseFloat(serviceData.rating) || 0,
+        includes: Array.isArray(serviceData.includes) ? serviceData.includes : [],
+        options: Array.isArray(serviceData.options) ? serviceData.options : [],
+        benefits: Array.isArray(serviceData.benefits) ? serviceData.benefits : [],
         updatedAt: new Date()
       };
       
       await updateDoc(docRef, cleanServiceData);
       
       // If category changed, update category service arrays
-      if (currentService && currentService.category !== serviceData.category) {
-        await updateCategoryServiceLists(id, currentService.category, serviceData.category);
+      if (currentService && currentService.category !== cleanServiceData.category) {
+        await updateCategoryServiceLists(id, currentService.category, cleanServiceData.category);
       }
       
       return true;
@@ -132,6 +149,39 @@ export const servicesDB = {
       return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     } catch (error) {
       console.error('Error fetching services by category:', error);
+      throw error;
+    }
+  },
+
+  // Clean up corrupted services
+  cleanupCorruptedServices: async () => {
+    try {
+      const services = await servicesDB.getAll();
+      const corruptedServices = [];
+      
+      for (const service of services) {
+        // Check for corrupted data
+        if (!service.title || 
+            service.title.trim() === '' ||
+            service.title.length < 2 ||
+            /^[^a-zA-Z0-9\s]/.test(service.title) || // Starts with special characters
+            typeof service.title !== 'string') {
+          corruptedServices.push(service);
+        }
+      }
+      
+      // Delete corrupted services
+      for (const service of corruptedServices) {
+        await servicesDB.delete(service.id);
+      }
+      
+      return {
+        success: true,
+        cleanedCount: corruptedServices.length,
+        message: `Cleaned up ${corruptedServices.length} corrupted services`
+      };
+    } catch (error) {
+      console.error('Error cleaning up corrupted services:', error);
       throw error;
     }
   }

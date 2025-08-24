@@ -274,57 +274,81 @@ const ServicesManagement = () => {
     }
   };
 
+  const handleCleanupData = async () => {
+    try {
+      setLoading(true);
+      
+      const result = await servicesDB.cleanupCorruptedServices();
+      
+      if (result.cleanedCount === 0) {
+        message.info('No corrupted data found.');
+      } else {
+        message.success(result.message);
+      }
+
+      await loadData(); // Reload data
+    } catch (error) {
+      console.error('Cleanup error:', error);
+      message.error('Failed to cleanup data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const serviceColumns = [
     {
       title: 'ID',
       dataIndex: 'id',
       key: 'id',
-      width: 60,
+      width: 80,
+      sorter: (a, b) => a.id - b.id,
+      render: (id) => <Text strong>{id}</Text>
     },
     {
       title: 'Title',
       dataIndex: 'title',
       key: 'title',
-      width: 200,
+      width: 250,
+      ellipsis: true,
+      render: (title) => <Text>{title || 'N/A'}</Text>
     },
     {
       title: 'Category',
       dataIndex: 'category',
       key: 'category',
       width: 150,
-      render: (category) => <Tag color="blue">{category}</Tag>
+      render: (category) => category ? <Tag color="blue">{category}</Tag> : <Tag color="default">N/A</Tag>
     },
     {
       title: 'Duration',
       dataIndex: 'duration',
       key: 'duration',
       width: 120,
+      render: (duration) => <Text>{duration || 'N/A'}</Text>
     },
     {
       title: 'Price (₹)',
       key: 'price',
       width: 100,
-      render: (_, record) => record.options[0]?.price || 'N/A',
+      render: (_, record) => {
+        const price = record.options?.[0]?.price || record.price;
+        return price ? <Tag color="green">₹{price}</Tag> : <Tag color="default">N/A</Tag>;
+      },
     },
     {
       title: 'Rating',
       dataIndex: 'rating',
       key: 'rating',
-      width: 80,
-      render: (rating) => <Tag color="gold">{rating} ⭐</Tag>
+      width: 100,
+      render: (rating) => rating ? <Tag color="gold">{rating} ⭐</Tag> : <Tag color="default">N/A</Tag>
     },
     {
       title: 'Actions',
       key: 'actions',
       width: 150,
+      fixed: 'right',
       render: (_, record) => (
         <Space size="small">
-          <Button
-            type="text"
-            icon={<EyeOutlined />}
-            size="small"
-            title="View Details"
-          />
           <Button
             type="text"
             icon={<EditOutlined />}
@@ -334,6 +358,7 @@ const ServicesManagement = () => {
           />
           <Popconfirm
             title="Are you sure you want to delete this service?"
+            description="This action cannot be undone."
             onConfirm={() => handleDeleteService(record.id)}
             okText="Yes"
             cancelText="No"
@@ -446,6 +471,14 @@ const ServicesManagement = () => {
                   </Button>
                 )}
                 <Button 
+                  danger
+                  onClick={handleCleanupData}
+                  loading={loading}
+                  title="Remove corrupted or invalid services"
+                >
+                  Cleanup Data
+                </Button>
+                <Button 
                   type="primary" 
                   icon={<PlusOutlined />}
                   onClick={handleAddService}
@@ -478,7 +511,7 @@ const ServicesManagement = () => {
           <Card>
             <Table
               columns={serviceColumns}
-              dataSource={services}
+              dataSource={services.filter(service => service.id && service.title)} // Filter out corrupted entries
               rowKey="id"
               loading={dataLoading}
               pagination={{ 
@@ -488,7 +521,9 @@ const ServicesManagement = () => {
                 showTotal: (total, range) => 
                   `${range[0]}-${range[1]} of ${total} services`
               }}
-              scroll={{ x: 800 }}
+              scroll={{ x: 1000 }}
+              size="middle"
+              bordered
             />
           </Card>
         </div>

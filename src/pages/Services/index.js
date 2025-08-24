@@ -43,9 +43,29 @@ const Services = () => {
       'DR CONSULTATION WITH DIET CHART': <CalendarOutlined style={{ fontSize: '24px', color: '#607d8b' }} />,
       'NATUROPATHY DIAGNOSIS': <UserOutlined style={{ fontSize: '24px', color: '#ff5722' }} />,
       'ACUPUNCTURE': <UserOutlined style={{ fontSize: '24px', color: '#3f51b5' }} />,
-      'WEEKEND SPECIALS': <ThunderboltOutlined style={{ fontSize: '24px', color: '#8bc34a' }} />
+      'WEEKEND SPECIALS': <ThunderboltOutlined style={{ fontSize: '24px', color: '#8bc34a' }} />,
+      'YONI YOGA': <UserOutlined style={{ fontSize: '24px', color: '#e91e63' }} />,
+      'SWSTHA YOGA': <HeartOutlined style={{ fontSize: '24px', color: '#4caf50' }} />
     };
-    return iconMap[service.title] || <UserOutlined style={{ fontSize: '24px', color: '#666' }} />;
+
+    // Check by title first, then by category as fallback
+    if (service.title && iconMap[service.title.toUpperCase()]) {
+      return iconMap[service.title.toUpperCase()];
+    }
+
+    // Fallback based on category
+    if (service.category) {
+      const categoryIcons = {
+        'Consultation': <MedicineBoxOutlined style={{ fontSize: '24px', color: '#795548' }} />,
+        'Online yoga': <UserOutlined style={{ fontSize: '24px', color: '#4caf50' }} />,
+        'Programs': <HeartOutlined style={{ fontSize: '24px', color: '#2196f3' }} />,
+        'Specials': <ThunderboltOutlined style={{ fontSize: '24px', color: '#8bc34a' }} />,
+        'Women & Pregnancy': <WomanOutlined style={{ fontSize: '24px', color: '#e91e63' }} />
+      };
+      return categoryIcons[service.category] || <UserOutlined style={{ fontSize: '24px', color: '#666' }} />;
+    }
+
+    return <UserOutlined style={{ fontSize: '24px', color: '#666' }} />;
   };
 
   const loadData = async () => {
@@ -67,6 +87,12 @@ const Services = () => {
 
       setServicesData(transformedServices);
       setServiceGroups(categories);
+
+      // Debug logging
+      console.log('Services Data:', transformedServices);
+      console.log('Categories:', categories);
+      console.log('Service categories:', transformedServices.map(s => s.category));
+      console.log('Category titles:', categories.map(c => c.title));
 
       // Set default active tab to first category
       if (categories.length > 0) {
@@ -92,6 +118,15 @@ const Services = () => {
 
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
+  }, []);
+
+  // Add periodic refresh every 2 minutes to ensure data synchronization
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadData();
+    }, 120000); // 2 minutes
+
+    return () => clearInterval(interval);
   }, []);
 
   const getThemeStyles = () => {
@@ -551,7 +586,10 @@ const Services = () => {
         {getTabIcon(group.id)}
         <span>{group.title}</span>
         <Badge 
-          count={group.services?.length || 0} 
+          count={servicesData.filter(service => 
+            service.category && group.title &&
+            service.category.toLowerCase().trim() === group.title.toLowerCase().trim()
+          ).length} 
           style={{ 
             background: themeStyles.gradientAccent,
             fontSize: '10px',
@@ -563,9 +601,10 @@ const Services = () => {
     ),
     children: (
       <TabContent 
-        groupServices={group.services?.map(id => 
-          servicesData.find(s => s.id == id || s.id === id.toString())
-        ).filter(Boolean) || []}
+        groupServices={servicesData.filter(service => 
+          service.category && group.title &&
+          service.category.toLowerCase().trim() === group.title.toLowerCase().trim()
+        )}
       />
     )
   }));
