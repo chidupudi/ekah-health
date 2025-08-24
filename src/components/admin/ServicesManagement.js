@@ -37,8 +37,11 @@ const ServicesManagement = () => {
   const [services, setServices] = useState([]);
   const [categories, setCategories] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
+  const [categoryModalVisible, setCategoryModalVisible] = useState(false);
   const [editingService, setEditingService] = useState(null);
+  const [editingCategory, setEditingCategory] = useState(null);
   const [form] = Form.useForm();
+  const [categoryForm] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
   const [seeded, setSeeded] = useState(false);
@@ -180,6 +183,97 @@ const ServicesManagement = () => {
     }
   };
 
+  // Category CRUD operations
+  const handleAddCategory = () => {
+    setEditingCategory(null);
+    categoryForm.resetFields();
+    setCategoryModalVisible(true);
+  };
+
+  const handleEditCategory = (category) => {
+    setEditingCategory(category);
+    categoryForm.setFieldsValue({
+      title: category.title,
+      description: category.description,
+      icon: category.icon
+    });
+    setCategoryModalVisible(true);
+  };
+
+  const handleDeleteCategory = async (categoryId) => {
+    try {
+      setLoading(true);
+      
+      // Check if category has services
+      const categoryServices = services.filter(service => {
+        const category = categories.find(cat => cat.id === categoryId);
+        return category && service.category === category.title;
+      });
+      
+      if (categoryServices.length > 0) {
+        message.error(`Cannot delete category. It has ${categoryServices.length} services. Please move or delete the services first.`);
+        return;
+      }
+      
+      await categoriesDB.delete(categoryId);
+      await loadData(); // Reload data
+      message.success('Category deleted successfully');
+    } catch (error) {
+      console.error('Delete category error:', error);
+      message.error('Failed to delete category');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveCategory = async (values) => {
+    setLoading(true);
+    try {
+      const categoryData = {
+        title: values.title,
+        description: values.description,
+        icon: values.icon || '📋',
+        services: editingCategory?.services || []
+      };
+
+      if (editingCategory) {
+        // Update existing category
+        const oldTitle = editingCategory.title;
+        await categoriesDB.update(editingCategory.id, categoryData);
+        
+        // If title changed, update all services that use this category
+        if (oldTitle !== values.title) {
+          const categoryServices = services.filter(service => service.category === oldTitle);
+          for (const service of categoryServices) {
+            await servicesDB.update(service.id, {
+              ...service,
+              category: values.title
+            });
+          }
+        }
+        
+        message.success('Category updated successfully');
+      } else {
+        // Add new category
+        const categoryId = values.title.toLowerCase().replace(/[^a-z0-9]/g, '-');
+        await categoriesDB.add({
+          id: categoryId,
+          ...categoryData
+        });
+        message.success('Category added successfully');
+      }
+
+      await loadData(); // Reload data
+      setCategoryModalVisible(false);
+      categoryForm.resetFields();
+    } catch (error) {
+      console.error('Save category error:', error);
+      message.error('Failed to save category');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const serviceColumns = [
     {
       title: 'ID',
@@ -281,14 +375,48 @@ const ServicesManagement = () => {
       title: 'Services Count',
       key: 'servicesCount',
       width: 120,
-      render: (_, record) => record.services?.length || 0,
+      render: (_, record) => {
+        const serviceCount = services.filter(service => service.category === record.title).length;
+        return <Tag color={serviceCount > 0 ? 'blue' : 'default'}>{serviceCount}</Tag>;
+      },
     },
     {
       title: 'Description',
       dataIndex: 'description',
       key: 'description',
       ellipsis: true,
-    }
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
+      width: 150,
+      render: (_, record) => (
+        <Space size="small">
+          <Button
+            type="text"
+            icon={<EditOutlined />}
+            size="small"
+            onClick={() => handleEditCategory(record)}
+            title="Edit Category"
+          />
+          <Popconfirm
+            title="Are you sure you want to delete this category?"
+            description="This will only work if the category has no services."
+            onConfirm={() => handleDeleteCategory(record.id)}
+            okText="Yes"
+            cancelText="No"
+          >
+            <Button
+              type="text"
+              icon={<DeleteOutlined />}
+              size="small"
+              danger
+              title="Delete Category"
+            />
+          </Popconfirm>
+        </Space>
+      ),
+    },
   ];
 
   const tabItems = [
@@ -380,8 +508,8 @@ const ServicesManagement = () => {
             </Col>
             <Col>
               <Space>
-                <Button icon={<ReloadOutlined />}>Refresh</Button>
-                <Button type="primary" icon={<PlusOutlined />}>Add Category</Button>
+                <Button icon={<ReloadOutlined />} onClick={loadData} loading={dataLoading}>Refresh</Button>
+                <Button type="primary" icon={<PlusOutlined />} onClick={handleAddCategory}>Add Category</Button>
               </Space>
             </Col>
           </Row>
@@ -399,7 +527,13 @@ const ServicesManagement = () => {
               columns={categoryColumns}
               dataSource={categories}
               rowKey="id"
-              pagination={false}
+              loading={dataLoading}
+              pagination={{
+                pageSize: 10,
+                showSizeChanger: true,
+                showTotal: (total, range) => 
+                  `${range[0]}-${range[1]} of ${total} categories`
+              }}
             />
           </Card>
         </div>
@@ -452,11 +586,11 @@ const ServicesManagement = () => {
                 rules={[{ required: true, message: 'Please select category' }]}
               >
                 <Select placeholder="Select category">
-                  <Option value="Programs">Programs</Option>
-                  <Option value="Consultation">Consultation</Option>
-                  <Option value="Women's Health">Women's Health</Option>
-                  <Option value="Women & Pregnancy">Women & Pregnancy</Option>
-                  <Option value="Specials">Specials</Option>
+                  {categories.map(category => (
+                    <Option key={category.id} value={category.title}>
+                      {category.icon} {category.title}
+                    </Option>
+                  ))}
                 </Select>
               </Form.Item>
             </Col>
@@ -514,6 +648,57 @@ const ServicesManagement = () => {
               <Button onClick={() => setModalVisible(false)}>Cancel</Button>
               <Button type="primary" htmlType="submit" loading={loading}>
                 {editingService ? 'Update Service' : 'Add Service'}
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* Category Modal */}
+      <Modal
+        title={editingCategory ? 'Edit Category' : 'Add New Category'}
+        open={categoryModalVisible}
+        onCancel={() => setCategoryModalVisible(false)}
+        footer={null}
+        width={500}
+      >
+        <Form
+          form={categoryForm}
+          layout="vertical"
+          onFinish={handleSaveCategory}
+        >
+          <Form.Item
+            name="title"
+            label="Category Title"
+            rules={[{ required: true, message: 'Please enter category title' }]}
+          >
+            <Input placeholder="Enter category title" />
+          </Form.Item>
+
+          <Form.Item
+            name="icon"
+            label="Icon (Emoji)"
+            rules={[{ required: true, message: 'Please enter an emoji icon' }]}
+          >
+            <Input placeholder="📋" maxLength={2} />
+          </Form.Item>
+
+          <Form.Item
+            name="description"
+            label="Description"
+            rules={[{ required: true, message: 'Please enter description' }]}
+          >
+            <TextArea
+              rows={3}
+              placeholder="Enter category description"
+            />
+          </Form.Item>
+
+          <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
+            <Space>
+              <Button onClick={() => setCategoryModalVisible(false)}>Cancel</Button>
+              <Button type="primary" htmlType="submit" loading={loading}>
+                {editingCategory ? 'Update Category' : 'Add Category'}
               </Button>
             </Space>
           </Form.Item>

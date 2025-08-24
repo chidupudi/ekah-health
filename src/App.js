@@ -8,6 +8,7 @@ import Welcome from './pages/Welcome';
 import WelcomeNew from './pages/WelcomeNew';
 import About from './pages/About';
 import Services from './pages/Services/index'; // Updated import for new modular Services
+import PrivacyPolicy from './pages/PrivacyPolicy'; // New import for Privacy Policy
 import MainHeader from './components/MainHeader';
 import { ThemeProvider } from './components/ParticleBackground';
 import { AnimatedSignIn } from './components/ui/sign-in';
@@ -73,6 +74,8 @@ const App = () => {
               <Route path="/welcome-old" element={<PageWrapper><Welcome /></PageWrapper>} />
               <Route path="/about" element={<PageWrapper><About /></PageWrapper>} />
               <Route path="/services" element={<PageWrapper><Services /></PageWrapper>} />
+              <Route path="/privacy" element={<PageWrapper><PrivacyPolicy /></PageWrapper>} />
+              <Route path="/privacy-policy" element={<PageWrapper><PrivacyPolicy /></PageWrapper>} />
               <Route path="/booking" element={
                 <PageWrapper>
                   <div style={{ 
@@ -143,6 +146,58 @@ const App = () => {
                       marginBottom: '16px'
                     }}>
                       Profile Page
+                    </h2>
+                    <p style={{ color: '#6b7280', fontSize: '1.2rem' }}>Coming Soon</p>
+                  </div>
+                </PageWrapper>
+              } />
+              {/* Terms of Service route - placeholder for future implementation */}
+              <Route path="/terms" element={
+                <PageWrapper>
+                  <div style={{ 
+                    padding: '64px 32px', 
+                    textAlign: 'center',
+                    background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #f8fafc 100%)',
+                    minHeight: '80vh',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexDirection: 'column'
+                  }}>
+                    <h2 style={{ 
+                      fontSize: '2.5rem',
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      marginBottom: '16px'
+                    }}>
+                      Terms of Service
+                    </h2>
+                    <p style={{ color: '#6b7280', fontSize: '1.2rem' }}>Coming Soon</p>
+                  </div>
+                </PageWrapper>
+              } />
+              {/* HIPAA Compliance route - placeholder for future implementation */}
+              <Route path="/hipaa" element={
+                <PageWrapper>
+                  <div style={{ 
+                    padding: '64px 32px', 
+                    textAlign: 'center',
+                    background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #f8fafc 100%)',
+                    minHeight: '80vh',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexDirection: 'column'
+                  }}>
+                    <h2 style={{ 
+                      fontSize: '2.5rem',
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      marginBottom: '16px'
+                    }}>
+                      HIPAA Compliance
                     </h2>
                     <p style={{ color: '#6b7280', fontSize: '1.2rem' }}>Coming Soon</p>
                   </div>

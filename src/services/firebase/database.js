@@ -157,12 +157,24 @@ export const categoriesDB = {
   // Add new category
   add: async (categoryData) => {
     try {
-      const docRef = await addDoc(collection(db, COLLECTIONS.CATEGORIES), {
-        ...categoryData,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
-      return docRef.id;
+      if (categoryData.id) {
+        // If ID is provided, use setDoc to create document with specific ID
+        const docRef = doc(db, COLLECTIONS.CATEGORIES, categoryData.id);
+        await setDoc(docRef, {
+          ...categoryData,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+        return categoryData.id;
+      } else {
+        // Otherwise use addDoc to auto-generate ID
+        const docRef = await addDoc(collection(db, COLLECTIONS.CATEGORIES), {
+          ...categoryData,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+        return docRef.id;
+      }
     } catch (error) {
       console.error('Error adding category:', error);
       throw error;
@@ -191,6 +203,18 @@ export const categoriesDB = {
       return true;
     } catch (error) {
       console.error('Error deleting category:', error);
+      throw error;
+    }
+  },
+
+  // Get category by ID
+  getById: async (id) => {
+    try {
+      const docRef = doc(db, COLLECTIONS.CATEGORIES, id.toString());
+      const docSnap = await getDoc(docRef);
+      return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } : null;
+    } catch (error) {
+      console.error('Error fetching category:', error);
       throw error;
     }
   }
