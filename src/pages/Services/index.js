@@ -84,6 +84,16 @@ const Services = () => {
     loadData();
   }, []);
 
+  // Add window focus listener to refresh data when user returns to tab
+  useEffect(() => {
+    const handleFocus = () => {
+      loadData();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, []);
+
   const getThemeStyles = () => {
     if (theme === 'dark') {
       return {
@@ -553,7 +563,9 @@ const Services = () => {
     ),
     children: (
       <TabContent 
-        groupServices={group.services?.map(id => servicesData.find(s => s.id === id)).filter(Boolean) || []}
+        groupServices={group.services?.map(id => 
+          servicesData.find(s => s.id == id || s.id === id.toString())
+        ).filter(Boolean) || []}
       />
     )
   }));

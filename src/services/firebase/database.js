@@ -42,7 +42,7 @@ export const servicesDB = {
   // Get service by ID
   getById: async (id) => {
     try {
-      const docRef = doc(db, COLLECTIONS.SERVICES, id);
+      const docRef = doc(db, COLLECTIONS.SERVICES, id.toString());
       const docSnap = await getDoc(docRef);
       return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } : null;
     } catch (error) {
@@ -54,11 +54,20 @@ export const servicesDB = {
   // Add new service
   add: async (serviceData) => {
     try {
-      const docRef = await addDoc(collection(db, COLLECTIONS.SERVICES), {
-        ...serviceData,
+      // Clean the service data to ensure it's serializable
+      const cleanServiceData = {
+        title: serviceData.title,
+        duration: serviceData.duration,
+        category: serviceData.category,
+        description: serviceData.description,
+        rating: serviceData.rating,
+        includes: serviceData.includes || [],
+        options: serviceData.options || [],
+        benefits: serviceData.benefits || [],
         createdAt: new Date(),
         updatedAt: new Date()
-      });
+      };
+      const docRef = await addDoc(collection(db, COLLECTIONS.SERVICES), cleanServiceData);
       return docRef.id;
     } catch (error) {
       console.error('Error adding service:', error);
@@ -69,11 +78,31 @@ export const servicesDB = {
   // Update service
   update: async (id, serviceData) => {
     try {
-      const docRef = doc(db, COLLECTIONS.SERVICES, id);
-      await updateDoc(docRef, {
-        ...serviceData,
+      // Get the current service to check if category changed
+      const currentService = await servicesDB.getById(id);
+      
+      const docRef = doc(db, COLLECTIONS.SERVICES, id.toString());
+      // Clean the service data to ensure it's serializable
+      // Don't include 'id' field as it's stored as document ID
+      const cleanServiceData = {
+        title: serviceData.title,
+        duration: serviceData.duration,
+        category: serviceData.category,
+        description: serviceData.description,
+        rating: serviceData.rating,
+        includes: serviceData.includes || [],
+        options: serviceData.options || [],
+        benefits: serviceData.benefits || [],
         updatedAt: new Date()
-      });
+      };
+      
+      await updateDoc(docRef, cleanServiceData);
+      
+      // If category changed, update category service arrays
+      if (currentService && currentService.category !== serviceData.category) {
+        await updateCategoryServiceLists(id, currentService.category, serviceData.category);
+      }
+      
       return true;
     } catch (error) {
       console.error('Error updating service:', error);
@@ -84,7 +113,7 @@ export const servicesDB = {
   // Delete service
   delete: async (id) => {
     try {
-      await deleteDoc(doc(db, COLLECTIONS.SERVICES, id));
+      await deleteDoc(doc(db, COLLECTIONS.SERVICES, id.toString()));
       return true;
     } catch (error) {
       console.error('Error deleting service:', error);
@@ -143,7 +172,7 @@ export const categoriesDB = {
   // Update category
   update: async (id, categoryData) => {
     try {
-      const docRef = doc(db, COLLECTIONS.CATEGORIES, id);
+      const docRef = doc(db, COLLECTIONS.CATEGORIES, id.toString());
       await updateDoc(docRef, {
         ...categoryData,
         updatedAt: new Date()
@@ -158,12 +187,62 @@ export const categoriesDB = {
   // Delete category
   delete: async (id) => {
     try {
-      await deleteDoc(doc(db, COLLECTIONS.CATEGORIES, id));
+      await deleteDoc(doc(db, COLLECTIONS.CATEGORIES, id.toString()));
       return true;
     } catch (error) {
       console.error('Error deleting category:', error);
       throw error;
     }
+  }
+};
+
+// Helper function to update category service lists when a service changes category
+const updateCategoryServiceLists = async (serviceId, oldCategory, newCategory) => {
+  try {
+    // Map category names to category IDs
+    const categoryMapping = {
+      'Consultation': 'consultation',
+      'Programs': 'programs', 
+      'Women\'s Health': 'women-pregnancy',
+      'Women & Pregnancy': 'women-pregnancy',
+      'Specials': 'specials'
+    };
+    
+    const oldCategoryId = categoryMapping[oldCategory] || oldCategory.toLowerCase().replace(/[^a-z0-9]/g, '-');
+    const newCategoryId = categoryMapping[newCategory] || newCategory.toLowerCase().replace(/[^a-z0-9]/g, '-');
+    
+    // Get all categories
+    const categories = await categoriesDB.getAll();
+    
+    // Update old category - remove service ID
+    const oldCategoryDoc = categories.find(cat => cat.id === oldCategoryId);
+    if (oldCategoryDoc && oldCategoryDoc.services) {
+      // Ensure services is an array before filtering
+      const servicesArray = Array.isArray(oldCategoryDoc.services) ? oldCategoryDoc.services : [];
+      const updatedOldServices = servicesArray.filter(id => id != serviceId && id !== parseInt(serviceId));
+      await categoriesDB.update(oldCategoryId, {
+        ...oldCategoryDoc,
+        services: updatedOldServices
+      });
+    }
+    
+    // Update new category - add service ID
+    const newCategoryDoc = categories.find(cat => cat.id === newCategoryId);
+    if (newCategoryDoc) {
+      // Ensure services is an array before using array methods
+      const currentServices = Array.isArray(newCategoryDoc.services) ? newCategoryDoc.services : [];
+      const serviceIdNum = parseInt(serviceId);
+      if (!currentServices.includes(serviceIdNum) && !currentServices.includes(serviceId)) {
+        await categoriesDB.update(newCategoryId, {
+          ...newCategoryDoc,
+          services: [...currentServices, serviceIdNum]
+        });
+      }
+    }
+    
+  } catch (error) {
+    console.error('Error updating category service lists:', error);
+    throw error;
   }
 };
 
