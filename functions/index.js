@@ -2,23 +2,32 @@ const {setGlobalOptions} = require("firebase-functions");
 const {onDocumentUpdated} = require("firebase-functions/v2/firestore");
 const {onRequest} = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
-const {google} = require("googleapis");
-const moment = require("moment");
 
-// Initialize Firebase Admin
-admin.initializeApp();
-
-// Load service account credentials
-const serviceAccount = require("./service-account-key.json");
-
-// Google Calendar setup
-const calendar = google.calendar("v3");
-const auth = new google.auth.GoogleAuth({
-  credentials: serviceAccount,
-  scopes: ["https://www.googleapis.com/auth/calendar"],
-});
+// Initialize Firebase Admin only once
+if (!admin.apps.length) {
+  admin.initializeApp();
+}
 
 setGlobalOptions({maxInstances: 10});
+
+/**
+ * Creates Google Auth client with proper scopes
+ * @return {Promise} Google Auth client
+ */
+async function createAuthClient() {
+  const {google} = require("googleapis");
+  const serviceAccount = require("./service-account-key.json");
+
+  const auth = new google.auth.GoogleAuth({
+    credentials: serviceAccount,
+    scopes: [
+      "https://www.googleapis.com/auth/calendar",
+      "https://www.googleapis.com/auth/calendar.events",
+    ],
+  });
+
+  return auth.getClient();
+}
 
 // Function triggered when booking status changes to 'confirmed'
 exports.createMeetingOnBookingConfirmed = onDocumentUpdated(
@@ -28,6 +37,11 @@ exports.createMeetingOnBookingConfirmed = onDocumentUpdated(
       const afterData = event.data.after.data();
       const bookingId = event.params.bookingId;
 
+      console.log("Function triggered for booking:", bookingId);
+      console.log("Before status:", beforeData?.status);
+      console.log("After status:", afterData?.status);
+      console.log("Has meeting link:", !!afterData?.meetingLink);
+
       // Only proceed if status changed to 'confirmed' and no meeting link
       if (afterData.status === "confirmed" &&
         beforeData.status !== "confirmed" &&
@@ -35,68 +49,108 @@ exports.createMeetingOnBookingConfirmed = onDocumentUpdated(
         try {
           console.log(`Creating meeting for booking: ${bookingId}`);
 
+          const {google} = require("googleapis");
+          const moment = require("moment");
+
           // Set up authenticated client
-          const authClient = await auth.getClient();
-          google.options({auth: authClient});
+          const authClient = await createAuthClient();
+          const calendar = google.calendar({version: "v3", auth: authClient});
 
           // Calculate meeting times
-          const startTime = moment(afterData.dateTime);
-          const endTime = startTime.clone().add(1, "hour"); // 1 hour duration
+          const startTime = moment(afterData.preferredTime);
+          const endTime = startTime.clone().add(1, "hour");
 
           // Create calendar event with Google Meet
           const event = {
-            summary: `Health Consultation - ${afterData.patientName}`,
-            description: `Service: ${afterData.serviceType}\n` +
-              `Notes: ${afterData.notes || "N/A"}`,
+            summary: `Health Consultation - ${afterData.firstName} ` +
+              `${afterData.lastName}`,
+            description: `Service: ` +
+              `${afterData.selectedServices?.[0]?.title || "Consultation"}\n` +
+              `Patient: ${afterData.firstName} ${afterData.lastName}\n` +
+              `Email: ${afterData.email}\n` +
+              `Phone: ${afterData.phone}\n` +
+              `Notes: ${afterData.specialRequests || "N/A"}`,
             start: {
               dateTime: startTime.toISOString(),
-              timeZone: "UTC",
+              timeZone: "Asia/Kolkata",
             },
             end: {
               dateTime: endTime.toISOString(),
-              timeZone: "UTC",
+              timeZone: "Asia/Kolkata",
             },
-            attendees: [
-              {email: afterData.userEmail},
-              {email: serviceAccount.client_email}, // Your admin email
-            ],
+            // Users will get meeting link via your app instead
             conferenceData: {
               createRequest: {
-                requestId: bookingId, // Unique request ID
-                conferenceSolutionKey: {
-                  type: "hangoutsMeet",
-                },
+                requestId: `meet-${bookingId}-${Date.now()}`,
+                conferenceSolutionKey: {type: "hangoutsMeet"},
               },
+            },
+            reminders: {
+              useDefault: false,
+              overrides: [
+                {method: "email", minutes: 24 * 60},
+                {method: "popup", minutes: 30},
+              ],
             },
           };
 
-          // Insert event into calendar
+          console.log("Inserting calendar event with Google Meet...");
+
+          // Insert event with conference data
           const response = await calendar.events.insert({
             calendarId: "primary",
             resource: event,
             conferenceDataVersion: 1,
-            sendUpdates: "all", // Send invites to all attendees
+            sendUpdates: "all",
           });
 
           console.log("Calendar event created:", response.data.id);
+          console.log("Conference data:",
+              JSON.stringify(response.data.conferenceData, null, 2));
 
-          // Extract meeting link
-          const meetingLink =
-            response.data.conferenceData?.entryPoints?.[0]?.uri;
+          // Extract Google Meet link with multiple fallback options
+          let meetingLink = null;
+
+          if (response.data.conferenceData) {
+            // Try to get the video entry point
+            const videoEntry = response.data.conferenceData.entryPoints?.find(
+                (ep) => ep.entryPointType === "video",
+            );
+            if (videoEntry) {
+              meetingLink = videoEntry.uri;
+            }
+          }
+
+          // Fallback to hangoutLink
+          if (!meetingLink && response.data.hangoutLink) {
+            meetingLink = response.data.hangoutLink;
+          }
+
+          // Final fallback using conference ID
+          if (!meetingLink && response.data.conferenceData?.conferenceId) {
+            meetingLink = `https://meet.google.com/${response.data.conferenceData.conferenceId}`;
+          }
 
           if (!meetingLink) {
+            console.error("No meeting link found in response:",
+                JSON.stringify(response.data, null, 2));
             throw new Error("Failed to create Google Meet link");
           }
 
+          console.log("Google Meet link created:", meetingLink);
+
           // Update booking document with meeting details
-          await admin.firestore().collection("bookings").doc(bookingId).update({
+          const updateData = {
             meetingLink: meetingLink,
             calendarEventId: response.data.id,
             meetingCreatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          });
+            conferenceId: response.data.conferenceData?.conferenceId || null,
+          };
 
-          console.log(`Meeting created successfully for booking ` +
-            `${bookingId}: ${meetingLink}`);
+          await admin.firestore().collection("bookings")
+              .doc(bookingId).update(updateData);
+
+          console.log(`Meeting created successfully: ${meetingLink}`);
 
           return {
             success: true,
@@ -107,13 +161,17 @@ exports.createMeetingOnBookingConfirmed = onDocumentUpdated(
           console.error("Error creating meeting:", error);
 
           // Update booking with error status
-          await admin.firestore().collection("bookings").doc(bookingId).update({
+          const errorData = {
             meetingError: error.message,
             meetingErrorAt: admin.firestore.FieldValue.serverTimestamp(),
-          });
+          };
+          await admin.firestore().collection("bookings")
+              .doc(bookingId).update(errorData);
 
           throw error;
         }
+      } else {
+        console.log("Conditions not met - skipping meeting creation");
       }
 
       return null;
@@ -129,49 +187,68 @@ exports.createMeetingManually = onRequest(async (req, res) => {
       return res.status(400).json({error: "bookingId is required"});
     }
 
+    console.log("Manual trigger for booking:", bookingId);
+
     // Get booking data
     const bookingDoc = await admin.firestore()
         .collection("bookings").doc(bookingId).get();
 
     if (!bookingDoc.exists) {
+      console.log("Booking not found:", bookingId);
       return res.status(404).json({error: "Booking not found"});
     }
 
     const bookingData = bookingDoc.data();
+    console.log("Booking data found:",
+        bookingData.firstName, bookingData.lastName);
 
-    // Trigger the same logic
-    const authClient = await auth.getClient();
-    google.options({auth: authClient});
+    const {google} = require("googleapis");
+    const moment = require("moment");
 
-    const startTime = moment(bookingData.dateTime);
+    // Create auth client
+    const authClient = await createAuthClient();
+    const calendar = google.calendar({version: "v3", auth: authClient});
+
+    const startTime = moment(bookingData.preferredTime);
     const endTime = startTime.clone().add(1, "hour");
 
+    // Create calendar event with Google Meet
     const event = {
-      summary: `Health Consultation - ${bookingData.patientName}`,
-      description: `Service: ${bookingData.serviceType}\n` +
-        `Notes: ${bookingData.notes || "N/A"}`,
+      summary: `Health Consultation - ${bookingData.firstName} ` +
+        `${bookingData.lastName}`,
+      description: `Service: ` +
+        `${bookingData.selectedServices?.[0]?.title || "Consultation"}\n` +
+        `Patient: ${bookingData.firstName} ${bookingData.lastName}\n` +
+        `Email: ${bookingData.email}\n` +
+        `Phone: ${bookingData.phone}\n` +
+        `Notes: ${bookingData.specialRequests || "N/A"}`,
       start: {
         dateTime: startTime.toISOString(),
-        timeZone: "UTC",
+        timeZone: "Asia/Kolkata",
       },
       end: {
         dateTime: endTime.toISOString(),
         timeZone: "UTC",
       },
-      attendees: [
-        {email: bookingData.userEmail},
-        {email: serviceAccount.client_email},
-      ],
+      // Users will get meeting link via your app instead
       conferenceData: {
         createRequest: {
           requestId: `manual-${bookingId}-${Date.now()}`,
-          conferenceSolutionKey: {
-            type: "hangoutsMeet",
-          },
+          conferenceSolutionKey: {type: "hangoutsMeet"},
         },
+      },
+      reminders: {
+        useDefault: false,
+        overrides: [
+          {method: "email", minutes: 24 * 60},
+          {method: "popup", minutes: 30},
+        ],
       },
     };
 
+    console.log("Creating calendar event with Google Meet...");
+
+    // Insert event with conference data
     const response = await calendar.events.insert({
       calendarId: "primary",
       resource: event,
@@ -179,21 +256,89 @@ exports.createMeetingManually = onRequest(async (req, res) => {
       sendUpdates: "all",
     });
 
-    const meetingLink = response.data.conferenceData?.entryPoints?.[0]?.uri;
+    console.log("Calendar event created:", response.data.id);
 
-    await admin.firestore().collection("bookings").doc(bookingId).update({
+    // Extract Google Meet link with multiple fallback options
+    let meetingLink = null;
+
+    if (response.data.conferenceData) {
+      const videoEntry = response.data.conferenceData.entryPoints?.find(
+          (ep) => ep.entryPointType === "video",
+      );
+      if (videoEntry) {
+        meetingLink = videoEntry.uri;
+      }
+    }
+
+    if (!meetingLink && response.data.hangoutLink) {
+      meetingLink = response.data.hangoutLink;
+    }
+
+    if (!meetingLink && response.data.conferenceData?.conferenceId) {
+      meetingLink = `https://meet.google.com/${response.data.conferenceData.conferenceId}`;
+    }
+
+    if (!meetingLink) {
+      console.error("No meeting link created");
+      return res.status(500).json({
+        error: "Failed to create meeting link",
+        debug: response.data,
+      });
+    }
+
+    console.log("Google Meet link created:", meetingLink);
+
+    const updateData = {
       meetingLink: meetingLink,
       calendarEventId: response.data.id,
       meetingCreatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
+      conferenceId: response.data.conferenceData?.conferenceId || null,
+    };
+
+    await admin.firestore().collection("bookings")
+        .doc(bookingId).update(updateData);
+
+    console.log("Meeting created successfully:", meetingLink);
 
     res.json({
       success: true,
       meetingLink: meetingLink,
       calendarEventId: response.data.id,
+      conferenceId: response.data.conferenceData?.conferenceId,
     });
   } catch (error) {
     console.error("Error in manual trigger:", error);
+    res.status(500).json({
+      error: error.message,
+      details: error.response?.data || error.message,
+    });
+  }
+});
+
+// Debug function to test Firestore access
+exports.debugFirestore = onRequest(async (req, res) => {
+  try {
+    console.log("Testing Firestore access...");
+
+    const bookingsSnapshot = await admin.firestore()
+        .collection("bookings").limit(5).get();
+    console.log("Bookings found:", bookingsSnapshot.size);
+
+    const bookings = [];
+    bookingsSnapshot.forEach((doc) => {
+      bookings.push({
+        id: doc.id,
+        data: doc.data(),
+      });
+    });
+
+    res.json({
+      success: true,
+      bookingsCount: bookingsSnapshot.size,
+      bookings: bookings,
+    });
+  } catch (error) {
+    console.error("Firestore test failed:", error);
     res.status(500).json({error: error.message});
   }
 });

@@ -33,6 +33,7 @@ import { useNavigate } from 'react-router-dom';
 import ServicesManagement from '../components/admin/ServicesManagement';
 import BookingsManagement from '../components/admin/BookingsManagement';
 import CalendarManagement from '../components/admin/CalendarManagement';
+import GoogleCalendarConfig from '../components/GoogleCalendarConfig';
 import { bookingsDB } from '../services/firebase/database';
 
 const { Header, Sider, Content } = Layout;
@@ -140,10 +141,13 @@ const AdminDashboard = () => {
         );
       case 'settings':
         return (
-          <Card>
-            <Title level={3}>System Settings</Title>
-            <Text type="secondary">Settings management functionality coming soon...</Text>
-          </Card>
+          <div>
+            <Card style={{ marginBottom: '24px' }}>
+              <Title level={3}>System Settings</Title>
+              <Text type="secondary">Manage system configurations and integrations.</Text>
+            </Card>
+            <GoogleCalendarConfig onConfigChange={(config) => console.log('Calendar config updated:', config)} />
+          </div>
         );
       default:
         return (
