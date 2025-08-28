@@ -19,7 +19,9 @@ const COLLECTIONS = {
   SERVICES: 'services',
   CATEGORIES: 'categories',
   USERS: 'users',
-  BOOKINGS: 'bookings'
+  BOOKINGS: 'bookings',
+  CALENDAR_CONFIG: 'calendar_config',
+  TIME_SLOTS: 'time_slots'
 };
 
 // Services CRUD Operations
@@ -265,6 +267,499 @@ export const categoriesDB = {
       return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } : null;
     } catch (error) {
       console.error('Error fetching category:', error);
+      throw error;
+    }
+  }
+};
+
+// Bookings CRUD Operations
+export const bookingsDB = {
+  // Get all bookings
+  getAll: async () => {
+    try {
+      const querySnapshot = await getDocs(collection(db, COLLECTIONS.BOOKINGS));
+      const bookings = querySnapshot.docs.map(doc => ({ 
+        id: doc.id, 
+        ...doc.data() 
+      }));
+      return bookings;
+    } catch (error) {
+      console.error('Error fetching bookings:', error);
+      throw error;
+    }
+  },
+
+  // Get booking by ID
+  getById: async (id) => {
+    try {
+      const docRef = doc(db, COLLECTIONS.BOOKINGS, id);
+      const docSnap = await getDoc(docRef);
+      return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } : null;
+    } catch (error) {
+      console.error('Error fetching booking:', error);
+      throw error;
+    }
+  },
+
+  // Get bookings by user ID
+  getByUserId: async (userId) => {
+    try {
+      const q = query(
+        collection(db, COLLECTIONS.BOOKINGS),
+        where('userId', '==', userId),
+        orderBy('createdAt', 'desc')
+      );
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error) {
+      console.error('Error fetching user bookings:', error);
+      throw error;
+    }
+  },
+
+  // Add new booking
+  add: async (bookingData) => {
+    try {
+      // Validate required fields
+      if (!bookingData.userId) {
+        throw new Error('User ID is required');
+      }
+      if (!bookingData.firstName || !bookingData.lastName) {
+        throw new Error('Name is required');
+      }
+      if (!bookingData.email || !bookingData.phone) {
+        throw new Error('Contact information is required');
+      }
+      if (!bookingData.preferredDate || !bookingData.preferredTime) {
+        throw new Error('Appointment date and time are required');
+      }
+
+      // Clean and structure the booking data
+      const cleanBookingData = {
+        // User Information
+        userId: bookingData.userId,
+        firstName: bookingData.firstName.trim(),
+        lastName: bookingData.lastName.trim(),
+        email: bookingData.email.toLowerCase().trim(),
+        phone: bookingData.phone.trim(),
+        address: bookingData.address?.trim() || '',
+        emergencyContact: bookingData.emergencyContact?.trim() || '',
+
+        // Health Information
+        age: parseInt(bookingData.age) || null,
+        gender: bookingData.gender || '',
+        medicalHistory: bookingData.medicalHistory?.trim() || '',
+        currentConcerns: bookingData.currentConcerns?.trim() || '',
+        previousTherapy: bookingData.previousTherapy || '',
+
+        // Appointment Details
+        preferredDate: bookingData.preferredDate, // Should be a date object or timestamp
+        preferredTime: bookingData.preferredTime, // Should be a date object or timestamp
+        sessionType: bookingData.sessionType || '',
+        alternativeSlots: bookingData.alternativeSlots || [],
+        specialRequests: bookingData.specialRequests?.trim() || '',
+
+        // Selected Services
+        selectedServices: bookingData.selectedServices || [],
+        
+        // Booking Status and Metadata
+        status: 'pending', // pending, confirmed, completed, cancelled
+        confirmationNumber: bookingData.confirmationNumber || '',
+        termsAccepted: bookingData.termsAccepted || false,
+        
+        // Timestamps
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      const docRef = await addDoc(collection(db, COLLECTIONS.BOOKINGS), cleanBookingData);
+      return { id: docRef.id, ...cleanBookingData };
+    } catch (error) {
+      console.error('Error adding booking:', error);
+      throw error;
+    }
+  },
+
+  // Update booking
+  update: async (id, bookingData) => {
+    try {
+      const docRef = doc(db, COLLECTIONS.BOOKINGS, id);
+      const updateData = {
+        ...bookingData,
+        updatedAt: new Date()
+      };
+      await updateDoc(docRef, updateData);
+      return true;
+    } catch (error) {
+      console.error('Error updating booking:', error);
+      throw error;
+    }
+  },
+
+  // Update booking status
+  updateStatus: async (id, status, notes = '') => {
+    try {
+      const docRef = doc(db, COLLECTIONS.BOOKINGS, id);
+      const updateData = {
+        status: status,
+        statusNotes: notes,
+        updatedAt: new Date()
+      };
+      
+      if (status === 'confirmed') {
+        updateData.confirmedAt = new Date();
+      } else if (status === 'completed') {
+        updateData.completedAt = new Date();
+      } else if (status === 'cancelled') {
+        updateData.cancelledAt = new Date();
+      }
+      
+      await updateDoc(docRef, updateData);
+      return true;
+    } catch (error) {
+      console.error('Error updating booking status:', error);
+      throw error;
+    }
+  },
+
+  // Delete booking
+  delete: async (id) => {
+    try {
+      await deleteDoc(doc(db, COLLECTIONS.BOOKINGS, id));
+      return true;
+    } catch (error) {
+      console.error('Error deleting booking:', error);
+      throw error;
+    }
+  },
+
+  // Get bookings by status
+  getByStatus: async (status) => {
+    try {
+      const q = query(
+        collection(db, COLLECTIONS.BOOKINGS),
+        where('status', '==', status),
+        orderBy('createdAt', 'desc')
+      );
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error) {
+      console.error('Error fetching bookings by status:', error);
+      throw error;
+    }
+  },
+
+  // Get bookings for a specific date range
+  getByDateRange: async (startDate, endDate) => {
+    try {
+      const q = query(
+        collection(db, COLLECTIONS.BOOKINGS),
+        where('preferredDate', '>=', startDate),
+        where('preferredDate', '<=', endDate),
+        orderBy('preferredDate', 'asc')
+      );
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error) {
+      console.error('Error fetching bookings by date range:', error);
+      throw error;
+    }
+  }
+};
+
+// Calendar Configuration CRUD Operations
+export const calendarConfigDB = {
+  // Get calendar configuration
+  getConfig: async () => {
+    try {
+      const configRef = doc(db, COLLECTIONS.CALENDAR_CONFIG, 'main');
+      const docSnap = await getDoc(configRef);
+      if (docSnap.exists()) {
+        return { id: docSnap.id, ...docSnap.data() };
+      } else {
+        // Return default configuration if none exists
+        return {
+          id: 'main',
+          businessHours: {
+            monday: { enabled: true, start: '09:00', end: '17:00' },
+            tuesday: { enabled: true, start: '09:00', end: '17:00' },
+            wednesday: { enabled: true, start: '09:00', end: '17:00' },
+            thursday: { enabled: true, start: '09:00', end: '17:00' },
+            friday: { enabled: true, start: '09:00', end: '17:00' },
+            saturday: { enabled: false, start: '09:00', end: '17:00' },
+            sunday: { enabled: false, start: '09:00', end: '17:00' }
+          },
+          slotDuration: 60, // minutes
+          bufferTime: 15, // minutes between appointments
+          advanceBookingDays: 30, // how many days in advance bookings are allowed
+          timezone: 'UTC'
+        };
+      }
+    } catch (error) {
+      console.error('Error fetching calendar config:', error);
+      throw error;
+    }
+  },
+
+  // Update calendar configuration
+  updateConfig: async (configData) => {
+    try {
+      const configRef = doc(db, COLLECTIONS.CALENDAR_CONFIG, 'main');
+      const updateData = {
+        ...configData,
+        updatedAt: new Date()
+      };
+      await setDoc(configRef, updateData, { merge: true });
+      return true;
+    } catch (error) {
+      console.error('Error updating calendar config:', error);
+      throw error;
+    }
+  }
+};
+
+// Time Slots CRUD Operations
+export const timeSlotsDB = {
+  // Get available time slots for a date range
+  getSlots: async (startDate, endDate) => {
+    try {
+      const q = query(
+        collection(db, COLLECTIONS.TIME_SLOTS),
+        where('date', '>=', startDate),
+        where('date', '<=', endDate)
+      );
+      const querySnapshot = await getDocs(q);
+      const slots = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      // Sort by date and time in JavaScript
+      return slots.sort((a, b) => {
+        const dateCompare = a.date.localeCompare(b.date);
+        if (dateCompare === 0) {
+          return a.time.localeCompare(b.time);
+        }
+        return dateCompare;
+      });
+    } catch (error) {
+      console.error('Error fetching time slots:', error);
+      throw error;
+    }
+  },
+
+  // Get time slots for a specific date
+  getSlotsByDate: async (date) => {
+    try {
+      const dateStr = typeof date === 'string' ? date : date.toISOString().split('T')[0];
+      const q = query(
+        collection(db, COLLECTIONS.TIME_SLOTS),
+        where('date', '==', dateStr)
+      );
+      const querySnapshot = await getDocs(q);
+      const slots = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      // Sort by time in JavaScript instead of Firestore
+      return slots.sort((a, b) => a.time.localeCompare(b.time));
+    } catch (error) {
+      console.error('Error fetching slots by date:', error);
+      throw error;
+    }
+  },
+
+  // Create or update a time slot
+  upsertSlot: async (slotData) => {
+    try {
+      const slotId = `${slotData.date}_${slotData.time.replace(':', '')}`;
+      const slotRef = doc(db, COLLECTIONS.TIME_SLOTS, slotId);
+      
+      const cleanSlotData = {
+        date: slotData.date, // YYYY-MM-DD format
+        time: slotData.time, // HH:MM format
+        status: slotData.status || 'available', // available, booked, blocked
+        bookingId: slotData.bookingId || null,
+        patientName: slotData.patientName || null,
+        patientEmail: slotData.patientEmail || null,
+        serviceType: slotData.serviceType || null,
+        notes: slotData.notes || '',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      await setDoc(slotRef, cleanSlotData, { merge: true });
+      return { id: slotId, ...cleanSlotData };
+    } catch (error) {
+      console.error('Error upserting time slot:', error);
+      throw error;
+    }
+  },
+
+  // Block a time slot
+  blockSlot: async (date, time, reason = '') => {
+    try {
+      return await timeSlotsDB.upsertSlot({
+        date: date,
+        time: time,
+        status: 'blocked',
+        notes: reason
+      });
+    } catch (error) {
+      console.error('Error blocking time slot:', error);
+      throw error;
+    }
+  },
+
+  // Unblock/make available a time slot
+  unblockSlot: async (date, time) => {
+    try {
+      return await timeSlotsDB.upsertSlot({
+        date: date,
+        time: time,
+        status: 'available',
+        bookingId: null,
+        patientName: null,
+        patientEmail: null,
+        serviceType: null,
+        notes: ''
+      });
+    } catch (error) {
+      console.error('Error unblocking time slot:', error);
+      throw error;
+    }
+  },
+
+  // Book a time slot
+  bookSlot: async (date, time, bookingData) => {
+    try {
+      return await timeSlotsDB.upsertSlot({
+        date: date,
+        time: time,
+        status: 'booked',
+        bookingId: bookingData.bookingId,
+        patientName: bookingData.patientName,
+        patientEmail: bookingData.patientEmail,
+        serviceType: bookingData.serviceType,
+        notes: bookingData.notes || ''
+      });
+    } catch (error) {
+      console.error('Error booking time slot:', error);
+      throw error;
+    }
+  },
+
+  // Get booked slots for a date range (for calendar view)
+  getBookedSlots: async (startDate, endDate) => {
+    try {
+      const q = query(
+        collection(db, COLLECTIONS.TIME_SLOTS),
+        where('date', '>=', startDate),
+        where('date', '<=', endDate),
+        where('status', '==', 'booked')
+      );
+      const querySnapshot = await getDocs(q);
+      const slots = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      // Sort by date and time in JavaScript
+      return slots.sort((a, b) => {
+        const dateCompare = a.date.localeCompare(b.date);
+        if (dateCompare === 0) {
+          return a.time.localeCompare(b.time);
+        }
+        return dateCompare;
+      });
+    } catch (error) {
+      console.error('Error fetching booked slots:', error);
+      throw error;
+    }
+  },
+
+  // Get available slots for a date range
+  getAvailableSlots: async (startDate, endDate) => {
+    try {
+      const q = query(
+        collection(db, COLLECTIONS.TIME_SLOTS),
+        where('date', '>=', startDate),
+        where('date', '<=', endDate),
+        where('status', '==', 'available')
+      );
+      const querySnapshot = await getDocs(q);
+      const slots = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      // Sort by date and time in JavaScript
+      return slots.sort((a, b) => {
+        const dateCompare = a.date.localeCompare(b.date);
+        if (dateCompare === 0) {
+          return a.time.localeCompare(b.time);
+        }
+        return dateCompare;
+      });
+    } catch (error) {
+      console.error('Error fetching available slots:', error);
+      throw error;
+    }
+  },
+
+  // Generate time slots for a date based on business hours
+  generateSlotsForDate: async (date, businessHours, slotDuration = 60) => {
+    try {
+      const dateStr = typeof date === 'string' ? date : date.toISOString().split('T')[0];
+      const dayName = new Date(dateStr).toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+      const dayMap = {
+        'sun': 'sunday',
+        'mon': 'monday', 
+        'tue': 'tuesday',
+        'wed': 'wednesday',
+        'thu': 'thursday',
+        'fri': 'friday',
+        'sat': 'saturday'
+      };
+      
+      const fullDayName = dayMap[dayName];
+      const dayConfig = businessHours[fullDayName];
+      
+      if (!dayConfig || !dayConfig.enabled) {
+        return [];
+      }
+
+      const slots = [];
+      const [startHour, startMinute] = dayConfig.start.split(':').map(Number);
+      const [endHour, endMinute] = dayConfig.end.split(':').map(Number);
+      
+      let currentHour = startHour;
+      let currentMinute = startMinute;
+      
+      while (currentHour < endHour || (currentHour === endHour && currentMinute < endMinute)) {
+        const timeStr = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`;
+        
+        // Check if slot already exists
+        const existingSlots = await timeSlotsDB.getSlotsByDate(dateStr);
+        const slotExists = existingSlots.some(slot => slot.time === timeStr);
+        
+        if (!slotExists) {
+          const newSlot = await timeSlotsDB.upsertSlot({
+            date: dateStr,
+            time: timeStr,
+            status: 'available'
+          });
+          slots.push(newSlot);
+        }
+        
+        // Increment time by slot duration
+        currentMinute += slotDuration;
+        if (currentMinute >= 60) {
+          currentHour += Math.floor(currentMinute / 60);
+          currentMinute = currentMinute % 60;
+        }
+      }
+      
+      return slots;
+    } catch (error) {
+      console.error('Error generating slots for date:', error);
+      throw error;
+    }
+  },
+
+  // Delete a time slot
+  deleteSlot: async (date, time) => {
+    try {
+      const slotId = `${date}_${time.replace(':', '')}`;
+      await deleteDoc(doc(db, COLLECTIONS.TIME_SLOTS, slotId));
+      return true;
+    } catch (error) {
+      console.error('Error deleting time slot:', error);
       throw error;
     }
   }

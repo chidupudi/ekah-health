@@ -418,7 +418,22 @@ const AnimatedSignIn = () => {
         // Login with email and password
         await login(formData.email, formData.password);
         message.success('Welcome back!');
-        navigate('/'); // Redirect to home page after login
+        
+        // Check for intended service booking
+        const intendedBooking = sessionStorage.getItem('intendedServiceBooking');
+        if (intendedBooking) {
+          sessionStorage.removeItem('intendedServiceBooking');
+          const service = JSON.parse(intendedBooking);
+          // Service is already cleaned (no React elements)
+          navigate('/booking', { 
+            state: { 
+              service: service,
+              selectedServices: [service]
+            } 
+          });
+        } else {
+          navigate('/'); // Redirect to home page after login
+        }
       } else {
         // Register with email and password
         await register(formData.email, formData.password, formData.name);
@@ -438,7 +453,22 @@ const AnimatedSignIn = () => {
       setLoading(true);
       await loginWithGoogle();
       message.success('Signed in with Google successfully!');
-      navigate('/'); // Redirect to home page after Google sign-in
+      
+      // Check for intended service booking
+      const intendedBooking = sessionStorage.getItem('intendedServiceBooking');
+      if (intendedBooking) {
+        sessionStorage.removeItem('intendedServiceBooking');
+        const service = JSON.parse(intendedBooking);
+        // Service is already cleaned (no React elements)
+        navigate('/booking', { 
+          state: { 
+            service: service,
+            selectedServices: [service]
+          } 
+        });
+      } else {
+        navigate('/'); // Redirect to home page after Google sign-in
+      }
     } catch (error) {
       // Error is handled by the AuthContext and set to the error state
       message.error(error.message || 'An error occurred during Google sign-in');

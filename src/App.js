@@ -17,6 +17,8 @@ import { AdminAuthProvider } from './contexts/AdminAuthContext';
 import TermsConditions from './pages/TermsConditions';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
+import BookingFlow from './pages/BookingFlow';
+import MyBookings from './pages/MyBookings';
 
 const PageWrapper = ({ children }) => (
   <>
@@ -78,31 +80,8 @@ const App = () => {
               <Route path="/privacy" element={<PageWrapper><PrivacyPolicy /></PageWrapper>} />
               <Route path="/terms" element={<PageWrapper><TermsConditions /></PageWrapper>} />
               <Route path="/privacy-policy" element={<PageWrapper><PrivacyPolicy /></PageWrapper>} />
-              <Route path="/booking" element={
-                <PageWrapper>
-                  <div style={{ 
-                    padding: '64px 32px', 
-                    textAlign: 'center',
-                    background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #f8fafc 100%)',
-                    minHeight: '80vh',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexDirection: 'column'
-                  }}>
-                    <h2 style={{ 
-                      fontSize: '2.5rem',
-                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      marginBottom: '16px'
-                    }}>
-                      Booking Page
-                    </h2>
-                    <p style={{ color: '#6b7280', fontSize: '1.2rem' }}>Coming Soon</p>
-                  </div>
-                </PageWrapper>
-              } />
+              <Route path="/booking" element={<PageWrapper><BookingFlow /></PageWrapper>} />
+              <Route path="/my-bookings" element={<PageWrapper><MyBookings /></PageWrapper>} />
               <Route path="/contact" element={
                 <PageWrapper>
                   <div style={{ 

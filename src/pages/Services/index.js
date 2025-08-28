@@ -17,12 +17,16 @@ import { useTheme } from '../../components/ParticleBackground';
 import ServicesHero from './components/ServicesHero';
 import CallToAction from './components/CallToAction';
 import { servicesDB, categoriesDB } from '../../services/firebase/database';
+import { useAuth } from '../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import './Services.css';
 
 const { Title, Text, Paragraph } = Typography;
 
 const Services = () => {
   const { theme } = useTheme();
+  const { currentUser } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('consultation');
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [selectedCourses, setSelectedCourses] = useState([]);
@@ -120,14 +124,6 @@ const Services = () => {
     return () => window.removeEventListener('focus', handleFocus);
   }, []);
 
-  // Add periodic refresh every 2 minutes to ensure data synchronization
-  useEffect(() => {
-    const interval = setInterval(() => {
-      loadData();
-    }, 120000); // 2 minutes
-
-    return () => clearInterval(interval);
-  }, []);
 
   const getThemeStyles = () => {
     if (theme === 'dark') {
@@ -188,6 +184,45 @@ const Services = () => {
       } else {
         return [...prev, serviceId];
       }
+    });
+  };
+
+  const handleBookNow = (service) => {
+    // Check if user is logged in
+    if (!currentUser) {
+      // Store the intended service booking in session storage for after login
+      if (service) {
+        // Remove React elements before storing
+        const serializableService = {
+          ...service,
+          icon: undefined // Remove the React element
+        };
+        sessionStorage.setItem('intendedServiceBooking', JSON.stringify(serializableService));
+      }
+      // Redirect to sign-in page
+      navigate('/signin');
+      return;
+    }
+    
+    // Clean service data by removing React elements
+    const cleanService = service ? {
+      ...service,
+      icon: undefined // Remove React element
+    } : null;
+    
+    const cleanSelectedServices = selectedCourses.length > 0 
+      ? servicesData.filter(s => selectedCourses.includes(s.id)).map(s => ({
+          ...s,
+          icon: undefined // Remove React elements
+        }))
+      : cleanService ? [cleanService] : [];
+    
+    // If user is logged in, proceed to booking flow
+    navigate('/booking', { 
+      state: { 
+        service: cleanService,
+        selectedServices: cleanSelectedServices
+      } 
     });
   };
 
@@ -473,7 +508,7 @@ const Services = () => {
           </div>
         </div>
 
-        {/* Know More Button */}
+        {/* Book Now Button */}
         <Button
           type="primary"
           block
@@ -486,8 +521,9 @@ const Services = () => {
             fontWeight: '600'
           }}
           icon={<InfoCircleOutlined />}
+          onClick={() => handleBookNow(service)}
         >
-          Know more
+          Book Now
         </Button>
       </div>
     );
@@ -521,7 +557,7 @@ const Services = () => {
               </Text>
               <br />
               <Text style={{ color: themeStyles.textSecondary, fontSize: '12px' }}>
-                Click "Know more" to see detailed information
+                Click "Book Now" to start your booking
               </Text>
             </div>
             <Button 
@@ -532,6 +568,7 @@ const Services = () => {
                 borderRadius: '8px'
               }}
               icon={<ArrowRightOutlined />}
+              onClick={() => handleBookNow(null)} // Pass null since multiple services are selected
             >
               Get Started
             </Button>

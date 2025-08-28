@@ -1,0 +1,28 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow read/write access to all documents for authenticated users
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Allow read access to calendar configuration for all users
+    match /calendar_config/{document} {
+      allow read: if true;
+    }
+    
+    // Allow read access to time slots for all users
+    match /time_slots/{document} {
+      allow read: if true;
+    }
+    
+    // Allow read access to services and categories for all users
+    match /services/{document} {
+      allow read: if true;
+    }
+    
+    match /categories/{document} {
+      allow read: if true;
+    }
+  }
+}

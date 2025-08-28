@@ -25,11 +25,15 @@ import {
   BellOutlined,
   EyeOutlined,
   EditOutlined,
-  PlusOutlined
+  PlusOutlined,
+  CalendarOutlined
 } from '@ant-design/icons';
 import { useAdminAuth } from '../contexts/AdminAuthContext';
 import { useNavigate } from 'react-router-dom';
 import ServicesManagement from '../components/admin/ServicesManagement';
+import BookingsManagement from '../components/admin/BookingsManagement';
+import CalendarManagement from '../components/admin/CalendarManagement';
+import { bookingsDB } from '../services/firebase/database';
 
 const { Header, Sider, Content } = Layout;
 const { Title, Text } = Typography;
@@ -88,6 +92,18 @@ const AdminDashboard = () => {
       label: 'Dashboard',
     },
     {
+      key: 'calendar',
+      icon: <CalendarOutlined />,
+      label: 'Calendar',
+      disabled: !hasPermission('manage_calendar'),
+    },
+    {
+      key: 'bookings',
+      icon: <BellOutlined />,
+      label: 'Bookings',
+      disabled: !hasPermission('view_bookings'),
+    },
+    {
       key: 'services',
       icon: <ShoppingOutlined />,
       label: 'Services',
@@ -109,6 +125,10 @@ const AdminDashboard = () => {
 
   const renderContent = () => {
     switch (selectedMenu) {
+      case 'calendar':
+        return <CalendarManagement />;
+      case 'bookings':
+        return <BookingsManagement />;
       case 'services':
         return <ServicesManagement />;
       case 'users':

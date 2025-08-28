@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { HeartOutlined, UserOutlined, LoginOutlined, LogoutOutlined } from '@ant-design/icons';
+import { HeartOutlined, UserOutlined, LoginOutlined, LogoutOutlined, CalendarOutlined } from '@ant-design/icons';
 import { Button, Avatar, Dropdown, Menu, Tooltip } from 'antd';
 import { useTheme } from './ParticleBackground'; // Corrected import path
 import ThemeToggle from './ThemeToggle';
@@ -97,6 +97,15 @@ const MainHeader = () => {
       >
         Profile
       </Menu.Item>
+      <Menu.Item 
+        key="my-bookings" 
+        icon={<CalendarOutlined style={{ color: themeStyles.menuText }} />} 
+        onClick={() => navigate('/my-bookings')}
+        style={{ color: themeStyles.menuText }}
+      >
+        My Bookings
+      </Menu.Item>
+      <Menu.Divider />
       <Menu.Item 
         key="logout" 
         icon={<LogoutOutlined style={{ color: themeStyles.menuText }} />} 
