@@ -26,14 +26,11 @@ import {
   EyeOutlined,
   EditOutlined,
   PlusOutlined,
-  CalendarOutlined
 } from '@ant-design/icons';
 import { useAdminAuth } from '../contexts/AdminAuthContext';
 import { useNavigate } from 'react-router-dom';
 import ServicesManagement from '../components/admin/ServicesManagement';
 import BookingsManagement from '../components/admin/BookingsManagement';
-import CalendarManagement from '../components/admin/CalendarManagement';
-import GoogleCalendarConfig from '../components/GoogleCalendarConfig';
 import { bookingsDB } from '../services/firebase/database';
 
 const { Header, Sider, Content } = Layout;
@@ -93,12 +90,6 @@ const AdminDashboard = () => {
       label: 'Dashboard',
     },
     {
-      key: 'calendar',
-      icon: <CalendarOutlined />,
-      label: 'Calendar',
-      disabled: !hasPermission('manage_calendar'),
-    },
-    {
       key: 'bookings',
       icon: <BellOutlined />,
       label: 'Bookings',
@@ -126,8 +117,6 @@ const AdminDashboard = () => {
 
   const renderContent = () => {
     switch (selectedMenu) {
-      case 'calendar':
-        return <CalendarManagement />;
       case 'bookings':
         return <BookingsManagement />;
       case 'services':
@@ -141,13 +130,10 @@ const AdminDashboard = () => {
         );
       case 'settings':
         return (
-          <div>
-            <Card style={{ marginBottom: '24px' }}>
-              <Title level={3}>System Settings</Title>
-              <Text type="secondary">Manage system configurations and integrations.</Text>
-            </Card>
-            <GoogleCalendarConfig onConfigChange={(config) => console.log('Calendar config updated:', config)} />
-          </div>
+          <Card>
+            <Title level={3}>System Settings</Title>
+            <Text type="secondary">Basic system settings coming soon...</Text>
+          </Card>
         );
       default:
         return (

@@ -482,7 +482,6 @@ const ServicesManagement = () => {
                   type="primary" 
                   icon={<PlusOutlined />}
                   onClick={handleAddService}
-                  disabled={services.length === 0}
                 >
                   Add Service
                 </Button>

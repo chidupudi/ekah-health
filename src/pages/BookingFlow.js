@@ -41,7 +41,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../components/ParticleBackground';
 import { bookingsDB, timeSlotsDB } from '../services/firebase/database';
 import CalendarPicker from '../components/CalendarPicker';
-import GoogleCalendarPicker from '../components/GoogleCalendarPicker';
 import moment from 'moment';
 
 const { Title, Text, Paragraph } = Typography;
@@ -61,8 +60,6 @@ const BookingFlow = () => {
   const [bookingComplete, setBookingComplete] = useState(false);
   const [confirmationNumber, setConfirmationNumber] = useState('');
   const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
-  const [useGoogleCalendar, setUseGoogleCalendar] = useState(false);
-
   // Get service data from navigation state
   const serviceData = location.state?.service;
   const selectedServices = location.state?.selectedServices || [serviceData].filter(Boolean);
@@ -76,13 +73,6 @@ const BookingFlow = () => {
     if (!serviceData && selectedServices.length === 0) {
       navigate('/services');
       return;
-    }
-    
-    // Check if Google Calendar is configured
-    const config = localStorage.getItem('googleCalendarConfig');
-    if (config) {
-      const parsedConfig = JSON.parse(config);
-      setUseGoogleCalendar(parsedConfig.enabled);
     }
   }, [currentUser, serviceData, selectedServices, navigate]);
 
@@ -469,39 +459,20 @@ const BookingFlow = () => {
       
       {/* Calendar Picker */}
       <Col xs={24}>
-{useGoogleCalendar ? (
-          <GoogleCalendarPicker
-            onSlotSelect={(slotInfo) => {
-              setSelectedTimeSlot(slotInfo);
-              // Update form data with the selected slot
-              setFormData(prev => ({
-                ...prev,
-                preferredDate: slotInfo.dateTime,
-                preferredTime: slotInfo.dateTime,
-                selectedSlot: slotInfo
-              }));
-            }}
-            selectedSlot={selectedTimeSlot}
-            disabled={loading}
-            duration={60} // Default 60 minutes appointment duration
-            workingHours={{ start: '09:00', end: '17:00' }}
-          />
-        ) : (
-          <CalendarPicker
-            onSlotSelect={(slotInfo) => {
-              setSelectedTimeSlot(slotInfo);
-              // Update form data with the selected slot
-              setFormData(prev => ({
-                ...prev,
-                preferredDate: slotInfo.dateTime,
-                preferredTime: slotInfo.dateTime,
-                selectedSlot: slotInfo
-              }));
-            }}
-            selectedSlot={selectedTimeSlot}
-            disabled={loading}
-          />
-        )}
+        <CalendarPicker
+          onSlotSelect={(slotInfo) => {
+            setSelectedTimeSlot(slotInfo);
+            // Update form data with the selected slot
+            setFormData(prev => ({
+              ...prev,
+              preferredDate: slotInfo.dateTime,
+              preferredTime: slotInfo.dateTime,
+              selectedSlot: slotInfo
+            }));
+          }}
+          selectedSlot={selectedTimeSlot}
+          disabled={loading}
+        />
       </Col>
       
       <Col xs={24}>
@@ -512,9 +483,6 @@ const BookingFlow = () => {
         >
           <Radio.Group>
             <Space direction="vertical">
-              <Radio value="online" style={{ color: themeStyles.textPrimary }}>
-                Online Session (Video Call)
-              </Radio>
               <Radio value="in-person" style={{ color: themeStyles.textPrimary }}>
                 In-Person Session
               </Radio>
