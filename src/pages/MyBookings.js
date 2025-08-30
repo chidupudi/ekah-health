@@ -1,3 +1,4 @@
+// src/pages/MyBookings.js - Updated with Jitsi Integration
 import React, { useState, useEffect } from 'react';
 import {
   Card,
@@ -15,7 +16,8 @@ import {
   Badge,
   Divider,
   Alert,
-  Statistic
+  Statistic,
+  notification
 } from 'antd';
 import {
   CalendarOutlined,
@@ -28,12 +30,16 @@ import {
   DesktopOutlined,
   HeartOutlined,
   EnvironmentOutlined,
-  UserOutlined
+  UserOutlined,
+  CopyOutlined,
+  WhatsAppOutlined,
+  DownloadOutlined
 } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 import { bookingsDB } from '../services/firebase/database';
 import { useTheme } from '../components/ParticleBackground';
 import { useNavigate } from 'react-router-dom';
+import { JitsiMeetingRoom, JitsiPreJoin } from '../components/JitsiMeeting';
 import moment from 'moment';
 
 const { Title, Text, Paragraph } = Typography;
@@ -43,6 +49,11 @@ const MyBookings = () => {
   const [loading, setLoading] = useState(true);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
+  const [showJitsiMeeting, setShowJitsiMeeting] = useState(false);
+  const [showPreJoin, setShowPreJoin] = useState(false);
+  const [meetingRoomName, setMeetingRoomName] = useState('');
+  const [patientName, setPatientName] = useState('');
+  const [meetingPassword, setMeetingPassword] = useState('');
   const { currentUser } = useAuth();
   const { theme } = useTheme();
   const navigate = useNavigate();
@@ -134,9 +145,93 @@ const MyBookings = () => {
     return icons[type] || <DesktopOutlined />;
   };
 
+  // Generate meeting room name from booking
+  const generateMeetingRoom = (booking) => {
+    const sanitizedName = booking.firstName.replace(/[^a-zA-Z0-9]/g, '');
+    return `EkahHealth-${booking.confirmationNumber}-${sanitizedName}`;
+  };
+
+  // Join video meeting
+  const handleJoinMeeting = (booking) => {
+    if (booking.meetingURL) {
+      // If meeting URL exists, open it
+      window.open(booking.meetingURL, '_blank');
+    } else {
+      // Generate meeting room and show pre-join
+      const roomName = generateMeetingRoom(booking);
+      setMeetingRoomName(roomName);
+      setPatientName(`${booking.firstName} ${booking.lastName}`);
+      setMeetingPassword(''); // No password for generated rooms
+      setSelectedBooking(booking);
+      setShowPreJoin(true);
+    }
+  };
+
+  // Handle pre-join completion
+  const handlePreJoinComplete = (userName) => {
+    setPatientName(userName);
+    setShowPreJoin(false);
+    setShowJitsiMeeting(true);
+  };
+
+  // Handle meeting end
+  const handleMeetingEnd = () => {
+    setShowJitsiMeeting(false);
+    setShowPreJoin(false);
+    setSelectedBooking(null);
+    notification.success({
+      message: 'Meeting Ended',
+      description: 'Thank you for using EkahHealth video consultation!'
+    });
+  };
+
+  // Copy meeting link
+  const copyMeetingLink = (booking) => {
+    const meetingURL = booking.meetingURL || `https://meet.jit.si/${generateMeetingRoom(booking)}`;
+    navigator.clipboard.writeText(meetingURL);
+    notification.success({
+      message: 'Link Copied!',
+      description: 'Meeting link copied to clipboard'
+    });
+  };
+
+  // Download Jitsi app
+  const downloadJitsiApp = () => {
+    const userAgent = navigator.userAgent.toLowerCase();
+    let downloadUrl = '';
+    
+    if (userAgent.includes('android')) {
+      downloadUrl = 'https://play.google.com/store/apps/details?id=org.jitsi.meet';
+    } else if (userAgent.includes('iphone') || userAgent.includes('ipad')) {
+      downloadUrl = 'https://apps.apple.com/app/jitsi-meet/id1165103905';
+    } else {
+      notification.info({
+        message: 'Desktop App Not Required',
+        description: 'Jitsi Meet works directly in your web browser!'
+      });
+      return;
+    }
+    
+    window.open(downloadUrl, '_blank');
+  };
+
   const showBookingDetails = (booking) => {
     setSelectedBooking(booking);
     setDetailModalVisible(true);
+  };
+
+  // Check if appointment is soon (within 30 minutes)
+  const isAppointmentSoon = (booking) => {
+    if (!booking.preferredDate || !booking.preferredTime) return false;
+    
+    const appointmentDate = moment(booking.preferredDate.toDate?.() || booking.preferredDate);
+    const appointmentTime = moment(booking.preferredTime.toDate?.() || booking.preferredTime);
+    const appointmentDateTime = moment(appointmentDate.format('YYYY-MM-DD') + ' ' + appointmentTime.format('HH:mm'));
+    
+    const now = moment();
+    const diffMinutes = appointmentDateTime.diff(now, 'minutes');
+    
+    return diffMinutes >= -15 && diffMinutes <= 30; // 15 minutes after to 30 minutes before
   };
 
   const getBookingStats = () => {
@@ -161,6 +256,30 @@ const MyBookings = () => {
   };
 
   const stats = getBookingStats();
+
+  // Show full-screen meeting
+  if (showJitsiMeeting) {
+    return (
+      <JitsiMeetingRoom
+        roomName={meetingRoomName}
+        displayName={patientName}
+        password={meetingPassword}
+        onBack={handleMeetingEnd}
+      />
+    );
+  }
+
+  // Show pre-join screen
+  if (showPreJoin) {
+    return (
+      <JitsiPreJoin
+        roomName={meetingRoomName}
+        displayName={patientName}
+        meetingPassword={meetingPassword}
+        onJoinMeeting={handlePreJoinComplete}
+      />
+    );
+  }
 
   if (loading) {
     return (
@@ -190,10 +309,10 @@ const MyBookings = () => {
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
           <Title level={2} style={{ color: themeStyles.textPrimary, marginBottom: '8px' }}>
-            My Bookings
+            My Appointments
           </Title>
           <Text style={{ color: themeStyles.textSecondary, fontSize: '16px' }}>
-            Manage your appointments and view booking history
+            Manage your video consultations and appointment history
           </Text>
         </div>
 
@@ -206,7 +325,7 @@ const MyBookings = () => {
               borderRadius: '12px'
             }}>
               <Statistic
-                title={<span style={{ color: themeStyles.textSecondary }}>Total Bookings</span>}
+                title={<span style={{ color: themeStyles.textSecondary }}>Total Appointments</span>}
                 value={stats.total}
                 prefix={<CalendarOutlined />}
                 valueStyle={{ color: themeStyles.textPrimary }}
@@ -223,6 +342,7 @@ const MyBookings = () => {
                 title={<span style={{ color: themeStyles.textSecondary }}>Upcoming</span>}
                 value={stats.upcoming}
                 valueStyle={{ color: themeStyles.primaryColor }}
+                prefix={<ClockCircleOutlined />}
               />
             </Card>
           </Col>
@@ -236,6 +356,7 @@ const MyBookings = () => {
                 title={<span style={{ color: themeStyles.textSecondary }}>Completed</span>}
                 value={stats.completed}
                 valueStyle={{ color: themeStyles.successColor }}
+                prefix={<CheckCircleOutlined />}
               />
             </Card>
           </Col>
@@ -249,10 +370,30 @@ const MyBookings = () => {
                 title={<span style={{ color: themeStyles.textSecondary }}>Cancelled</span>}
                 value={stats.cancelled}
                 valueStyle={{ color: themeStyles.errorColor }}
+                prefix={<ExclamationCircleOutlined />}
               />
             </Card>
           </Col>
         </Row>
+
+        {/* Jitsi Meet Info */}
+        <Alert
+          message="🎥 Video Consultations Powered by Jitsi Meet"
+          description="Secure, free video meetings right in your browser. No downloads required! Click 'Join Meeting' when it's time for your appointment."
+          type="info"
+          showIcon
+          closable
+          action={
+            <Button size="small" icon={<DownloadOutlined />} onClick={downloadJitsiApp}>
+              Get Mobile App
+            </Button>
+          }
+          style={{ 
+            marginBottom: '32px',
+            background: themeStyles.cardBg,
+            border: `1px solid ${themeStyles.cardBorder}`
+          }}
+        />
 
         {/* Quick Actions */}
         <Card style={{
@@ -267,7 +408,7 @@ const MyBookings = () => {
                 Need to book another appointment?
               </Title>
               <Text style={{ color: themeStyles.textSecondary }}>
-                Browse our services and schedule your next session
+                Browse our services and schedule your next consultation
               </Text>
             </Col>
             <Col>
@@ -294,14 +435,14 @@ const MyBookings = () => {
           borderRadius: '16px'
         }}>
           <Title level={4} style={{ color: themeStyles.textPrimary, marginBottom: '24px' }}>
-            Booking History
+            Appointment History
           </Title>
           
           {bookings.length === 0 ? (
             <Empty
               description={
                 <span style={{ color: themeStyles.textSecondary }}>
-                  No bookings found. Book your first appointment!
+                  No appointments found. Book your first consultation!
                 </span>
               }
               image={Empty.PRESENTED_IMAGE_SIMPLE}
@@ -324,6 +465,8 @@ const MyBookings = () => {
                 const appointmentTime = moment(booking.preferredTime?.toDate?.() || booking.preferredTime);
                 const isUpcoming = appointmentDate.isAfter(moment()) && 
                   (booking.status === 'pending' || booking.status === 'confirmed');
+                const isSoon = isAppointmentSoon(booking);
+                const canJoinMeeting = booking.status === 'confirmed' && (isUpcoming || isSoon);
                 
                 return (
                   <Timeline.Item
@@ -332,12 +475,13 @@ const MyBookings = () => {
                       <div style={{
                         background: getStatusColor(booking.status),
                         borderRadius: '50%',
-                        width: '16px',
-                        height: '16px',
+                        width: '24px',
+                        height: '24px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: 'white'
+                        color: 'white',
+                        fontSize: '12px'
                       }}>
                         {getStatusIcon(booking.status)}
                       </div>
@@ -356,7 +500,7 @@ const MyBookings = () => {
                         <Col xs={24} lg={16}>
                           <Space direction="vertical" size="small" style={{ width: '100%' }}>
                             {/* Header */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                               <Text code style={{ 
                                 background: themeStyles.primaryColor,
                                 color: 'white',
@@ -371,6 +515,16 @@ const MyBookings = () => {
                               </Tag>
                               {isUpcoming && (
                                 <Badge status="processing" text="Upcoming" />
+                              )}
+                              {isSoon && (
+                                <Badge status="warning" text="Starting Soon" />
+                              )}
+                              {booking.meetingURL && (
+                                <Badge 
+                                  count={<VideoCameraOutlined />} 
+                                  style={{ backgroundColor: '#52c41a' }}
+                                  title="Video Meeting Ready"
+                                />
                               )}
                             </div>
 
@@ -423,17 +577,46 @@ const MyBookings = () => {
                             <Text style={{ color: themeStyles.textSecondary, fontSize: '12px' }}>
                               Booked: {moment(booking.createdAt?.toDate?.() || booking.createdAt).format('MMM DD, YYYY')}
                             </Text>
-                            <Button
-                              size="small"
-                              icon={<EyeOutlined />}
-                              onClick={() => showBookingDetails(booking)}
-                              style={{
-                                borderColor: themeStyles.primaryColor,
-                                color: themeStyles.primaryColor
-                              }}
-                            >
-                              View Details
-                            </Button>
+                            
+                            <Space direction="vertical" size="small">
+                              {canJoinMeeting && (
+                                <Button
+                                  type="primary"
+                                  icon={<VideoCameraOutlined />}
+                                  onClick={() => handleJoinMeeting(booking)}
+                                  style={{
+                                    background: '#52c41a',
+                                    borderColor: '#52c41a'
+                                  }}
+                                  size="small"
+                                >
+                                  Join Video Meeting
+                                </Button>
+                              )}
+                              
+                              <Space>
+                                <Button
+                                  size="small"
+                                  icon={<EyeOutlined />}
+                                  onClick={() => showBookingDetails(booking)}
+                                  style={{
+                                    borderColor: themeStyles.primaryColor,
+                                    color: themeStyles.primaryColor
+                                  }}
+                                >
+                                  Details
+                                </Button>
+                                
+                                {(canJoinMeeting || booking.meetingURL) && (
+                                  <Button
+                                    size="small"
+                                    icon={<CopyOutlined />}
+                                    onClick={() => copyMeetingLink(booking)}
+                                    title="Copy meeting link"
+                                  />
+                                )}
+                              </Space>
+                            </Space>
                           </Space>
                         </Col>
                       </Row>
@@ -450,7 +633,12 @@ const MyBookings = () => {
       <Modal
         title={
           <span style={{ color: themeStyles.textPrimary }}>
-            Booking Details - {selectedBooking?.confirmationNumber}
+            Appointment Details - {selectedBooking?.confirmationNumber}
+            {selectedBooking?.meetingURL && (
+              <Tag color="green" style={{ marginLeft: 8 }}>
+                <VideoCameraOutlined /> Video Ready
+              </Tag>
+            )}
           </span>
         }
         open={detailModalVisible}
@@ -458,7 +646,21 @@ const MyBookings = () => {
         footer={[
           <Button key="close" onClick={() => setDetailModalVisible(false)}>
             Close
-          </Button>
+          </Button>,
+          selectedBooking && (selectedBooking.status === 'confirmed' && (isAppointmentSoon(selectedBooking) || selectedBooking.meetingURL)) && (
+            <Button 
+              key="join" 
+              type="primary"
+              icon={<VideoCameraOutlined />}
+              onClick={() => {
+                setDetailModalVisible(false);
+                handleJoinMeeting(selectedBooking);
+              }}
+              style={{ background: '#52c41a', borderColor: '#52c41a' }}
+            >
+              Join Video Meeting
+            </Button>
+          )
         ]}
         width={700}
       >
@@ -466,9 +668,16 @@ const MyBookings = () => {
           <div>
             <Descriptions bordered column={2} size="small">
               <Descriptions.Item label="Status" span={2}>
-                <Tag color={getStatusColor(selectedBooking.status)}>
-                  {selectedBooking.status?.toUpperCase()}
-                </Tag>
+                <Space>
+                  <Tag color={getStatusColor(selectedBooking.status)}>
+                    {selectedBooking.status?.toUpperCase()}
+                  </Tag>
+                  {selectedBooking.meetingURL && (
+                    <Tag color="green">
+                      <VideoCameraOutlined /> Video Meeting Ready
+                    </Tag>
+                  )}
+                </Space>
               </Descriptions.Item>
               
               <Descriptions.Item label="Date">
@@ -485,18 +694,87 @@ const MyBookings = () => {
               </Descriptions.Item>
               
               <Descriptions.Item label="Session Type">
-                {selectedBooking.sessionType?.charAt(0).toUpperCase() + selectedBooking.sessionType?.slice(1)}
+                <Space>
+                  {getSessionTypeIcon(selectedBooking.sessionType)}
+                  {selectedBooking.sessionType?.charAt(0).toUpperCase() + selectedBooking.sessionType?.slice(1)}
+                </Space>
               </Descriptions.Item>
-              <Descriptions.Item label="Age">
-                {selectedBooking.age} years
+              <Descriptions.Item label="Duration">
+                30-60 minutes
               </Descriptions.Item>
               
               <Descriptions.Item label="Phone">
-                {selectedBooking.phone}
+                <a href={`tel:${selectedBooking.phone}`}>{selectedBooking.phone}</a>
               </Descriptions.Item>
               <Descriptions.Item label="Email">
-                {selectedBooking.email}
+                <a href={`mailto:${selectedBooking.email}`}>{selectedBooking.email}</a>
               </Descriptions.Item>
+              
+              {/* Video Meeting Details */}
+              {selectedBooking.meetingURL && (
+                <Descriptions.Item label="Video Meeting" span={2}>
+                  <Space direction="vertical" style={{ width: '100%' }}>
+                    <Alert
+                      message="Video Meeting Information"
+                      description={
+                        <div>
+                          <p><strong>Meeting Link:</strong></p>
+                          <div style={{ 
+                            background: '#f6f8fa', 
+                            padding: '8px 12px', 
+                            borderRadius: '4px',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginBottom: '10px'
+                          }}>
+                            <Text code style={{ fontSize: '12px', wordBreak: 'break-all' }}>
+                              {selectedBooking.meetingURL}
+                            </Text>
+                            <Button 
+                              size="small"
+                              icon={<CopyOutlined />}
+                              onClick={() => copyMeetingLink(selectedBooking)}
+                            />
+                          </div>
+                          
+                          {selectedBooking.meetingPassword && (
+                            <p><strong>Password:</strong> <Text code>{selectedBooking.meetingPassword}</Text></p>
+                          )}
+                          
+                          <div style={{ marginTop: '10px' }}>
+                            <Text type="secondary">
+                              💡 <strong>Tip:</strong> Click the meeting link 5 minutes before your appointment time
+                            </Text>
+                          </div>
+                        </div>
+                      }
+                      type="info"
+                      showIcon
+                    />
+                    
+                    <Space>
+                      <Button 
+                        type="primary"
+                        icon={<VideoCameraOutlined />}
+                        onClick={() => {
+                          setDetailModalVisible(false);
+                          handleJoinMeeting(selectedBooking);
+                        }}
+                        style={{ background: '#52c41a', borderColor: '#52c41a' }}
+                      >
+                        Join Meeting
+                      </Button>
+                      <Button 
+                        icon={<DownloadOutlined />}
+                        onClick={downloadJitsiApp}
+                      >
+                        Get Mobile App
+                      </Button>
+                    </Space>
+                  </Space>
+                </Descriptions.Item>
+              )}
               
               <Descriptions.Item label="Current Concerns" span={2}>
                 {selectedBooking.currentConcerns || 'Not provided'}
@@ -511,13 +789,13 @@ const MyBookings = () => {
                   .format('MMMM DD, YYYY HH:mm')}
               </Descriptions.Item>
               <Descriptions.Item label="Last Updated">
-                {moment(selectedBooking.updatedAt?.toDate?.() || selectedBooking.updatedAt)
+                {moment(selectedBooking.updatedAt?.toDate?.() || selectedBooking.updatedAt || selectedBooking.createdAt?.toDate?.() || selectedBooking.createdAt)
                   .format('MMMM DD, YYYY HH:mm')}
               </Descriptions.Item>
             </Descriptions>
             
             {selectedBooking.selectedServices && selectedBooking.selectedServices.length > 0 && (
-              <div style={{ marginTop: '16px' }}>
+              <div style={{ marginTop: 16 }}>
                 <Title level={5} style={{ color: themeStyles.textPrimary }}>
                   Selected Services
                 </Title>
@@ -528,6 +806,34 @@ const MyBookings = () => {
                     </Tag>
                   ))}
                 </Space>
+              </div>
+            )}
+
+            {/* Meeting Instructions */}
+            {selectedBooking.status === 'confirmed' && (
+              <div style={{ marginTop: 16 }}>
+                <Alert
+                  message="How to Join Your Video Consultation"
+                  description={
+                    <div>
+                      <ol style={{ paddingLeft: '20px' }}>
+                        <li><strong>5 minutes before:</strong> Click "Join Video Meeting" button</li>
+                        <li><strong>Allow permissions:</strong> Enable camera and microphone when prompted</li>
+                        <li><strong>Wait for doctor:</strong> Your healthcare provider will join shortly</li>
+                        <li><strong>Backup plan:</strong> Call +91 63617 43098 if you have technical issues</li>
+                      </ol>
+                      
+                      <div style={{ marginTop: '10px', padding: '8px', background: '#f0f9ff', borderRadius: '4px' }}>
+                        <Text type="secondary">
+                          📱 <strong>Mobile users:</strong> Download the free "Jitsi Meet" app for the best experience, or use your mobile browser
+                        </Text>
+                      </div>
+                    </div>
+                  }
+                  type="success"
+                  showIcon={false}
+                  style={{ marginTop: 16 }}
+                />
               </div>
             )}
           </div>

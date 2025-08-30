@@ -418,9 +418,9 @@ const ProfessionalCalendarSidebar = () => {
     setContextMenu(null);
   };
 
-  // Multi-select Handlers
+  // Enhanced Multi-select Handlers
   const handleSlotSelect = (slotId, event) => {
-    if (event.ctrlKey || event.metaKey) {
+    if (isMultiSelectMode || event.ctrlKey || event.metaKey) {
       const newSelection = new Set(selectedSlots);
       if (newSelection.has(slotId)) {
         newSelection.delete(slotId);
@@ -428,10 +428,15 @@ const ProfessionalCalendarSidebar = () => {
         newSelection.add(slotId);
       }
       setSelectedSlots(newSelection);
+      
+      // Show feedback for multi-selection
+      if (newSelection.size > 0) {
+        message.info(`${newSelection.size} slot${newSelection.size > 1 ? 's' : ''} selected`);
+      }
     } else if (event.shiftKey && selectedSlots.size > 0) {
       // Range selection logic
       handleRangeSelect(slotId);
-    } else {
+    } else if (!isMultiSelectMode) {
       setSelectedSlots(new Set([slotId]));
     }
   };
@@ -470,7 +475,7 @@ const ProfessionalCalendarSidebar = () => {
     setSelectedSlots(new Set());
   };
 
-  // Bulk Operations
+  // Enhanced Bulk Operations with slot creation
   const handleBulkAction = async (action, data = {}) => {
     if (selectedSlots.size === 0) {
       message.warning('Please select slots first');
@@ -478,27 +483,82 @@ const ProfessionalCalendarSidebar = () => {
     }
 
     try {
+      setLoading(true);
       const selectedSlotArray = Array.from(selectedSlots);
+      let successCount = 0;
       
       switch (action) {
         case 'block':
           for (const slotId of selectedSlotArray) {
-            await timeSlotsDB.updateSlotStatus(slotId, 'blocked', data);
+            const existingSlot = timeSlots.find(slot => slot.id === slotId);
+            
+            if (existingSlot && existingSlot.isTemporary) {
+              // Create new blocked slot for temporary/empty slots
+              const [, dateStr, timeStr] = slotId.split('_');
+              await timeSlotsDB.createSlot({
+                date: dateStr,
+                time: timeStr,
+                endTime: moment(timeStr, 'HH:mm').add(30, 'minutes').format('HH:mm'),
+                duration: 30,
+                status: 'blocked',
+                createdBy: 'admin',
+                createdAt: new Date(),
+                notes: data.reason || 'Blocked via bulk action'
+              });
+              successCount++;
+            } else if (existingSlot) {
+              // Update existing slot
+              await timeSlotsDB.updateSlotStatus(slotId, 'blocked', data);
+              successCount++;
+            }
           }
-          message.success(`Blocked ${selectedSlotArray.length} slots`);
+          message.success(`Blocked ${successCount} slots`);
           break;
+          
         case 'unblock':
           for (const slotId of selectedSlotArray) {
-            await timeSlotsDB.updateSlotStatus(slotId, 'available');
+            const existingSlot = timeSlots.find(slot => slot.id === slotId);
+            if (existingSlot && !existingSlot.isTemporary) {
+              await timeSlotsDB.updateSlotStatus(slotId, 'available');
+              successCount++;
+            }
           }
-          message.success(`Unblocked ${selectedSlotArray.length} slots`);
+          message.success(`Unblocked ${successCount} slots`);
           break;
+          
         case 'delete':
           for (const slotId of selectedSlotArray) {
-            await timeSlotsDB.deleteSlot(slotId);
+            const existingSlot = timeSlots.find(slot => slot.id === slotId);
+            if (existingSlot && !existingSlot.isTemporary) {
+              await timeSlotsDB.deleteSlot(slotId);
+              successCount++;
+            }
           }
-          message.success(`Deleted ${selectedSlotArray.length} slots`);
+          message.success(`Deleted ${successCount} slots`);
           break;
+          
+        case 'create-available':
+          for (const slotId of selectedSlotArray) {
+            const existingSlot = timeSlots.find(slot => slot.id === slotId);
+            
+            if (existingSlot && existingSlot.isTemporary) {
+              // Create new available slot for temporary/empty slots
+              const [, dateStr, timeStr] = slotId.split('_');
+              await timeSlotsDB.createSlot({
+                date: dateStr,
+                time: timeStr,
+                endTime: moment(timeStr, 'HH:mm').add(30, 'minutes').format('HH:mm'),
+                duration: 30,
+                status: 'available',
+                createdBy: 'admin',
+                createdAt: new Date()
+              });
+              successCount++;
+            }
+          }
+          message.success(`Created ${successCount} available slots`);
+          break;
+          
         default:
           break;
       }
@@ -508,6 +568,8 @@ const ProfessionalCalendarSidebar = () => {
     } catch (error) {
       console.error('Bulk action failed:', error);
       message.error('Bulk action failed');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -745,6 +807,15 @@ const ProfessionalCalendarSidebar = () => {
     // Add selection styling
     if (slot && selectedSlots.has(slot.id)) {
       cellClasses.push('calendar-slot-selected');
+      if (slot.isTemporary) {
+        cellClasses.push('calendar-slot-empty');
+      }
+    }
+    
+    // Check if this empty cell is selected via temporary slot
+    const tempSlotId = `temp_${dateStr}_${time}`;
+    if (!slot && selectedSlots.has(tempSlotId)) {
+      cellClasses.push('calendar-slot-selected', 'calendar-slot-empty');
     }
 
     // Add drop target styling
@@ -753,13 +824,32 @@ const ProfessionalCalendarSidebar = () => {
     }
 
     const handleCellClick = (e) => {
-      if (isMultiSelectMode) {
+      // Multi-select mode or keyboard modifiers for selecting multiple slots
+      if (isMultiSelectMode || e.ctrlKey || e.metaKey || e.shiftKey) {
         if (slot) {
           handleSlotSelect(slot.id, e);
+        } else {
+          // Create a temporary slot for empty cells to enable selection
+          const tempSlotId = `temp_${dateStr}_${time}`;
+          const tempSlot = { 
+            id: tempSlotId, 
+            date: dateStr, 
+            time, 
+            status: 'empty',
+            isTemporary: true 
+          };
+          
+          // Add to timeSlots temporarily if not exists
+          if (!timeSlots.find(s => s.id === tempSlotId)) {
+            setTimeSlots(prev => [...prev, tempSlot]);
+          }
+          
+          handleSlotSelect(tempSlotId, e);
         }
         return;
       }
 
+      // Single click actions (non-multi-select mode)
       if (booking) {
         setSelectedBooking(booking);
         setBookingDetailsDrawer(true);
@@ -767,6 +857,7 @@ const ProfessionalCalendarSidebar = () => {
         setSelectedSlot({ ...slot, date: dateStr, time });
         openModal('editSlot');
       } else {
+        // Create new slot in empty cell
         setSelectedSlot({ date: dateStr, time, status: 'available' });
         openModal('editSlot');
       }
@@ -816,7 +907,17 @@ const ProfessionalCalendarSidebar = () => {
           </Col>
           <Col>
             <Space>
-              <Tooltip title="Multi-select mode (Ctrl+Click)">
+              <Tooltip 
+                title={
+                  <div>
+                    <div><strong>Multi-Selection Mode</strong></div>
+                    <div>• Toggle ON: Click to select/deselect slots</div>
+                    <div>• Toggle OFF: Ctrl+Click or Shift+Click to select</div>
+                    <div>• Select empty slots to create new blocked slots</div>
+                  </div>
+                }
+                placement="bottomRight"
+              >
                 <Switch 
                   size="small"
                   checked={isMultiSelectMode}
@@ -859,6 +960,19 @@ const ProfessionalCalendarSidebar = () => {
           </Col>
         </Row>
       </Card>
+
+      {/* Multi-select mode help alert */}
+      {isMultiSelectMode && (
+        <Alert
+          message="Multi-Selection Mode Active"
+          description="Click on time slots (including empty ones) to select multiple slots for bulk actions. Use 'Block All' to create blocked slots in empty time periods."
+          type="info"
+          showIcon
+          closable
+          style={{ marginBottom: 8, fontSize: '11px' }}
+          onClose={() => setIsMultiSelectMode(false)}
+        />
+      )}
 
       {/* Advanced Navigation & Filters */}
       <Card size="small" className="calendar-nav-card">
@@ -913,38 +1027,84 @@ const ProfessionalCalendarSidebar = () => {
           </Col>
         </Row>
         
-        {/* Quick Action Bar */}
+        {/* Enhanced Quick Action Bar */}
         {selectedSlots.size > 0 && (
           <div className="quick-actions-bar">
-            <Space>
-              <Text strong>{selectedSlots.size} selected</Text>
+            <Space wrap>
+              <Text strong>
+                {selectedSlots.size} slot{selectedSlots.size > 1 ? 's' : ''} selected
+                {Array.from(selectedSlots).some(id => 
+                  timeSlots.find(slot => slot.id === id)?.isTemporary
+                ) && <Tag color="orange" size="small" style={{ marginLeft: 4 }}>
+                  +Empty
+                </Tag>}
+              </Text>
+              
+              {/* Block slots (works for both existing and empty slots) */}
               <Button 
                 size="small" 
                 type="primary"
                 icon={<BlockOutlined />}
-                onClick={() => handleBulkAction('block')}
+                onClick={() => {
+                  Modal.confirm({
+                    title: 'Block Selected Slots',
+                    content: `Are you sure you want to block ${selectedSlots.size} selected slot${selectedSlots.size > 1 ? 's' : ''}? This will create new blocked slots for empty time periods.`,
+                    onOk: () => handleBulkAction('block', { reason: 'Bulk block action' })
+                  });
+                }}
+                loading={loading}
               >
-                Block
+                Block All
               </Button>
+              
+              {/* Create available slots for empty slots */}
+              {Array.from(selectedSlots).some(id => 
+                timeSlots.find(slot => slot.id === id)?.isTemporary
+              ) && (
+                <Button 
+                  size="small"
+                  type="default"
+                  icon={<PlusOutlined />}
+                  onClick={() => handleBulkAction('create-available')}
+                  loading={loading}
+                >
+                  Create Available
+                </Button>
+              )}
+              
+              {/* Unblock existing slots */}
               <Button 
                 size="small"
                 icon={<CheckCircleOutlined />}
                 onClick={() => handleBulkAction('unblock')}
+                loading={loading}
+                disabled={!Array.from(selectedSlots).some(id => {
+                  const slot = timeSlots.find(slot => slot.id === id);
+                  return slot && !slot.isTemporary && slot.status === 'blocked';
+                })}
               >
                 Unblock
               </Button>
+              
+              {/* Delete existing slots */}
               <Popconfirm
-                title="Delete selected slots?"
+                title={`Delete ${selectedSlots.size} selected slot${selectedSlots.size > 1 ? 's' : ''}?`}
+                description="This will permanently remove the time slots."
                 onConfirm={() => handleBulkAction('delete')}
               >
                 <Button 
                   size="small" 
                   danger
                   icon={<DeleteOutlined />}
+                  loading={loading}
+                  disabled={Array.from(selectedSlots).every(id => 
+                    timeSlots.find(slot => slot.id === id)?.isTemporary
+                  )}
                 >
                   Delete
                 </Button>
               </Popconfirm>
+              
               <Button 
                 size="small"
                 icon={<CopyOutlined />}
@@ -952,11 +1112,12 @@ const ProfessionalCalendarSidebar = () => {
               >
                 Copy
               </Button>
+              
               <Button 
                 size="small"
                 onClick={handleClearSelection}
               >
-                Clear
+                Clear Selection
               </Button>
             </Space>
           </div>

@@ -317,6 +317,26 @@
   border-color: var(--warning-color);
   border-width: 2px;
   box-shadow: 0 0 0 2px rgba(250, 173, 20, 0.2);
+  position: relative;
+}
+
+/* Selected empty slot styling */
+.calendar-slot-selected.calendar-slot-empty {
+  background: linear-gradient(135deg, #fff2e8 0%, #ffd591 100%);
+  border: 2px dashed var(--warning-color);
+  box-shadow: 0 0 0 2px rgba(250, 173, 20, 0.15);
+}
+
+.calendar-slot-selected.calendar-slot-empty::before {
+  content: '+';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 16px;
+  font-weight: bold;
+  color: var(--warning-color);
+  opacity: 0.7;
 }
 
 .calendar-slot-drop-target {
@@ -491,38 +511,36 @@
   }
 }
 
-/* Dark Mode Support */
-@media (prefers-color-scheme: dark) {
-  .professional-calendar-sidebar {
-    --border-color: #434343;
-    --background-color: #1f1f1f;
-  }
-  
-  .calendar-main-card,
-  .calendar-header-card,
-  .calendar-nav-card,
-  .calendar-legend-card {
-    background: #262626;
-    border-color: var(--border-color);
-  }
-  
-  .time-header,
-  .day-header,
-  .time-label {
-    background: linear-gradient(135deg, #2f2f2f 0%, #434343 100%);
-    color: #d9d9d9;
-  }
-  
-  .calendar-slot-cell {
-    background: #303030;
-    border-color: var(--border-color);
-    color: #d9d9d9;
-  }
-  
-  .context-menu {
-    background: #262626;
-    border-color: var(--border-color);
-  }
+/* Dark Mode Support - Disabled by default */
+.professional-calendar-sidebar.dark-mode {
+  --border-color: #434343;
+  --background-color: #1f1f1f;
+}
+
+.professional-calendar-sidebar.dark-mode .calendar-main-card,
+.professional-calendar-sidebar.dark-mode .calendar-header-card,
+.professional-calendar-sidebar.dark-mode .calendar-nav-card,
+.professional-calendar-sidebar.dark-mode .calendar-legend-card {
+  background: #262626;
+  border-color: var(--border-color);
+}
+
+.professional-calendar-sidebar.dark-mode .time-header,
+.professional-calendar-sidebar.dark-mode .day-header,
+.professional-calendar-sidebar.dark-mode .time-label {
+  background: linear-gradient(135deg, #2f2f2f 0%, #434343 100%);
+  color: #d9d9d9;
+}
+
+.professional-calendar-sidebar.dark-mode .calendar-slot-cell {
+  background: #303030;
+  border-color: var(--border-color);
+  color: #d9d9d9;
+}
+
+.professional-calendar-sidebar.dark-mode .context-menu {
+  background: #262626;
+  border-color: var(--border-color);
 }
 
 /* High Contrast Mode */
