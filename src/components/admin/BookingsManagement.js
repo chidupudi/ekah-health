@@ -266,6 +266,31 @@ const BookingsManagement = () => {
     }
   ];
 
+  const handleConfirmAndCreateMeet = async (booking) => {
+    try {
+      const response = await fetch('/api/create-meeting', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ booking }),
+      });
+      const data = await response.json();
+      if (data.meetingLink) {
+        // Call your Firestore update function
+        await bookingsDB.update(booking.id, {
+          meetingLink: data.meetingLink,
+          status: "confirmed",
+          meetingCreatedAt: new Date(),
+          // ...add any other fields you want to track
+        });
+        // Optionally update UI or show a success message
+      } else {
+        // Handle error
+      }
+    } catch (err) {
+      // Handle error
+    }
+  };
+
   return (
     <div>
       {/* Statistics */}

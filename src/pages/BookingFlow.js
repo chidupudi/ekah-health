@@ -483,11 +483,14 @@ const BookingFlow = () => {
         >
           <Radio.Group>
             <Space direction="vertical">
-              <Radio value="in-person" style={{ color: themeStyles.textPrimary }}>
-                In-Person Session
+              <Radio value="online" style={{ color: themeStyles.textPrimary }}>
+                Online Meet
               </Radio>
               <Radio value="phone" style={{ color: themeStyles.textPrimary }}>
                 Phone Consultation
+              </Radio>
+               <Radio value="offline" style={{ color: themeStyles.textPrimary }}>
+               In-Person Consultation
               </Radio>
             </Space>
           </Radio.Group>
