@@ -32,7 +32,7 @@ import { useAdminAuth } from '../contexts/AdminAuthContext';
 import { useNavigate } from 'react-router-dom';
 import ServicesManagement from '../components/admin/ServicesManagement';
 import BookingsManagement from '../components/admin/BookingsManagement';
-import AdminCalendarSidebar from '../components/admin/AdminCalendarSidebar';
+import ProfessionalCalendarSidebar from '../components/admin/ProfessionalCalendarSidebar';
 import { bookingsDB } from '../services/firebase/database';
 
 const { Header, Sider, Content } = Layout;
@@ -126,7 +126,7 @@ const AdminDashboard = () => {
   const renderContent = () => {
     switch (selectedMenu) {
       case 'calendar':
-        return <AdminCalendarSidebar />;
+        return <ProfessionalCalendarSidebar />;
       case 'bookings':
         return <BookingsManagement />;
       case 'services':
@@ -356,7 +356,7 @@ const AdminDashboard = () => {
               borderRadius: '12px',
               minHeight: '100%'
             }}>
-              <AdminCalendarSidebar />
+              <ProfessionalCalendarSidebar />
             </div>
           )}
         </Content>
