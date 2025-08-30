@@ -26,11 +26,13 @@ import {
   EyeOutlined,
   EditOutlined,
   PlusOutlined,
+  CalendarOutlined,
 } from '@ant-design/icons';
 import { useAdminAuth } from '../contexts/AdminAuthContext';
 import { useNavigate } from 'react-router-dom';
 import ServicesManagement from '../components/admin/ServicesManagement';
 import BookingsManagement from '../components/admin/BookingsManagement';
+import AdminCalendarSidebar from '../components/admin/AdminCalendarSidebar';
 import { bookingsDB } from '../services/firebase/database';
 
 const { Header, Sider, Content } = Layout;
@@ -90,6 +92,12 @@ const AdminDashboard = () => {
       label: 'Dashboard',
     },
     {
+      key: 'calendar',
+      icon: <CalendarOutlined />,
+      label: 'Calendar',
+      disabled: !hasPermission('view_bookings'),
+    },
+    {
       key: 'bookings',
       icon: <BellOutlined />,
       label: 'Bookings',
@@ -117,6 +125,8 @@ const AdminDashboard = () => {
 
   const renderContent = () => {
     switch (selectedMenu) {
+      case 'calendar':
+        return <AdminCalendarSidebar />;
       case 'bookings':
         return <BookingsManagement />;
       case 'services':
@@ -323,9 +333,13 @@ const AdminDashboard = () => {
         <Content style={{ 
           margin: '24px', 
           minHeight: 280,
-          background: '#f0f2f5'
+          background: '#f0f2f5',
+          display: 'flex',
+          gap: '16px'
         }}>
+          {/* Main Content */}
           <div style={{ 
+            flex: 1,
             padding: '24px',
             background: '#fff',
             borderRadius: '12px',
@@ -333,6 +347,18 @@ const AdminDashboard = () => {
           }}>
             {renderContent()}
           </div>
+          
+          {/* Calendar Sidebar */}
+          {selectedMenu !== 'calendar' && (
+            <div style={{
+              width: '350px',
+              background: '#fff',
+              borderRadius: '12px',
+              minHeight: '100%'
+            }}>
+              <AdminCalendarSidebar />
+            </div>
+          )}
         </Content>
       </Layout>
     </Layout>

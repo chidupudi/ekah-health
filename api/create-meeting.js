@@ -20,7 +20,7 @@ const initializeGoogleCalendar = () => {
 
 // Initialize Email Transporter
 const initializeEmailTransporter = () => {
-  return nodemailer.createTransporter({
+  return nodemailer.createTransport({
     host: process.env.SMTP_HOST,
     port: parseInt(process.env.SMTP_PORT),
     secure: false,

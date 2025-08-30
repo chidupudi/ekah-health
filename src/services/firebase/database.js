@@ -753,13 +753,111 @@ export const timeSlotsDB = {
   },
 
   // Delete a time slot
-  deleteSlot: async (date, time) => {
+  deleteSlot: async (slotId) => {
     try {
-      const slotId = `${date}_${time.replace(':', '')}`;
+      if (typeof slotId === 'object' && slotId.date && slotId.time) {
+        slotId = `${slotId.date}_${slotId.time.replace(':', '')}`;
+      } else if (typeof slotId === 'string' && slotId.includes('_')) {
+        // Already in correct format
+      } else {
+        throw new Error('Invalid slot ID format');
+      }
       await deleteDoc(doc(db, COLLECTIONS.TIME_SLOTS, slotId));
       return true;
     } catch (error) {
       console.error('Error deleting time slot:', error);
+      throw error;
+    }
+  },
+
+  // Get slots in date range (all statuses)
+  getSlotsInRange: async (startDate, endDate) => {
+    try {
+      const q = query(
+        collection(db, COLLECTIONS.TIME_SLOTS),
+        where('date', '>=', startDate),
+        where('date', '<=', endDate)
+      );
+      const querySnapshot = await getDocs(q);
+      const slots = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      // Sort by date and time in JavaScript
+      return slots.sort((a, b) => {
+        const dateCompare = a.date.localeCompare(b.date);
+        if (dateCompare === 0) {
+          return a.time.localeCompare(b.time);
+        }
+        return dateCompare;
+      });
+    } catch (error) {
+      console.error('Error fetching slots in range:', error);
+      throw error;
+    }
+  },
+
+  // Create a single time slot
+  createSlot: async (slotData) => {
+    try {
+      const slotId = `${slotData.date}_${slotData.time.replace(':', '')}`;
+      const slotRef = doc(db, COLLECTIONS.TIME_SLOTS, slotId);
+      
+      const cleanSlotData = {
+        date: slotData.date, // YYYY-MM-DD format
+        time: slotData.time, // HH:MM format
+        endTime: slotData.endTime || null,
+        duration: slotData.duration || 30,
+        status: slotData.status || 'available', // available, booked, blocked
+        bookingId: slotData.bookingId || null,
+        patientName: slotData.patientName || null,
+        patientEmail: slotData.patientEmail || null,
+        serviceType: slotData.serviceType || null,
+        notes: slotData.notes || '',
+        createdBy: slotData.createdBy || 'system',
+        createdAt: slotData.createdAt || new Date(),
+        updatedAt: new Date()
+      };
+
+      await setDoc(slotRef, cleanSlotData);
+      return { id: slotId, ...cleanSlotData };
+    } catch (error) {
+      console.error('Error creating time slot:', error);
+      throw error;
+    }
+  },
+
+  // Update slot status
+  updateSlotStatus: async (slotId, status, additionalData = {}) => {
+    try {
+      if (typeof slotId === 'object' && slotId.date && slotId.time) {
+        slotId = `${slotId.date}_${slotId.time.replace(':', '')}`;
+      }
+      
+      const slotRef = doc(db, COLLECTIONS.TIME_SLOTS, slotId);
+      const updateData = {
+        status: status,
+        ...additionalData,
+        updatedAt: new Date()
+      };
+      
+      await updateDoc(slotRef, updateData);
+      return true;
+    } catch (error) {
+      console.error('Error updating slot status:', error);
+      throw error;
+    }
+  },
+
+  // Get slot by ID
+  getSlotById: async (slotId) => {
+    try {
+      if (typeof slotId === 'object' && slotId.date && slotId.time) {
+        slotId = `${slotId.date}_${slotId.time.replace(':', '')}`;
+      }
+      
+      const slotRef = doc(db, COLLECTIONS.TIME_SLOTS, slotId);
+      const docSnap = await getDoc(slotRef);
+      return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } : null;
+    } catch (error) {
+      console.error('Error fetching slot by ID:', error);
       throw error;
     }
   }

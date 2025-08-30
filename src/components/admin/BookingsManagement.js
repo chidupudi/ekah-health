@@ -27,7 +27,7 @@ import {
   UserOutlined,
   HeartOutlined
 } from '@ant-design/icons';
-import { bookingsDB } from '../../services/firebase/database';
+import { bookingsDB, timeSlotsDB } from '../../services/firebase/database';
 import moment from 'moment';
 
 const { Title, Text } = Typography;
@@ -82,7 +82,29 @@ const BookingsManagement = () => {
 
   const handleStatusChange = async (bookingId, newStatus) => {
     try {
+      const booking = bookings.find(b => b.id === bookingId);
       await bookingsDB.updateStatus(bookingId, newStatus);
+      
+      // Update time slot status based on booking status
+      if (booking?.preferredDate && booking?.preferredTime) {
+        const dateStr = moment(booking.preferredDate.toDate ? booking.preferredDate.toDate() : booking.preferredDate).format('YYYY-MM-DD');
+        const timeStr = moment(booking.preferredTime.toDate ? booking.preferredTime.toDate() : booking.preferredTime).format('HH:mm');
+        
+        if (newStatus === 'confirmed') {
+          // Book the time slot
+          await timeSlotsDB.bookSlot(dateStr, timeStr, {
+            bookingId: booking.id,
+            patientName: `${booking.firstName} ${booking.lastName}`,
+            patientEmail: booking.email,
+            serviceType: booking.selectedServices?.[0]?.title || 'Consultation',
+            notes: `Booking confirmed: ${booking.confirmationNumber}`
+          });
+        } else if (newStatus === 'cancelled' || newStatus === 'completed') {
+          // Make slot available again
+          await timeSlotsDB.unblockSlot(dateStr, timeStr);
+        }
+      }
+      
       message.success(`Booking ${newStatus} successfully`);
       loadBookings(); // Reload to get updated data
     } catch (error) {
@@ -98,6 +120,20 @@ const handleConfirmWithMeeting = async (booking) => {
     
     // First update booking status
     await bookingsDB.updateStatus(booking.id, 'confirmed');
+    
+    // Book the time slot
+    if (booking?.preferredDate && booking?.preferredTime) {
+      const dateStr = moment(booking.preferredDate.toDate ? booking.preferredDate.toDate() : booking.preferredDate).format('YYYY-MM-DD');
+      const timeStr = moment(booking.preferredTime.toDate ? booking.preferredTime.toDate() : booking.preferredTime).format('HH:mm');
+      
+      await timeSlotsDB.bookSlot(dateStr, timeStr, {
+        bookingId: booking.id,
+        patientName: `${booking.firstName} ${booking.lastName}`,
+        patientEmail: booking.email,
+        serviceType: booking.selectedServices?.[0]?.title || 'Consultation',
+        notes: `Booking confirmed with meeting: ${booking.confirmationNumber}`
+      });
+    }
     
     // Create meeting via API
     const response = await fetch('/api/create-meeting', {
