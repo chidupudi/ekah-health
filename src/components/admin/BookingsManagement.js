@@ -91,6 +91,54 @@ const BookingsManagement = () => {
     }
   };
 
+  // Add this function right after handleStatusChange
+const handleConfirmWithMeeting = async (booking) => {
+  try {
+    setLoading(true);
+    
+    // First update booking status
+    await bookingsDB.updateStatus(booking.id, 'confirmed');
+    
+    // Create meeting via API
+    const response = await fetch('/api/create-meeting', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        bookingId: booking.confirmationNumber,
+        patientEmail: booking.email,
+        patientName: `${booking.firstName} ${booking.lastName}`,
+        appointmentDateTime: booking.preferredDate?.toDate?.() || booking.preferredDate,
+        serviceType: booking.selectedServices?.map(s => s.title).join(', ') || 'Consultation'
+      })
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      // Update booking with meeting details
+      await bookingsDB.update(booking.id, {
+        meetLink: result.meetLink,
+        eventId: result.eventId,
+        meetingCreated: true,
+        meetingCreatedAt: new Date()
+      });
+
+      message.success('Booking confirmed and Google Meet created! Invites sent to patient.');
+    } else {
+      message.error('Booking confirmed but failed to create meeting: ' + result.details);
+    }
+    
+    loadBookings(); // Reload bookings
+  } catch (error) {
+    console.error('Error confirming with meeting:', error);
+    message.error('Failed to confirm booking with meeting');
+  } finally {
+    setLoading(false);
+  }
+};
+
   const showBookingDetails = (booking) => {
     setSelectedBooking(booking);
     setDetailModalVisible(true);
@@ -246,9 +294,10 @@ const BookingsManagement = () => {
               size="small" 
               type="primary"
               icon={<CheckCircleOutlined />}
-              onClick={() => handleStatusChange(record.id, 'confirmed')}
+              onClick={() => handleConfirmWithMeeting(record)}
+              style={{ marginRight: '8px' }}
             >
-              Confirm
+              Confirm & Create Meet
             </Button>
           )}
           {(record.status === 'pending' || record.status === 'confirmed') && (
@@ -265,31 +314,6 @@ const BookingsManagement = () => {
       )
     }
   ];
-
-  const handleConfirmAndCreateMeet = async (booking) => {
-    try {
-      const response = await fetch('/api/create-meeting', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ booking }),
-      });
-      const data = await response.json();
-      if (data.meetingLink) {
-        // Call your Firestore update function
-        await bookingsDB.update(booking.id, {
-          meetingLink: data.meetingLink,
-          status: "confirmed",
-          meetingCreatedAt: new Date(),
-          // ...add any other fields you want to track
-        });
-        // Optionally update UI or show a success message
-      } else {
-        // Handle error
-      }
-    } catch (err) {
-      // Handle error
-    }
-  };
 
   return (
     <div>
