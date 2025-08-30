@@ -93,14 +93,6 @@ EkahHealth Team
           requestId: `booking-${bookingId}-${Date.now()}`,
           conferenceSolutionKey: { type: 'hangoutsMeet' }
         }
-      },
-      reminders: {
-        useDefault: false,
-        overrides: [
-          { method: 'email', minutes: 1440 }, // 24 hours
-          { method: 'email', minutes: 60 },   // 1 hour
-          { method: 'popup', minutes: 15 }    // 15 minutes
-        ]
       }
     };
 
