@@ -978,7 +978,12 @@ export const timeSlotsDB = {
         setTimeout(async () => {
           try {
             const { emailService } = await import('../notifications/emailService.js');
-            await emailService.sendAdminBookingNotification(updatedBooking);
+            // Add the booking ID to the booking data for the notification
+            const bookingWithId = { 
+              id: bookingData.bookingId, 
+              ...updatedBooking 
+            };
+            await emailService.sendAdminBookingNotification(bookingWithId);
             console.log('Admin booking notification sent successfully');
           } catch (emailError) {
             console.error('Failed to send admin notification:', emailError);
