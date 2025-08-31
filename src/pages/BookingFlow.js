@@ -212,13 +212,22 @@ const BookingFlow = () => {
       
       // Book the selected time slot
       if (selectedTimeSlot && savedBooking.id) {
-        await timeSlotsDB.bookSlot(selectedTimeSlot.date, selectedTimeSlot.time, {
-          bookingId: savedBooking.id,
-          patientName: `${formData.firstName} ${formData.lastName}`,
-          patientEmail: formData.email,
-          serviceType: selectedServices.map(s => s.title).join(', '),
-          notes: formData.specialRequests || ''
-        });
+        try {
+          await timeSlotsDB.atomicBookSlot(selectedTimeSlot.date, selectedTimeSlot.time, {
+            bookingId: savedBooking.id,
+            patientName: `${formData.firstName} ${formData.lastName}`,
+            patientEmail: formData.email,
+            serviceType: selectedServices.map(s => s.title).join(', '),
+            notes: formData.specialRequests || ''
+          });
+        } catch (slotErr) {
+          // Rollback booking if slot is not available
+          message.error('Selected slot is no longer available. Please choose another.');
+          // Optionally, delete the booking if needed
+          // await bookingsDB.delete(savedBooking.id);
+          setLoading(false);
+          return;
+        }
       }
       
       console.log('Booking saved successfully:', savedBooking);

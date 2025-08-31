@@ -1,4 +1,3 @@
-// src/services/firebase/database.js
 import { 
   collection, 
   doc, 
@@ -10,7 +9,8 @@ import {
   setDoc,
   query,
   where,
-  orderBy
+  orderBy,
+  runTransaction
 } from 'firebase/firestore';
 import { db } from './config';
 
@@ -859,6 +859,357 @@ export const timeSlotsDB = {
     } catch (error) {
       console.error('Error fetching slot by ID:', error);
       throw error;
+    }
+  },
+
+  // ATOMIC OPERATIONS WITH ACID PROPERTIES
+  
+  // Atomically book a time slot (prevents double-booking)
+  atomicBookSlot: async (date, time, bookingData) => {
+    const slotId = `${date}_${time.replace(':', '')}`;
+    const slotRef = doc(db, COLLECTIONS.TIME_SLOTS, slotId);
+    const bookingRef = doc(db, COLLECTIONS.BOOKINGS, bookingData.bookingId);
+    
+    try {
+      return await runTransaction(db, async (transaction) => {
+        // Read operations first (Isolation)
+        const slotDoc = await transaction.get(slotRef);
+        const bookingDoc = await transaction.get(bookingRef);
+        
+        // Validate slot exists and is available (Consistency)
+        if (!slotDoc.exists()) {
+          throw new Error('Time slot does not exist');
+        }
+        
+        const slot = slotDoc.data();
+        if (slot.status !== 'available') {
+          throw new Error(`Slot is ${slot.status} and not available for booking`);
+        }
+        
+        // Validate booking exists and is in correct state
+        if (!bookingDoc.exists()) {
+          throw new Error('Booking record does not exist');
+        }
+        
+        const booking = bookingDoc.data();
+        if (booking.status !== 'pending') {
+          throw new Error(`Booking is already ${booking.status}`);
+        }
+        
+        // Prepare atomic updates (Atomicity)
+        const updatedSlot = {
+          ...slot,
+          status: 'booked',
+          bookingId: bookingData.bookingId,
+          patientName: bookingData.patientName,
+          patientEmail: bookingData.patientEmail,
+          patientPhone: bookingData.patientPhone || null,
+          serviceType: bookingData.serviceType,
+          notes: bookingData.notes || '',
+          bookedAt: new Date(),
+          updatedAt: new Date(),
+          version: (slot.version || 0) + 1 // Optimistic locking
+        };
+        
+        const updatedBooking = {
+          ...booking,
+          status: 'confirmed',
+          confirmedSlotId: slotId,
+          confirmedDate: date,
+          confirmedTime: time,
+          confirmedAt: new Date(),
+          updatedAt: new Date()
+        };
+        
+        // Write operations (Durability)
+        transaction.set(slotRef, updatedSlot);
+        transaction.set(bookingRef, updatedBooking);
+        
+        return { 
+          slot: { id: slotId, ...updatedSlot },
+          booking: { id: bookingData.bookingId, ...updatedBooking }
+        };
+      });
+    } catch (error) {
+      console.error('Atomic booking failed:', error);
+      throw new Error(`Booking failed: ${error.message}`);
+    }
+  },
+
+  // Atomically cancel a booking and free the slot
+  atomicCancelBooking: async (slotId, bookingId, reason = '') => {
+    const slotRef = doc(db, COLLECTIONS.TIME_SLOTS, slotId);
+    const bookingRef = doc(db, COLLECTIONS.BOOKINGS, bookingId);
+    
+    try {
+      return await runTransaction(db, async (transaction) => {
+        // Read current state
+        const slotDoc = await transaction.get(slotRef);
+        const bookingDoc = await transaction.get(bookingRef);
+        
+        // Validate documents exist
+        if (!slotDoc.exists()) {
+          throw new Error('Time slot not found');
+        }
+        if (!bookingDoc.exists()) {
+          throw new Error('Booking not found');
+        }
+        
+        const slot = slotDoc.data();
+        const booking = bookingDoc.data();
+        
+        // Validate current state
+        if (slot.status !== 'booked') {
+          throw new Error('Slot is not currently booked');
+        }
+        if (slot.bookingId !== bookingId) {
+          throw new Error('Slot booking ID mismatch');
+        }
+        if (booking.status === 'cancelled') {
+          throw new Error('Booking is already cancelled');
+        }
+        
+        // Prepare updates
+        const updatedSlot = {
+          ...slot,
+          status: 'available',
+          bookingId: null,
+          patientName: null,
+          patientEmail: null,
+          patientPhone: null,
+          serviceType: null,
+          notes: '',
+          bookedAt: null,
+          cancelledAt: new Date(),
+          updatedAt: new Date(),
+          version: (slot.version || 0) + 1
+        };
+        
+        const updatedBooking = {
+          ...booking,
+          status: 'cancelled',
+          cancellationReason: reason,
+          cancelledAt: new Date(),
+          updatedAt: new Date()
+        };
+        
+        // Atomic write
+        transaction.set(slotRef, updatedSlot);
+        transaction.set(bookingRef, updatedBooking);
+        
+        return {
+          slot: { id: slotId, ...updatedSlot },
+          booking: { id: bookingId, ...updatedBooking }
+        };
+      });
+    } catch (error) {
+      console.error('Atomic cancellation failed:', error);
+      throw new Error(`Cancellation failed: ${error.message}`);
+    }
+  },
+
+  // Atomically reschedule a booking to a new slot
+  atomicReschedule: async (oldSlotId, newSlotId, bookingId, rescheduleData = {}) => {
+    const oldSlotRef = doc(db, COLLECTIONS.TIME_SLOTS, oldSlotId);
+    const newSlotRef = doc(db, COLLECTIONS.TIME_SLOTS, newSlotId);
+    const bookingRef = doc(db, COLLECTIONS.BOOKINGS, bookingId);
+    
+    try {
+      return await runTransaction(db, async (transaction) => {
+        // Read all documents
+        const oldSlotDoc = await transaction.get(oldSlotRef);
+        const newSlotDoc = await transaction.get(newSlotRef);
+        const bookingDoc = await transaction.get(bookingRef);
+        
+        // Validate all documents exist
+        if (!oldSlotDoc.exists() || !newSlotDoc.exists() || !bookingDoc.exists()) {
+          throw new Error('One or more required documents not found');
+        }
+        
+        const oldSlot = oldSlotDoc.data();
+        const newSlot = newSlotDoc.data();
+        const booking = bookingDoc.data();
+        
+        // Validate states
+        if (oldSlot.status !== 'booked' || oldSlot.bookingId !== bookingId) {
+          throw new Error('Original slot is not booked by this booking');
+        }
+        if (newSlot.status !== 'available') {
+          throw new Error('New slot is not available');
+        }
+        if (booking.status !== 'confirmed') {
+          throw new Error('Booking is not in confirmed state');
+        }
+        
+        // Prepare updates
+        const updatedOldSlot = {
+          ...oldSlot,
+          status: 'available',
+          bookingId: null,
+          patientName: null,
+          patientEmail: null,
+          patientPhone: null,
+          serviceType: null,
+          notes: '',
+          bookedAt: null,
+          rescheduledAt: new Date(),
+          updatedAt: new Date(),
+          version: (oldSlot.version || 0) + 1
+        };
+        
+        const updatedNewSlot = {
+          ...newSlot,
+          status: 'booked',
+          bookingId: bookingId,
+          patientName: oldSlot.patientName,
+          patientEmail: oldSlot.patientEmail,
+          patientPhone: oldSlot.patientPhone,
+          serviceType: oldSlot.serviceType,
+          notes: rescheduleData.notes || oldSlot.notes,
+          bookedAt: new Date(),
+          rescheduledFrom: oldSlotId,
+          updatedAt: new Date(),
+          version: (newSlot.version || 0) + 1
+        };
+        
+        const updatedBooking = {
+          ...booking,
+          confirmedSlotId: newSlotId,
+          confirmedDate: newSlot.date,
+          confirmedTime: newSlot.time,
+          rescheduledFrom: oldSlotId,
+          rescheduledAt: new Date(),
+          rescheduleReason: rescheduleData.reason || '',
+          updatedAt: new Date()
+        };
+        
+        // Atomic write all changes
+        transaction.set(oldSlotRef, updatedOldSlot);
+        transaction.set(newSlotRef, updatedNewSlot);
+        transaction.set(bookingRef, updatedBooking);
+        
+        return {
+          oldSlot: { id: oldSlotId, ...updatedOldSlot },
+          newSlot: { id: newSlotId, ...updatedNewSlot },
+          booking: { id: bookingId, ...updatedBooking }
+        };
+      });
+    } catch (error) {
+      console.error('Atomic reschedule failed:', error);
+      throw new Error(`Reschedule failed: ${error.message}`);
+    }
+  },
+
+  // Atomically block multiple slots (for maintenance, holidays, etc.)
+  atomicBlockSlots: async (slotIds, blockData = {}) => {
+    if (!Array.isArray(slotIds) || slotIds.length === 0) {
+      throw new Error('slotIds must be a non-empty array');
+    }
+    
+    try {
+      return await runTransaction(db, async (transaction) => {
+        const results = [];
+        
+        // Read all slots first
+        const slotPromises = slotIds.map(slotId => {
+          const slotRef = doc(db, COLLECTIONS.TIME_SLOTS, slotId);
+          return { slotId, slotRef, docPromise: transaction.get(slotRef) };
+        });
+        
+        const slotDocs = await Promise.all(slotPromises.map(s => s.docPromise));
+        
+        // Validate and prepare updates
+        for (let i = 0; i < slotDocs.length; i++) {
+          const slotDoc = slotDocs[i];
+          const { slotId, slotRef } = slotPromises[i];
+          
+          if (!slotDoc.exists()) {
+            throw new Error(`Slot ${slotId} does not exist`);
+          }
+          
+          const slot = slotDoc.data();
+          if (slot.status === 'booked') {
+            throw new Error(`Cannot block slot ${slotId} - it is currently booked`);
+          }
+          
+          const updatedSlot = {
+            ...slot,
+            status: 'blocked',
+            blockReason: blockData.reason || 'Administrative block',
+            blockedBy: blockData.blockedBy || 'system',
+            blockedAt: new Date(),
+            blockNotes: blockData.notes || '',
+            updatedAt: new Date(),
+            version: (slot.version || 0) + 1
+          };
+          
+          transaction.set(slotRef, updatedSlot);
+          results.push({ id: slotId, ...updatedSlot });
+        }
+        
+        return results;
+      });
+    } catch (error) {
+      console.error('Atomic block slots failed:', error);
+      throw new Error(`Block slots failed: ${error.message}`);
+    }
+  },
+
+  // Atomically unblock multiple slots
+  atomicUnblockSlots: async (slotIds, unblockData = {}) => {
+    if (!Array.isArray(slotIds) || slotIds.length === 0) {
+      throw new Error('slotIds must be a non-empty array');
+    }
+    
+    try {
+      return await runTransaction(db, async (transaction) => {
+        const results = [];
+        
+        // Read all slots first
+        const slotPromises = slotIds.map(slotId => {
+          const slotRef = doc(db, COLLECTIONS.TIME_SLOTS, slotId);
+          return { slotId, slotRef, docPromise: transaction.get(slotRef) };
+        });
+        
+        const slotDocs = await Promise.all(slotPromises.map(s => s.docPromise));
+        
+        // Validate and prepare updates
+        for (let i = 0; i < slotDocs.length; i++) {
+          const slotDoc = slotDocs[i];
+          const { slotId, slotRef } = slotPromises[i];
+          
+          if (!slotDoc.exists()) {
+            throw new Error(`Slot ${slotId} does not exist`);
+          }
+          
+          const slot = slotDoc.data();
+          if (slot.status !== 'blocked') {
+            throw new Error(`Slot ${slotId} is not currently blocked`);
+          }
+          
+          const updatedSlot = {
+            ...slot,
+            status: 'available',
+            blockReason: null,
+            blockedBy: null,
+            blockedAt: null,
+            blockNotes: null,
+            unblockedBy: unblockData.unblockedBy || 'system',
+            unblockedAt: new Date(),
+            unblockReason: unblockData.reason || 'Administrative unblock',
+            updatedAt: new Date(),
+            version: (slot.version || 0) + 1
+          };
+          
+          transaction.set(slotRef, updatedSlot);
+          results.push({ id: slotId, ...updatedSlot });
+        }
+        
+        return results;
+      });
+    } catch (error) {
+      console.error('Atomic unblock slots failed:', error);
+      throw new Error(`Unblock slots failed: ${error.message}`);
     }
   }
 };
