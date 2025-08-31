@@ -72,10 +72,10 @@ const BookingsManagement = () => {
   const calculateStats = (bookingsList) => {
     const stats = {
       total: bookingsList.length,
-      pending: bookingsList.filter(b => b.status === 'pending').length,
+      pending: bookingsList.filter(b => b.status === 'pending' || b.status === 'pending_admin_confirmation').length,
       confirmed: bookingsList.filter(b => b.status === 'confirmed').length,
       completed: bookingsList.filter(b => b.status === 'completed').length,
-      cancelled: bookingsList.filter(b => b.status === 'cancelled').length
+      cancelled: bookingsList.filter(b => b.status === 'cancelled' || b.status === 'rejected').length
     };
     setStats(stats);
   };
@@ -113,67 +113,63 @@ const BookingsManagement = () => {
     }
   };
 
-  // Add this function right after handleStatusChange
-const handleConfirmWithMeeting = async (booking) => {
-  try {
-    setLoading(true);
-    
-    // First update booking status
-    await bookingsDB.updateStatus(booking.id, 'confirmed');
-    
-    // Book the time slot
-    if (booking?.preferredDate && booking?.preferredTime) {
-      const dateStr = moment(booking.preferredDate.toDate ? booking.preferredDate.toDate() : booking.preferredDate).format('YYYY-MM-DD');
-      const timeStr = moment(booking.preferredTime.toDate ? booking.preferredTime.toDate() : booking.preferredTime).format('HH:mm');
+  // Atomic confirm booking with meeting generation
+  const handleConfirmBooking = async (booking) => {
+    try {
+      setLoading(true);
       
-      await timeSlotsDB.bookSlot(dateStr, timeStr, {
-        bookingId: booking.id,
-        patientName: `${booking.firstName} ${booking.lastName}`,
-        patientEmail: booking.email,
-        serviceType: booking.selectedServices?.[0]?.title || 'Consultation',
-        notes: `Booking confirmed with meeting: ${booking.confirmationNumber}`
-      });
+      const adminData = {
+        adminId: 'admin_001', // You can get this from auth context
+        notes: `Booking confirmed via admin interface for ${booking.confirmationNumber}`
+      };
+
+      // Use atomic confirmation operation
+      const result = await timeSlotsDB.atomicAdminConfirmBooking(booking.id, adminData);
+      
+      console.log('Booking confirmed with atomic operation:', result);
+      message.success('Booking confirmed successfully! Meet link has been sent to the patient.');
+      
+      // Reload bookings to get updated data
+      loadBookings();
+      
+    } catch (error) {
+      console.error('Error confirming booking:', error);
+      message.error('Failed to confirm booking: ' + error.message);
+    } finally {
+      setLoading(false);
     }
-    
-    // Create meeting via API
-    const response = await fetch('/api/create-meeting', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        bookingId: booking.confirmationNumber,
-        patientEmail: booking.email,
-        patientName: `${booking.firstName} ${booking.lastName}`,
-        appointmentDateTime: booking.preferredDate?.toDate?.() || booking.preferredDate,
-        serviceType: booking.selectedServices?.map(s => s.title).join(', ') || 'Consultation'
-      })
-    });
+  };
 
-    const result = await response.json();
+  // Atomic reject booking
+  const handleRejectBooking = async (booking) => {
+    const reason = prompt('Please provide a reason for rejection:');
+    if (!reason) return;
 
-    if (result.success) {
-      // Update booking with meeting details
-      await bookingsDB.update(booking.id, {
-        meetLink: result.meetLink,
-        eventId: result.eventId,
-        meetingCreated: true,
-        meetingCreatedAt: new Date()
-      });
+    try {
+      setLoading(true);
+      
+      const rejectionData = {
+        adminId: 'admin_001',
+        reason: reason,
+        notes: `Booking rejected via admin interface for ${booking.confirmationNumber}`
+      };
 
-      message.success('Booking confirmed and Google Meet created! Invites sent to patient.');
-    } else {
-      message.error('Booking confirmed but failed to create meeting: ' + result.details);
+      // Use atomic rejection operation
+      const result = await timeSlotsDB.atomicAdminRejectBooking(booking.id, rejectionData);
+      
+      console.log('Booking rejected with atomic operation:', result);
+      message.success('Booking rejected successfully. Patient has been notified.');
+      
+      // Reload bookings to get updated data
+      loadBookings();
+      
+    } catch (error) {
+      console.error('Error rejecting booking:', error);
+      message.error('Failed to reject booking: ' + error.message);
+    } finally {
+      setLoading(false);
     }
-    
-    loadBookings(); // Reload bookings
-  } catch (error) {
-    console.error('Error confirming with meeting:', error);
-    message.error('Failed to confirm booking with meeting');
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const showBookingDetails = (booking) => {
     setSelectedBooking(booking);
@@ -183,9 +179,11 @@ const handleConfirmWithMeeting = async (booking) => {
   const getStatusColor = (status) => {
     const colors = {
       pending: 'orange',
+      pending_admin_confirmation: 'gold',
       confirmed: 'blue',
       completed: 'green',
-      cancelled: 'red'
+      cancelled: 'red',
+      rejected: 'red'
     };
     return colors[status] || 'default';
   };
@@ -315,33 +313,76 @@ const handleConfirmWithMeeting = async (booking) => {
     {
       title: 'Actions',
       key: 'actions',
-      width: 200,
+      width: 250,
       render: (_, record) => (
-        <Space>
+        <Space direction="vertical" size="small" style={{ width: '100%' }}>
           <Button 
             size="small" 
             icon={<EyeOutlined />}
             onClick={() => showBookingDetails(record)}
+            block
           >
             View
           </Button>
+          
+          {/* Show Confirm/Reject buttons for pending admin confirmation */}
+          {record.status === 'pending_admin_confirmation' && (
+            <Space size="small" style={{ width: '100%' }}>
+              <Button 
+                size="small" 
+                type="primary"
+                icon={<CheckCircleOutlined />}
+                onClick={() => handleConfirmBooking(record)}
+                loading={loading}
+              >
+                Confirm
+              </Button>
+              <Button 
+                size="small" 
+                danger
+                icon={<CloseCircleOutlined />}
+                onClick={() => handleRejectBooking(record)}
+                loading={loading}
+              >
+                Reject
+              </Button>
+            </Space>
+          )}
+          
+          {/* Show meeting link for confirmed bookings */}
+          {record.status === 'confirmed' && record.meetLink && (
+            <Button 
+              size="small" 
+              type="link"
+              onClick={() => window.open(record.meetLink.url || record.meetLink, '_blank')}
+              style={{ padding: 0 }}
+            >
+              🎥 Join Meeting
+            </Button>
+          )}
+          
+          {/* Legacy pending status support */}
           {record.status === 'pending' && (
             <Button 
               size="small" 
               type="primary"
               icon={<CheckCircleOutlined />}
-              onClick={() => handleConfirmWithMeeting(record)}
-              style={{ marginRight: '8px' }}
+              onClick={() => handleConfirmBooking(record)}
+              loading={loading}
+              block
             >
               Confirm & Create Meet
             </Button>
           )}
-          {(record.status === 'pending' || record.status === 'confirmed') && (
+          
+          {/* Cancel button for active bookings */}
+          {(record.status === 'pending' || record.status === 'pending_admin_confirmation' || record.status === 'confirmed') && (
             <Button 
               size="small" 
               danger
               icon={<CloseCircleOutlined />}
               onClick={() => handleStatusChange(record.id, 'cancelled')}
+              disabled={loading}
             >
               Cancel
             </Button>
@@ -422,9 +463,11 @@ const handleConfirmWithMeeting = async (booking) => {
             >
               <Option value="all">All Statuses</Option>
               <Option value="pending">Pending</Option>
+              <Option value="pending_admin_confirmation">Needs Confirmation</Option>
               <Option value="confirmed">Confirmed</Option>
               <Option value="completed">Completed</Option>
               <Option value="cancelled">Cancelled</Option>
+              <Option value="rejected">Rejected</Option>
             </Select>
           </Col>
           <Col span={6}>
@@ -562,31 +605,75 @@ const handleConfirmWithMeeting = async (booking) => {
             
             <div style={{ marginTop: 24, textAlign: 'right' }}>
               <Space>
+                {/* Confirm/Reject for pending admin confirmation */}
+                {selectedBooking.status === 'pending_admin_confirmation' && (
+                  <>
+                    <Button 
+                      type="primary"
+                      icon={<CheckCircleOutlined />}
+                      onClick={() => {
+                        handleConfirmBooking(selectedBooking);
+                        setDetailModalVisible(false);
+                      }}
+                      loading={loading}
+                    >
+                      Confirm Booking
+                    </Button>
+                    <Button 
+                      danger
+                      icon={<CloseCircleOutlined />}
+                      onClick={() => {
+                        handleRejectBooking(selectedBooking);
+                        setDetailModalVisible(false);
+                      }}
+                      loading={loading}
+                    >
+                      Reject Booking
+                    </Button>
+                  </>
+                )}
+                
+                {/* Legacy pending status */}
                 {selectedBooking.status === 'pending' && (
                   <Button 
                     type="primary"
                     icon={<CheckCircleOutlined />}
                     onClick={() => {
-                      handleStatusChange(selectedBooking.id, 'confirmed');
+                      handleConfirmBooking(selectedBooking);
                       setDetailModalVisible(false);
                     }}
+                    loading={loading}
                   >
                     Confirm Booking
                   </Button>
                 )}
+                
+                {/* Mark complete for confirmed */}
                 {selectedBooking.status === 'confirmed' && (
-                  <Button 
-                    type="primary"
-                    icon={<CheckCircleOutlined />}
-                    onClick={() => {
-                      handleStatusChange(selectedBooking.id, 'completed');
-                      setDetailModalVisible(false);
-                    }}
-                  >
-                    Mark Complete
-                  </Button>
+                  <>
+                    <Button 
+                      type="primary"
+                      icon={<CheckCircleOutlined />}
+                      onClick={() => {
+                        handleStatusChange(selectedBooking.id, 'completed');
+                        setDetailModalVisible(false);
+                      }}
+                    >
+                      Mark Complete
+                    </Button>
+                    {selectedBooking.meetLink && (
+                      <Button 
+                        type="link"
+                        onClick={() => window.open(selectedBooking.meetLink.url || selectedBooking.meetLink, '_blank')}
+                      >
+                        🎥 Join Meeting
+                      </Button>
+                    )}
+                  </>
                 )}
-                {(selectedBooking.status === 'pending' || selectedBooking.status === 'confirmed') && (
+                
+                {/* Cancel for active bookings */}
+                {(selectedBooking.status === 'pending' || selectedBooking.status === 'pending_admin_confirmation' || selectedBooking.status === 'confirmed') && (
                   <Button 
                     danger
                     icon={<CloseCircleOutlined />}
@@ -598,6 +685,7 @@ const handleConfirmWithMeeting = async (booking) => {
                     Cancel Booking
                   </Button>
                 )}
+                
                 <Button onClick={() => setDetailModalVisible(false)}>
                   Close
                 </Button>
