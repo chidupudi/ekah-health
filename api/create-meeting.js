@@ -10,8 +10,8 @@ const initializeEmailTransporter = () => {
       port: 587,
       secure: false,
       auth: {
-        user: 'ekahhealth@gmail.com', // Replace with your email
-        pass: 'mwdj pluj imjg mbpf'     // Replace with your app password
+        user: 'noreplyekahhealth@gmail.com',
+        pass: 'ddko skyd ucsr fcix'
       }
     };
 
@@ -196,7 +196,7 @@ export default async function handler(req, res) {
               <h4 style="margin-top: 0;">❓ Need Help?</h4>
               <p>If you have any technical issues or questions:</p>
               <ul>
-                <li>📧 Email: <a href="mailto:hello@ekah.life">hello@ekah.life</a></li>
+                <li>📧 Email: <a href="mailto:ekahhealth@gmail.com">ekahhealth@gmail.com</a></li>
                 <li>📞 Phone: +91 63617 43098</li>
                 <li>💬 WhatsApp support available</li>
               </ul>
@@ -218,9 +218,9 @@ export default async function handler(req, res) {
 
     try {
       await transporter.sendMail({
-        from: '"EkahHealth" <hello@ekah.life>',
+        from: '"EkahHealth" <noreplyekahhealth@gmail.com>',
         to: patientEmail,
-        cc: 'admin@ekah.life', // Admin copy
+        cc: 'ekahhealth@gmail.com', // Admin copy
         subject: `🎥 Video Meeting Ready - ${appointmentDate.toLocaleDateString()} | Booking ${bookingId}`,
         html: patientEmailContent
       });
@@ -285,8 +285,8 @@ export default async function handler(req, res) {
     // Send admin notification
     try {
       await transporter.sendMail({
-        from: '"EkahHealth Bookings" <bookings@ekah.life>',
-        to: 'admin@ekah.life', // Replace with actual admin email
+        from: '"EkahHealth Bookings" <noreplyekahhealth@gmail.com>',
+        to: 'ekahhealth@gmail.com',
         subject: `👨‍⚕️ New Appointment: ${patientName} - ${appointmentDate.toLocaleDateString()}`,
         html: adminEmailContent
       });

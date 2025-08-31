@@ -464,6 +464,45 @@ export const bookingsDB = {
       console.error('Error fetching bookings by date range:', error);
       throw error;
     }
+  },
+
+  // Get bookings pending admin confirmation
+  getPendingAdminConfirmation: async () => {
+    try {
+      const q = query(
+        collection(db, COLLECTIONS.BOOKINGS),
+        where('status', '==', 'pending_admin_confirmation'),
+        orderBy('createdAt', 'desc')
+      );
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error) {
+      console.error('Error fetching pending bookings:', error);
+      throw error;
+    }
+  },
+
+  // Get confirmed bookings with meet links
+  getConfirmedBookings: async (startDate, endDate) => {
+    try {
+      const q = query(
+        collection(db, COLLECTIONS.BOOKINGS),
+        where('status', '==', 'confirmed'),
+        where('confirmedDate', '>=', startDate),
+        where('confirmedDate', '<=', endDate),
+        orderBy('confirmedDate', 'asc')
+      );
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(doc => ({ 
+        id: doc.id, 
+        ...doc.data(),
+        // Ensure meet link info is included
+        hasMeetLink: !!doc.data().meetLink
+      }));
+    } catch (error) {
+      console.error('Error fetching confirmed bookings:', error);
+      throw error;
+    }
   }
 };
 
@@ -913,11 +952,12 @@ export const timeSlotsDB = {
         
         const updatedBooking = {
           ...booking,
-          status: 'confirmed',
+          status: 'pending_admin_confirmation', // Changed from 'confirmed'
           confirmedSlotId: slotId,
           confirmedDate: date,
           confirmedTime: time,
-          confirmedAt: new Date(),
+          bookedAt: new Date(),
+          adminNotified: true,
           updatedAt: new Date()
         };
         
@@ -925,10 +965,27 @@ export const timeSlotsDB = {
         transaction.set(slotRef, updatedSlot);
         transaction.set(bookingRef, updatedBooking);
         
-        return { 
+        const result = { 
           slot: { id: slotId, ...updatedSlot },
-          booking: { id: bookingData.bookingId, ...updatedBooking }
+          booking: { id: bookingData.bookingId, ...updatedBooking },
+          notifications: {
+            adminNotified: true,
+            status: 'pending_admin_confirmation'
+          }
         };
+        
+        // Send admin notification asynchronously after transaction completes
+        setTimeout(async () => {
+          try {
+            const { emailService } = await import('../notifications/emailService.js');
+            await emailService.sendAdminBookingNotification(updatedBooking);
+            console.log('Admin booking notification sent successfully');
+          } catch (emailError) {
+            console.error('Failed to send admin notification:', emailError);
+          }
+        }, 100);
+        
+        return result;
       });
     } catch (error) {
       console.error('Atomic booking failed:', error);
@@ -1211,6 +1268,236 @@ export const timeSlotsDB = {
       console.error('Atomic unblock slots failed:', error);
       throw new Error(`Unblock slots failed: ${error.message}`);
     }
+  },
+
+  // Admin confirms booking and generates meet link
+  atomicAdminConfirmBooking: async (bookingId, adminData = {}) => {
+    const bookingRef = doc(db, COLLECTIONS.BOOKINGS, bookingId);
+    
+    try {
+      return await runTransaction(db, async (transaction) => {
+        // Read current booking
+        const bookingDoc = await transaction.get(bookingRef);
+        
+        if (!bookingDoc.exists()) {
+          throw new Error('Booking not found');
+        }
+        
+        const booking = bookingDoc.data();
+        
+        // Validate current state
+        if (booking.status !== 'pending_admin_confirmation') {
+          throw new Error(`Cannot confirm booking with status: ${booking.status}`);
+        }
+        
+        // Generate meet link (you can customize this based on your preferred service)
+        const meetLink = await generateMeetLink(booking);
+        
+        // Prepare confirmation update
+        const updatedBooking = {
+          ...booking,
+          status: 'confirmed',
+          confirmedBy: adminData.adminId || 'admin',
+          confirmedAt: new Date(),
+          meetLink: meetLink,
+          meetId: meetLink.meetId || null,
+          adminNotes: adminData.notes || '',
+          notificationsScheduled: true,
+          updatedAt: new Date()
+        };
+        
+        // Update slot to mark it as confirmed
+        if (booking.confirmedSlotId) {
+          const slotRef = doc(db, COLLECTIONS.TIME_SLOTS, booking.confirmedSlotId);
+          const slotDoc = await transaction.get(slotRef);
+          
+          if (slotDoc.exists()) {
+            const slot = slotDoc.data();
+            const updatedSlot = {
+              ...slot,
+              status: 'confirmed', // Different from just 'booked'
+              confirmedBy: adminData.adminId || 'admin',
+              confirmedAt: new Date(),
+              meetLink: meetLink.url,
+              meetId: meetLink.meetId,
+              updatedAt: new Date(),
+              version: (slot.version || 0) + 1
+            };
+            
+            transaction.set(slotRef, updatedSlot);
+          }
+        }
+        
+        // Atomic write
+        transaction.set(bookingRef, updatedBooking);
+        
+        // Prepare response data
+        const result = {
+          booking: { id: bookingId, ...updatedBooking },
+          meetLink,
+          notifications: {
+            scheduled: true,
+            email: true,
+            meetingCreated: true
+          }
+        };
+        
+        // After transaction completes, trigger email notifications asynchronously
+        // This ensures the database transaction completes successfully first
+        setTimeout(async () => {
+          try {
+            // Import the email service dynamically to avoid circular imports
+            const { emailService } = await import('../notifications/emailService.js');
+            
+            // Send confirmation email with meeting details
+            await emailService.sendBookingConfirmation(updatedBooking, meetLink);
+            console.log('Booking confirmation email sent successfully');
+          } catch (emailError) {
+            console.error('Failed to send confirmation email:', emailError);
+            // Email failure doesn't affect the booking confirmation
+          }
+        }, 100); // Small delay to ensure transaction is committed
+        
+        return result;
+      });
+    } catch (error) {
+      console.error('Admin confirmation failed:', error);
+      throw new Error(`Confirmation failed: ${error.message}`);
+    }
+  },
+
+  // Admin rejects booking
+  atomicAdminRejectBooking: async (bookingId, rejectionData = {}) => {
+    const bookingRef = doc(db, COLLECTIONS.BOOKINGS, bookingId);
+    
+    try {
+      return await runTransaction(db, async (transaction) => {
+        const bookingDoc = await transaction.get(bookingRef);
+        
+        if (!bookingDoc.exists()) {
+          throw new Error('Booking not found');
+        }
+        
+        const booking = bookingDoc.data();
+        
+        if (booking.status !== 'pending_admin_confirmation') {
+          throw new Error(`Cannot reject booking with status: ${booking.status}`);
+        }
+        
+        // Free up the slot
+        if (booking.confirmedSlotId) {
+          const slotRef = doc(db, COLLECTIONS.TIME_SLOTS, booking.confirmedSlotId);
+          const slotDoc = await transaction.get(slotRef);
+          
+          if (slotDoc.exists()) {
+            const slot = slotDoc.data();
+            const updatedSlot = {
+              ...slot,
+              status: 'available',
+              bookingId: null,
+              patientName: null,
+              patientEmail: null,
+              patientPhone: null,
+              serviceType: null,
+              notes: '',
+              bookedAt: null,
+              rejectedAt: new Date(),
+              updatedAt: new Date(),
+              version: (slot.version || 0) + 1
+            };
+            
+            transaction.set(slotRef, updatedSlot);
+          }
+        }
+        
+        const updatedBooking = {
+          ...booking,
+          status: 'rejected',
+          rejectedBy: rejectionData.adminId || 'admin',
+          rejectedAt: new Date(),
+          rejectionReason: rejectionData.reason || 'No reason provided',
+          adminNotes: rejectionData.notes || '',
+          updatedAt: new Date()
+        };
+        
+        transaction.set(bookingRef, updatedBooking);
+        
+        const result = {
+          booking: { id: bookingId, ...updatedBooking },
+          notifications: {
+            scheduled: true,
+            email: true
+          }
+        };
+        
+        // Send rejection notification asynchronously
+        setTimeout(async () => {
+          try {
+            const { emailService } = await import('../notifications/emailService.js');
+            await emailService.sendBookingRejection(updatedBooking, rejectionData.reason);
+            console.log('Booking rejection email sent successfully');
+          } catch (emailError) {
+            console.error('Failed to send rejection email:', emailError);
+          }
+        }, 100);
+        
+        return result;
+      });
+    } catch (error) {
+      console.error('Admin rejection failed:', error);
+      throw new Error(`Rejection failed: ${error.message}`);
+    }
+  }
+};
+
+// Meet link generation function
+const generateMeetLink = async (bookingData) => {
+  try {
+    // This is a placeholder - you can integrate with your preferred video service
+    // Options: Google Meet, Zoom, Jitsi, etc.
+    
+    const meetingTitle = `Health Consultation - ${bookingData.firstName} ${bookingData.lastName}`;
+    const startTime = new Date(`${bookingData.confirmedDate}T${bookingData.confirmedTime}:00`);
+    const endTime = new Date(startTime.getTime() + (bookingData.duration || 60) * 60000);
+    
+    // For now, generating a Jitsi Meet link (free and doesn't require API keys)
+    const roomName = `ekah-health-${bookingData.confirmedSlotId}-${Date.now()}`;
+    const jitsiLink = `https://meet.jit.si/${roomName}`;
+    
+    // You can replace this with Google Meet API, Zoom API, etc.
+    /*
+    // Example for Google Meet API (requires setup)
+    const googleMeetLink = await createGoogleMeetEvent({
+      summary: meetingTitle,
+      start: { dateTime: startTime.toISOString() },
+      end: { dateTime: endTime.toISOString() },
+      attendees: [
+        { email: bookingData.email },
+        { email: 'admin@ekah-health.com' } // Replace with actual admin email
+      ]
+    });
+    */
+    
+    return {
+      url: jitsiLink,
+      meetId: roomName,
+      service: 'jitsi',
+      title: meetingTitle,
+      startTime: startTime.toISOString(),
+      endTime: endTime.toISOString(),
+      createdAt: new Date().toISOString()
+    };
+  } catch (error) {
+    console.error('Error generating meet link:', error);
+    // Fallback to simple room generation
+    const fallbackRoom = `ekah-health-${Date.now()}`;
+    return {
+      url: `https://meet.jit.si/${fallbackRoom}`,
+      meetId: fallbackRoom,
+      service: 'jitsi',
+      title: `Health Consultation`,
+      createdAt: new Date().toISOString()
+    };
   }
 };
 
