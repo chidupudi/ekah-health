@@ -1355,7 +1355,11 @@ export const timeSlotsDB = {
             const { emailService } = await import('../notifications/emailService.js');
             
             // Send confirmation email with meeting details
-            await emailService.sendBookingConfirmation(updatedBooking, meetLink);
+            const bookingWithId = { 
+              id: bookingId, 
+              ...updatedBooking 
+            };
+            await emailService.sendBookingConfirmation(bookingWithId, meetLink);
             console.log('Booking confirmation email sent successfully');
           } catch (emailError) {
             console.error('Failed to send confirmation email:', emailError);

@@ -12,7 +12,7 @@ const initializeEmailTransporter = () => {
         pass: 'ddko skyd ucsr fcix'     
       }
     };
-    return nodemailer.createTransporter(emailConfig);
+    return nodemailer.createTransport(emailConfig);
   } catch (error) {
     console.error('Error initializing email transporter:', error);
     throw error;
