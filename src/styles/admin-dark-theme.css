@@ -1,0 +1,515 @@
+/* Admin Dark Theme Styles */
+
+/* Global Dark Theme Variables */
+:root[data-theme="dark"] {
+  /* Primary Colors */
+  --color-primary: #00d4aa;
+  --color-primary-hover: #00b894;
+  --color-primary-active: #00a085;
+  --color-secondary: #6c5ce7;
+  --color-secondary-hover: #5f3dc4;
+  
+  /* Background Colors */
+  --bg-primary: #0d1117;
+  --bg-secondary: #161b22;
+  --bg-tertiary: #21262d;
+  --bg-elevated: #30363d;
+  
+  /* Text Colors */
+  --text-primary: #f0f6fc;
+  --text-secondary: #8b949e;
+  --text-muted: #6e7681;
+  --text-inverse: #24292f;
+  
+  /* Border Colors */
+  --border-primary: #30363d;
+  --border-secondary: #21262d;
+  --border-accent: #fd7e14;
+  
+  /* Status Colors */
+  --status-success: #238636;
+  --status-success-text: #2ea043;
+  --status-warning: #9a6700;
+  --status-warning-text: #d29922;
+  --status-error: #da3633;
+  --status-error-text: #f85149;
+  --status-info: #0969da;
+  --status-info-text: #58a6ff;
+  
+  /* Shadows */
+  --shadow-small: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-medium: 0 4px 6px rgba(0, 0, 0, 0.4);
+  --shadow-large: 0 10px 25px rgba(0, 0, 0, 0.5);
+  --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.6);
+}
+
+/* Global Body Styles for Dark Theme */
+[data-theme="dark"] body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* Admin Dashboard Dark Theme */
+[data-theme="dark"] .admin-dashboard {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+}
+
+[data-theme="dark"] .admin-header {
+  background: linear-gradient(135deg, #161b22 0%, #21262d 100%);
+  border-bottom: 1px solid var(--border-primary);
+  box-shadow: var(--shadow-medium);
+}
+
+[data-theme="dark"] .admin-header h1 {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .logout-btn {
+  background: var(--status-error);
+  border: 1px solid var(--status-error);
+  transition: all 0.3s ease;
+}
+
+[data-theme="dark"] .logout-btn:hover {
+  background: #c0392b;
+  border-color: #c0392b;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-small);
+}
+
+[data-theme="dark"] .admin-navigation {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-primary);
+  box-shadow: var(--shadow-small);
+}
+
+[data-theme="dark"] .admin-navigation button {
+  color: var(--text-secondary);
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  transition: all 0.3s ease;
+}
+
+[data-theme="dark"] .admin-navigation button:hover {
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .admin-navigation button.nav-active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+  background: var(--bg-tertiary);
+}
+
+/* Bookings Management Dark Theme */
+[data-theme="dark"] .bookings-table-container {
+  background: var(--bg-primary);
+}
+
+[data-theme="dark"] .bookings-header h2 {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .bookings-filters button {
+  background: var(--bg-secondary);
+  border: 2px solid var(--color-primary);
+  color: var(--color-primary);
+  transition: all 0.3s ease;
+}
+
+[data-theme="dark"] .bookings-filters button:hover {
+  background: var(--color-primary);
+  color: var(--text-inverse);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-small);
+}
+
+[data-theme="dark"] .bookings-filters button.filter-active {
+  background: var(--color-primary);
+  color: var(--text-inverse);
+  box-shadow: var(--shadow-small);
+}
+
+[data-theme="dark"] .refresh-btn {
+  background: var(--status-success);
+  border: 1px solid var(--status-success);
+  transition: all 0.3s ease;
+}
+
+[data-theme="dark"] .refresh-btn:hover {
+  background: #2ea043;
+  border-color: #2ea043;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-small);
+}
+
+[data-theme="dark"] .bookings-table-wrapper {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  box-shadow: var(--shadow-large);
+}
+
+[data-theme="dark"] .bookings-table {
+  background: var(--bg-secondary);
+}
+
+[data-theme="dark"] .bookings-table th {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-bottom: 2px solid var(--border-primary);
+  font-weight: 600;
+}
+
+[data-theme="dark"] .bookings-table td {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-primary);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .booking-row:hover {
+  background: var(--bg-tertiary) !important;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-small);
+}
+
+[data-theme="dark"] .booking-row.pending_admin_confirmation {
+  border-left: 4px solid var(--status-warning-text);
+  background: rgba(218, 165, 32, 0.05);
+}
+
+[data-theme="dark"] .booking-row.confirmed {
+  border-left: 4px solid var(--status-success-text);
+  background: rgba(46, 160, 67, 0.05);
+}
+
+[data-theme="dark"] .booking-row.rejected {
+  border-left: 4px solid var(--status-error-text);
+  background: rgba(248, 81, 73, 0.05);
+}
+
+[data-theme="dark"] .booking-row.cancelled {
+  border-left: 4px solid var(--text-muted);
+  background: rgba(139, 148, 158, 0.05);
+}
+
+/* Status Badges Dark Theme */
+[data-theme="dark"] .status-badge {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+[data-theme="dark"] .status-pending {
+  background: rgba(218, 165, 32, 0.2);
+  color: var(--status-warning-text);
+  border: 1px solid var(--status-warning-text);
+}
+
+[data-theme="dark"] .status-confirmed {
+  background: rgba(46, 160, 67, 0.2);
+  color: var(--status-success-text);
+  border: 1px solid var(--status-success-text);
+}
+
+[data-theme="dark"] .status-rejected {
+  background: rgba(248, 81, 73, 0.2);
+  color: var(--status-error-text);
+  border: 1px solid var(--status-error-text);
+}
+
+[data-theme="dark"] .status-cancelled {
+  background: rgba(139, 148, 158, 0.2);
+  color: var(--text-muted);
+  border: 1px solid var(--text-muted);
+}
+
+/* Button Styles Dark Theme */
+[data-theme="dark"] .btn-confirm {
+  background: var(--status-success);
+  border: 1px solid var(--status-success);
+  color: white;
+  transition: all 0.3s ease;
+  font-weight: 600;
+}
+
+[data-theme="dark"] .btn-confirm:hover:not(:disabled) {
+  background: #2ea043;
+  border-color: #2ea043;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-small);
+}
+
+[data-theme="dark"] .btn-reject {
+  background: var(--status-error);
+  border: 1px solid var(--status-error);
+  color: white;
+  transition: all 0.3s ease;
+  font-weight: 600;
+}
+
+[data-theme="dark"] .btn-reject:hover:not(:disabled) {
+  background: #c0392b;
+  border-color: #c0392b;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-small);
+}
+
+[data-theme="dark"] .btn-confirm:disabled,
+[data-theme="dark"] .btn-reject:disabled {
+  background: var(--bg-tertiary);
+  border-color: var(--border-primary);
+  color: var(--text-muted);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Meet Link Button */
+[data-theme="dark"] .meet-link-btn {
+  background: var(--color-primary);
+  border: 1px solid var(--color-primary);
+  color: var(--text-inverse);
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+[data-theme="dark"] .meet-link-btn:hover {
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-small);
+}
+
+/* Contact Info Links */
+[data-theme="dark"] .contact-info a {
+  color: var(--color-primary);
+  transition: color 0.3s ease;
+}
+
+[data-theme="dark"] .contact-info a:hover {
+  color: var(--color-primary-hover);
+}
+
+/* Service Type Badge */
+[data-theme="dark"] .service-type {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-primary);
+}
+
+/* Medical Info Section */
+[data-theme="dark"] .medical-info {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+[data-theme="dark"] .medical-item strong {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .medical-text {
+  color: var(--text-secondary);
+}
+
+/* Loading State */
+[data-theme="dark"] .bookings-loading {
+  color: var(--color-primary);
+  background: var(--bg-primary);
+}
+
+[data-theme="dark"] .no-bookings {
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border: 2px dashed var(--border-primary);
+  border-radius: 12px;
+}
+
+/* Booking ID */
+[data-theme="dark"] .booking-id {
+  color: var(--color-primary);
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+}
+
+[data-theme="dark"] .booking-date {
+  color: var(--text-muted);
+}
+
+/* Confirmed Info */
+[data-theme="dark"] .confirmed-info {
+  color: var(--status-success-text);
+}
+
+[data-theme="dark"] .rejected-info {
+  color: var(--status-error-text);
+}
+
+[data-theme="dark"] .cancelled-info {
+  color: var(--text-muted);
+}
+
+/* Ant Design Components Dark Theme Override */
+[data-theme="dark"] .ant-card {
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .ant-card-head {
+  background: var(--bg-tertiary) !important;
+  border-bottom: 1px solid var(--border-primary) !important;
+}
+
+[data-theme="dark"] .ant-card-head-title {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .ant-table {
+  background: var(--bg-secondary) !important;
+}
+
+[data-theme="dark"] .ant-table-thead > tr > th {
+  background: var(--bg-tertiary) !important;
+  color: var(--text-primary) !important;
+  border-bottom: 2px solid var(--border-primary) !important;
+}
+
+[data-theme="dark"] .ant-table-tbody > tr > td {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  border-bottom: 1px solid var(--border-primary) !important;
+}
+
+[data-theme="dark"] .ant-table-tbody > tr:hover > td {
+  background: var(--bg-tertiary) !important;
+}
+
+[data-theme="dark"] .ant-input {
+  background: var(--bg-tertiary) !important;
+  border: 1px solid var(--border-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .ant-input:focus {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 2px rgba(0, 212, 170, 0.2) !important;
+}
+
+[data-theme="dark"] .ant-select-selector {
+  background: var(--bg-tertiary) !important;
+  border: 1px solid var(--border-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .ant-select-focused .ant-select-selector {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 2px rgba(0, 212, 170, 0.2) !important;
+}
+
+[data-theme="dark"] .ant-btn {
+  border-radius: 6px !important;
+  font-weight: 500 !important;
+  transition: all 0.3s ease !important;
+}
+
+[data-theme="dark"] .ant-btn-primary {
+  background: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+}
+
+[data-theme="dark"] .ant-btn-primary:hover {
+  background: var(--color-primary-hover) !important;
+  border-color: var(--color-primary-hover) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: var(--shadow-small) !important;
+}
+
+[data-theme="dark"] .ant-btn-danger {
+  background: var(--status-error) !important;
+  border-color: var(--status-error) !important;
+}
+
+[data-theme="dark"] .ant-btn-danger:hover {
+  background: #c0392b !important;
+  border-color: #c0392b !important;
+  transform: translateY(-1px) !important;
+  box-shadow: var(--shadow-small) !important;
+}
+
+[data-theme="dark"] .ant-modal-content {
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-primary) !important;
+}
+
+[data-theme="dark"] .ant-modal-header {
+  background: var(--bg-tertiary) !important;
+  border-bottom: 1px solid var(--border-primary) !important;
+}
+
+[data-theme="dark"] .ant-modal-title {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .ant-modal-close-x {
+  color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .ant-modal-close-x:hover {
+  color: var(--text-primary) !important;
+}
+
+/* Scrollbar Styling */
+[data-theme="dark"] ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: var(--border-primary);
+  border-radius: 4px;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Animation Enhancements */
+[data-theme="dark"] .booking-row.pending_admin_confirmation::before {
+  content: "🚨";
+  position: absolute;
+  margin-left: -20px;
+  animation: pulse 2s infinite;
+  filter: drop-shadow(0 0 8px rgba(218, 165, 32, 0.6));
+}
+
+@keyframes pulse {
+  0% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* Responsive Dark Theme */
+@media (max-width: 768px) {
+  [data-theme="dark"] .admin-header {
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+  }
+  
+  [data-theme="dark"] .admin-navigation {
+    padding: 0 16px;
+  }
+  
+  [data-theme="dark"] .bookings-table-container {
+    padding: 12px;
+  }
+}
