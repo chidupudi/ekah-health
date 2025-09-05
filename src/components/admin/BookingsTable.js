@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { bookingsDB, timeSlotsDB } from '../../services/firebase/database.js';
+import { useTheme } from '../ParticleBackground';
 import './BookingsTable.css';
 
 const BookingsTable = () => {
@@ -7,6 +8,7 @@ const BookingsTable = () => {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState({});
   const [filter, setFilter] = useState('all'); // all, pending, confirmed, rejected
+  const { theme } = useTheme();
 
   useEffect(() => {
     loadBookings();
@@ -191,7 +193,7 @@ const BookingsTable = () => {
   }
 
   return (
-    <div className="bookings-table-container">
+    <div className={`bookings-table-container ${theme}-theme`}>
       <div className="bookings-header">
         <h2>📅 Bookings Management</h2>
         

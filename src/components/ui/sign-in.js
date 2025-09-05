@@ -45,7 +45,9 @@ const AnimatedSignIn = () => {
     setMounted(true);
     
     // Clear any previous auth errors when component mounts
-    clearError();
+    if (clearError) {
+      clearError();
+    }
   }, [clearError]);
 
   // Therapy-themed cards for the display

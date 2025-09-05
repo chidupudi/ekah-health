@@ -1,358 +1,608 @@
-/* Bookings Table Styles */
+/* Bookings Table Styles - PC Optimized with Dark Theme Support */
 
 .bookings-table-container {
-  padding: 20px;
-  max-width: 1400px;
-  margin: 0 auto;
+  padding: 30px;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .bookings-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 30px;
   flex-wrap: wrap;
-  gap: 15px;
+  gap: 20px;
 }
 
 .bookings-header h2 {
-  color: #2c3e50;
   margin: 0;
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+}
+
+/* Light theme header */
+.light-theme .bookings-header h2 {
+  color: var(--light-text-primary, #2c3e50);
+}
+
+/* Dark theme header */
+.dark-theme .bookings-header h2 {
+  color: var(--dark-text-primary, #f7fafc);
 }
 
 .bookings-filters {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
 .bookings-filters button {
-  padding: 8px 16px;
+  padding: 10px 20px;
   border: 2px solid #3498db;
-  background: white;
-  color: #3498db;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.3s;
-  font-weight: 500;
+  transition: all 0.3s ease;
+  font-weight: 600;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.bookings-filters button:hover {
+/* Light theme filters */
+.light-theme .bookings-filters button {
+  background: var(--light-bg-primary, #ffffff);
+  color: #3498db;
+}
+
+.light-theme .bookings-filters button:hover {
+  background: #3498db;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+}
+
+.light-theme .bookings-filters button.filter-active {
   background: #3498db;
   color: white;
 }
 
-.bookings-filters button.filter-active {
+/* Dark theme filters */
+.dark-theme .bookings-filters button {
+  background: var(--dark-bg-secondary, #2d3748);
+  color: #3498db;
+  border-color: #3498db;
+}
+
+.dark-theme .bookings-filters button:hover {
+  background: #3498db;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+}
+
+.dark-theme .bookings-filters button.filter-active {
   background: #3498db;
   color: white;
 }
 
 .refresh-btn {
-  padding: 10px 20px;
+  padding: 12px 24px;
   background: #27ae60;
   color: white;
   border: none;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: pointer;
-  font-weight: bold;
-  transition: background 0.3s;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .refresh-btn:hover {
   background: #229954;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
 }
 
 .bookings-table-wrapper {
-  background: white;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-  overflow: hidden;
+  border-radius: 12px;
+  overflow: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  max-width: 100%;
+}
+
+/* Light theme table wrapper */
+.light-theme .bookings-table-wrapper {
+  background: var(--light-bg-primary, #ffffff);
+  box-shadow: 0 8px 32px var(--light-shadow, rgba(0, 0, 0, 0.1));
+}
+
+/* Dark theme table wrapper */
+.dark-theme .bookings-table-wrapper {
+  background: var(--dark-bg-secondary, #2d3748);
+  box-shadow: 0 8px 32px var(--dark-shadow, rgba(0, 0, 0, 0.3));
 }
 
 .bookings-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
+  min-width: 100%; /* Fit container instead of fixed width */
+  table-layout: fixed; /* Fixed layout for better control */
 }
 
 .bookings-table th {
-  background: #34495e;
-  color: white;
-  padding: 15px 12px;
+  padding: 20px 12px;
   text-align: left;
-  font-weight: bold;
-  border-bottom: 2px solid #2c3e50;
+  font-weight: 700;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  position: sticky;
+  top: 168px;
+  z-index: 100;
+}
+
+/* Column width distribution */
+.bookings-table th:nth-child(1) { width: 12%; } /* Booking ID */
+.bookings-table th:nth-child(2) { width: 15%; } /* Patient Info */
+.bookings-table th:nth-child(3) { width: 15%; } /* Contact */
+.bookings-table th:nth-child(4) { width: 10%; } /* Service */
+.bookings-table th:nth-child(5) { width: 12%; } /* Appointment Date */
+.bookings-table th:nth-child(6) { width: 10%; } /* Status */
+.bookings-table th:nth-child(7) { width: 16%; } /* Medical Info */
+.bookings-table th:nth-child(8) { width: 10%; } /* Actions */
+
+/* Light theme table headers */
+.light-theme .bookings-table th {
+  background: var(--admin-secondary, #2c3e50);
+  color: white;
+  border-bottom: 3px solid var(--admin-primary, #3498db);
+}
+
+/* Dark theme table headers */
+.dark-theme .bookings-table th {
+  background: var(--dark-bg-primary, #1a1d23);
+  color: var(--dark-text-primary, #f7fafc);
+  border-bottom: 3px solid var(--admin-primary, #3498db);
 }
 
 .bookings-table td {
-  padding: 12px;
-  border-bottom: 1px solid #ecf0f1;
+  padding: 16px 12px;
   vertical-align: top;
+  font-size: 14px;
+  line-height: 1.5;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
-.booking-row:hover {
-  background: #f8f9fa;
+/* Light theme table cells */
+.light-theme .bookings-table td {
+  border-bottom: 1px solid var(--light-border, #dee2e6);
 }
 
+/* Dark theme table cells */
+.dark-theme .bookings-table td {
+  border-bottom: 1px solid var(--dark-border, #4a5568);
+}
+
+.booking-row {
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+/* Light theme row hover */
+.light-theme .booking-row:hover {
+  background: var(--light-bg-secondary, #f8f9fa);
+  transform: scale(1.002);
+}
+
+/* Dark theme row hover */
+.dark-theme .booking-row:hover {
+  background: var(--dark-bg-tertiary, #4a5568);
+  transform: scale(1.002);
+}
+
+/* Status-based row styling */
 .booking-row.pending_admin_confirmation {
-  border-left: 4px solid #f39c12;
+  border-left: 6px solid #f39c12;
 }
 
 .booking-row.confirmed {
-  border-left: 4px solid #27ae60;
+  border-left: 6px solid #27ae60;
 }
 
 .booking-row.rejected {
-  border-left: 4px solid #e74c3c;
+  border-left: 6px solid #e74c3c;
 }
 
 .booking-row.cancelled {
-  border-left: 4px solid #95a5a6;
+  border-left: 6px solid #95a5a6;
 }
 
 .booking-id {
-  font-weight: bold;
-  color: #2c3e50;
+  font-weight: 700;
   display: block;
+  margin-bottom: 6px;
+  font-size: 15px;
+}
+
+/* Light theme booking ID */
+.light-theme .booking-id {
+  color: var(--admin-primary, #3498db);
+}
+
+/* Dark theme booking ID */
+.dark-theme .booking-id {
+  color: var(--admin-primary, #3498db);
 }
 
 .booking-date {
-  color: #7f8c8d;
   font-size: 11px;
+  opacity: 0.7;
+  font-style: italic;
 }
 
 .patient-info {
-  line-height: 1.4;
+  line-height: 1.5;
+  min-width: 160px;
 }
 
 .patient-info strong {
-  color: #2c3e50;
   display: block;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* Light theme patient info */
+.light-theme .patient-info strong {
+  color: var(--light-text-primary, #2c3e50);
+}
+
+/* Dark theme patient info */
+.dark-theme .patient-info strong {
+  color: var(--dark-text-primary, #f7fafc);
 }
 
 .contact-info {
-  line-height: 1.4;
+  line-height: 1.6;
+  min-width: 180px;
 }
 
 .contact-info a {
-  color: #3498db;
+  color: var(--admin-primary, #3498db);
   text-decoration: none;
+  font-weight: 500;
+  transition: all 0.3s ease;
 }
 
 .contact-info a:hover {
   text-decoration: underline;
+  color: #2980b9;
 }
 
 .service-type {
-  background: #ecf0f1;
-  padding: 4px 8px;
-  border-radius: 4px;
+  padding: 8px 12px;
+  border-radius: 6px;
   font-size: 12px;
-  color: #2c3e50;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Light theme service type */
+.light-theme .service-type {
+  background: var(--light-bg-tertiary, #ecf0f1);
+  color: var(--light-text-primary, #2c3e50);
+}
+
+/* Dark theme service type */
+.dark-theme .service-type {
+  background: var(--dark-bg-primary, #1a1d23);
+  color: var(--dark-text-primary, #f7fafc);
 }
 
 .appointment-time {
   text-align: center;
+  min-width: 160px;
 }
 
 .appointment-time strong {
   display: block;
-  color: #2c3e50;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  font-size: 15px;
+}
+
+/* Light theme appointment time */
+.light-theme .appointment-time strong {
+  color: var(--light-text-primary, #2c3e50);
+}
+
+/* Dark theme appointment time */
+.dark-theme .appointment-time strong {
+  color: var(--dark-text-primary, #f7fafc);
 }
 
 .status-badge {
   display: inline-block;
-  padding: 6px 12px;
-  border-radius: 15px;
+  padding: 8px 16px;
+  border-radius: 20px;
   font-size: 12px;
-  font-weight: bold;
+  font-weight: 700;
   text-align: center;
-  min-width: 100px;
+  min-width: 120px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .status-pending {
-  background: #fff3cd;
+  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
   color: #856404;
-  border: 1px solid #ffeaa7;
+  border: 2px solid #ffd700;
 }
 
 .status-confirmed {
-  background: #d4edda;
+  background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
   color: #155724;
-  border: 1px solid #c3e6cb;
+  border: 2px solid #27ae60;
 }
 
 .status-rejected {
-  background: #f8d7da;
+  background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
   color: #721c24;
-  border: 1px solid #f5c6cb;
+  border: 2px solid #e74c3c;
 }
 
 .status-cancelled {
-  background: #e2e3e5;
+  background: linear-gradient(135deg, #e2e3e5 0%, #d6d8db 100%);
   color: #383d41;
-  border: 1px solid #d6d8db;
+  border: 2px solid #95a5a6;
 }
 
 .status-completed {
-  background: #d1ecf1;
+  background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
   color: #0c5460;
-  border: 1px solid #bee5eb;
+  border: 2px solid #17a2b8;
 }
 
 .confirmed-by {
   font-size: 11px;
-  color: #7f8c8d;
-  margin-top: 4px;
+  opacity: 0.7;
+  margin-top: 6px;
+  font-style: italic;
 }
 
 .medical-info {
-  max-width: 200px;
-  line-height: 1.3;
+  max-width: 220px;
+  line-height: 1.4;
 }
 
 .medical-item {
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   font-size: 12px;
 }
 
 .medical-item strong {
-  color: #34495e;
   display: block;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+/* Light theme medical item */
+.light-theme .medical-item strong {
+  color: var(--admin-secondary, #2c3e50);
+}
+
+/* Dark theme medical item */
+.dark-theme .medical-item strong {
+  color: var(--dark-text-primary, #f7fafc);
 }
 
 .medical-text {
-  color: #7f8c8d;
+  opacity: 0.8;
   font-style: italic;
+  line-height: 1.3;
 }
 
 .action-buttons {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  min-width: 120px;
+  gap: 10px;
+  min-width: 140px;
+}
+
+.btn-confirm,
+.btn-reject {
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .btn-confirm {
-  background: #27ae60;
+  background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
   color: white;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: bold;
-  transition: background 0.3s;
+  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
 }
 
 .btn-confirm:hover:not(:disabled) {
-  background: #229954;
+  background: linear-gradient(135deg, #229954 0%, #27ae60 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4);
 }
 
 .btn-confirm:disabled {
   background: #bdc3c7;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .btn-reject {
-  background: #e74c3c;
+  background: linear-gradient(135deg, #e74c3c 0%, #ec7063 100%);
   color: white;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: bold;
-  transition: background 0.3s;
+  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
 }
 
 .btn-reject:hover:not(:disabled) {
-  background: #c0392b;
+  background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4);
 }
 
 .btn-reject:disabled {
   background: #bdc3c7;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .confirmed-info {
   color: #27ae60;
-  font-weight: bold;
+  font-weight: 600;
   font-size: 12px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
+  text-align: center;
 }
 
 .meet-link-btn {
-  background: #3498db;
+  background: linear-gradient(135deg, #3498db 0%, #5dade2 100%);
   color: white;
-  padding: 4px 8px;
-  border-radius: 3px;
+  padding: 6px 12px;
+  border-radius: 5px;
   text-decoration: none;
-  font-size: 10px;
-  transition: background 0.3s;
+  font-size: 11px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
 }
 
 .meet-link-btn:hover {
-  background: #2980b9;
+  background: linear-gradient(135deg, #2980b9 0%, #3498db 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+}
+
+.rejected-info,
+.cancelled-info {
+  font-weight: 600;
+  font-size: 12px;
+  text-align: center;
+  line-height: 1.4;
 }
 
 .rejected-info {
   color: #e74c3c;
-  font-weight: bold;
-  font-size: 12px;
-  text-align: center;
 }
 
 .cancelled-info {
   color: #95a5a6;
-  font-weight: bold;
-  font-size: 12px;
-  text-align: center;
 }
 
 .no-action {
-  color: #bdc3c7;
   text-align: center;
+  opacity: 0.5;
+  font-style: italic;
 }
 
 .no-bookings {
   text-align: center;
-  padding: 40px;
-  color: #7f8c8d;
-  font-size: 16px;
+  padding: 60px 40px;
+  font-size: 18px;
+  font-weight: 500;
+  opacity: 0.7;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
 }
 
 .bookings-loading {
   text-align: center;
-  padding: 40px;
-  font-size: 18px;
-  color: #3498db;
+  padding: 60px 40px;
+  font-size: 20px;
+  color: var(--admin-primary, #3498db);
+  font-weight: 500;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
 }
 
-/* Responsive Design */
-@media (max-width: 1200px) {
+/* Large Screen Optimizations (1400px+) */
+@media (min-width: 1400px) {
   .bookings-table-container {
-    padding: 15px;
+    padding: 40px;
+  }
+  
+  .bookings-header h2 {
+    font-size: 32px;
   }
   
   .bookings-table {
-    font-size: 13px;
+    font-size: 15px;
+  }
+  
+  .bookings-table th {
+    padding: 24px 16px;
+    font-size: 14px;
+  }
+  
+  .bookings-table td {
+    padding: 20px 16px;
   }
   
   .medical-info {
-    max-width: 150px;
+    max-width: none;
+  }
+  
+  .action-buttons {
+    min-width: 140px;
   }
 }
 
-@media (max-width: 768px) {
+/* Extra Large Screen Optimizations (1800px+) */
+@media (min-width: 1800px) {
+  .bookings-table-container {
+    padding: 50px;
+  }
+  
+  .bookings-table th {
+    padding: 24px 20px;
+  }
+  
+  .bookings-table td {
+    padding: 20px;
+  }
+}
+
+/* Tablet Styles */
+@media (max-width: 1024px) {
+  .bookings-table-container {
+    padding: 20px;
+  }
+  
   .bookings-header {
     flex-direction: column;
     align-items: stretch;
+    gap: 20px;
   }
   
   .bookings-filters {
@@ -361,28 +611,88 @@
   
   .bookings-table-wrapper {
     overflow-x: auto;
+    border-radius: 8px;
+  }
+  
+  .bookings-table {
+    min-width: 900px;
+  }
+  
+  .bookings-table th,
+  .bookings-table td {
+    padding: 12px 8px;
+    font-size: 13px;
+  }
+  
+  /* Adjust column widths for tablet */
+  .bookings-table th:nth-child(7) { width: 20%; } /* Medical Info wider */
+  .bookings-table th:nth-child(8) { width: 12%; } /* Actions wider */
+}
+
+/* Mobile Styles */
+@media (max-width: 768px) {
+  .bookings-table-container {
+    padding: 15px;
+  }
+  
+  .bookings-header h2 {
+    font-size: 24px;
+    text-align: center;
   }
   
   .bookings-table {
     min-width: 1000px;
+    font-size: 13px;
   }
   
   .bookings-table th,
   .bookings-table td {
     padding: 8px;
   }
+  
+  .medical-info {
+    max-width: 150px;
+  }
+  
+  .action-buttons {
+    min-width: 100px;
+  }
 }
 
-/* Priority Indicators */
+/* Priority Indicators with Enhanced Animation */
 .booking-row.pending_admin_confirmation::before {
   content: "🚨";
   position: absolute;
-  margin-left: -20px;
-  animation: pulse 2s infinite;
+  left: -25px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+  animation: urgentPulse 1.5s infinite ease-in-out;
 }
 
-@keyframes pulse {
-  0% { opacity: 1; }
-  50% { opacity: 0.5; }
-  100% { opacity: 1; }
+@keyframes urgentPulse {
+  0%, 100% { 
+    opacity: 1; 
+    transform: translateY(-50%) scale(1);
+  }
+  50% { 
+    opacity: 0.6; 
+    transform: translateY(-50%) scale(1.2);
+  }
+}
+
+/* Smooth transitions for theme changes */
+.bookings-table-container *,
+.bookings-table-wrapper *,
+.bookings-table * {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Enhanced accessibility */
+.bookings-filters button:focus,
+.refresh-btn:focus,
+.btn-confirm:focus,
+.btn-reject:focus {
+  outline: 2px solid var(--admin-primary, #3498db);
+  outline-offset: 2px;
 }

@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
 import BookingsTable from '../../components/admin/BookingsTable';
+import { useTheme } from '../../components/ParticleBackground';
 import './AdminDashboard.css';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('bookings');
+  const { theme, toggleTheme } = useTheme();
 
   const renderContent = () => {
     switch (activeTab) {
       case 'bookings':
         return <BookingsTable />;
-      case 'calendar':
-        return <div className="tab-content">📅 Calendar Management (Coming Soon)</div>;
       case 'patients':
         return <div className="tab-content">👥 Patient Management (Coming Soon)</div>;
       case 'settings':
@@ -21,10 +21,17 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="admin-dashboard">
+    <div className={`admin-dashboard ${theme}-theme`}>
       <div className="admin-header">
         <h1>🏥 EkahHealth Admin Dashboard</h1>
         <div className="admin-info">
+          <button 
+            className="theme-toggle-btn"
+            onClick={toggleTheme}
+            title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+          >
+            {theme === 'light' ? '🌙' : '☀️'}
+          </button>
           <span>Welcome, Admin</span>
           <button className="logout-btn">🚪 Logout</button>
         </div>
@@ -36,12 +43,6 @@ const AdminDashboard = () => {
           onClick={() => setActiveTab('bookings')}
         >
           📅 Bookings
-        </button>
-        <button 
-          className={activeTab === 'calendar' ? 'nav-active' : ''}
-          onClick={() => setActiveTab('calendar')}
-        >
-          📆 Calendar
         </button>
         <button 
           className={activeTab === 'patients' ? 'nav-active' : ''}
