@@ -1,6 +1,6 @@
 // pages/Services/index.js
-import React, { useState, useEffect } from 'react';
-import { Tabs, Row, Col, Typography, Card, Button, Badge, Empty, Spin, Alert } from 'antd';
+import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
+import { Tabs, Row, Col, Typography, Card, Button, Badge, Empty, Spin, Alert, Skeleton } from 'antd';
 import { 
   CheckCircleOutlined,
   ArrowRightOutlined,
@@ -35,7 +35,7 @@ const Services = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const getServiceIcon = (service) => {
+  const getServiceIcon = useCallback((service) => {
     // Map service titles to icons since we can't store React elements in Firestore
     const iconMap = {
       'YONI AROGYA': <WomanOutlined style={{ fontSize: '24px', color: '#e91e63' }} />,
@@ -70,9 +70,9 @@ const Services = () => {
     }
 
     return <UserOutlined style={{ fontSize: '24px', color: '#666' }} />;
-  };
+  }, []);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -108,66 +108,63 @@ const Services = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getServiceIcon]);
 
   useEffect(() => {
     loadData();
-  }, []);
-
-  // Add window focus listener to refresh data when user returns to tab
-  useEffect(() => {
-    const handleFocus = () => {
-      loadData();
-    };
-
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
-  }, []);
+  }, [loadData]);
 
 
-  const getThemeStyles = () => {
+
+  const getThemeStyles = useMemo(() => {
     if (theme === 'dark') {
       return {
-        background: 'linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 50%, #0f0f0f 100%)',
-        containerBg: 'rgba(67, 127, 151, 0.08)', // Using #437F97 with transparency
+        background: 'linear-gradient(135deg, #0a0b0f 0%, #1a1d23 50%, #0f1117 100%)',
+        containerBg: 'rgba(67, 127, 151, 0.08)',
         cardBg: 'rgba(67, 127, 151, 0.12)',
         cardBorder: 'rgba(67, 127, 151, 0.25)',
         listItemBg: 'rgba(67, 127, 151, 0.08)',
         listItemHover: 'rgba(67, 127, 151, 0.15)',
-        selectedBg: 'rgba(238, 225, 179, 0.15)', // Using #EEEIB3 for selection
+        selectedBg: 'rgba(238, 225, 179, 0.15)',
         selectedBorder: '#EEEIB3',
         textPrimary: '#ffffff',
         textSecondary: 'rgba(255, 255, 255, 0.75)',
-        gradientPrimary: 'linear-gradient(135deg, #437F97 0%, #EEEIB3 100%)', // Blue to cream
-        gradientSecondary: 'linear-gradient(135deg, #FFB5C2 0%, #437F97 100%)', // Pink to blue
-        gradientAccent: 'linear-gradient(135deg, #EEEIB3 0%, #FFB5C2 100%)', // Cream to pink
+        gradientPrimary: 'linear-gradient(135deg, #437F97 0%, #5A9BB8 50%, #EEEIB3 100%)',
+        gradientSecondary: 'linear-gradient(135deg, #FFB5C2 0%, #FF8A9B 50%, #437F97 100%)',
+        gradientAccent: 'linear-gradient(135deg, #EEEIB3 0%, #F5F0C4 50%, #FFB5C2 100%)',
         priceColor: '#EEEIB3',
         accentColor: '#FFB5C2',
+        shadowColor: 'rgba(67, 127, 151, 0.4)',
+        shadowColorStrong: 'rgba(67, 127, 151, 0.6)',
+        glowColor: 'rgba(238, 225, 179, 0.3)',
       };
     } else {
       return {
-        background: 'linear-gradient(135deg, #f8fafc 0%, rgba(238, 225, 179, 0.1) 50%, #f8fafc 100%)',
-        containerBg: 'rgba(67, 127, 151, 0.08)',
+        background: 'linear-gradient(135deg, #fafbfc 0%, rgba(238, 225, 179, 0.08) 50%, #f8fafc 100%)',
+        containerBg: 'rgba(67, 127, 151, 0.06)',
         cardBg: 'rgba(255, 255, 255, 0.95)',
         cardBorder: 'rgba(67, 127, 151, 0.15)',
         listItemBg: 'rgba(255, 255, 255, 0.9)',
         listItemHover: 'rgba(67, 127, 151, 0.08)',
         selectedBg: 'rgba(238, 225, 179, 0.25)',
         selectedBorder: '#437F97',
-        textPrimary: '#1f2937',
-        textSecondary: '#6b7280',
-        gradientPrimary: 'linear-gradient(135deg, #437F97 0%, #EEEIB3 100%)',
-        gradientSecondary: 'linear-gradient(135deg, #FFB5C2 0%, #437F97 100%)',
-        gradientAccent: 'linear-gradient(135deg, #EEEIB3 0%, #FFB5C2 100%)',
+        textPrimary: '#1a202c',
+        textSecondary: '#4a5568',
+        gradientPrimary: 'linear-gradient(135deg, #437F97 0%, #5A9BB8 50%, #EEEIB3 100%)',
+        gradientSecondary: 'linear-gradient(135deg, #FFB5C2 0%, #FF8A9B 50%, #437F97 100%)',
+        gradientAccent: 'linear-gradient(135deg, #EEEIB3 0%, #F5F0C4 50%, #FFB5C2 100%)',
         priceColor: '#437F97',
         accentColor: '#FFB5C2',
+        shadowColor: 'rgba(67, 127, 151, 0.15)',
+        shadowColorStrong: 'rgba(67, 127, 151, 0.25)',
+        glowColor: 'rgba(238, 225, 179, 0.4)',
       };
     }
-  };
+  }, [theme]);
 
-  const themeStyles = getThemeStyles();
+  const themeStyles = getThemeStyles;
 
-  const getTabIcon = (groupId) => {
+  const getTabIcon = useCallback((groupId) => {
     const iconMap = {
       consultation: <MedicineBoxOutlined />,
       specials: <ThunderboltOutlined />,
@@ -175,9 +172,9 @@ const Services = () => {
       programs: <HeartOutlined />
     };
     return iconMap[groupId] || <UserOutlined />;
-  };
+  }, []);
 
-  const toggleCourseSelection = (serviceId) => {
+  const toggleCourseSelection = useCallback((serviceId) => {
     setSelectedCourses(prev => {
       if (prev.includes(serviceId)) {
         return prev.filter(id => id !== serviceId);
@@ -185,9 +182,9 @@ const Services = () => {
         return [...prev, serviceId];
       }
     });
-  };
+  }, []);
 
-  const handleBookNow = (service) => {
+  const handleBookNow = useCallback((service) => {
     // Check if user is logged in
     if (!currentUser) {
       // Store the intended service booking in session storage for after login
@@ -224,29 +221,53 @@ const Services = () => {
         selectedServices: cleanSelectedServices
       } 
     });
-  };
+  }, [currentUser, navigate, selectedCourses, servicesData]);
 
-  const CourseListItem = ({ service, isSelected, isInCart, onSelect, onToggleCart }) => (
+  const handleTabChange = useCallback((key) => {
+    setActiveTab(key);
+    setSelectedCourse(null); // Reset selection when switching tabs
+    setSelectedCourses([]);
+    // The useEffect in TabContent will auto-select the first course in the new tab
+  }, []);
+
+  const CourseListItem = memo(({ service, isSelected, isInCart, onSelect, onToggleCart }) => (
     <div
       style={{
         background: isSelected ? themeStyles.selectedBg : themeStyles.listItemBg,
         border: `2px solid ${isSelected ? themeStyles.selectedBorder : themeStyles.cardBorder}`,
-        borderRadius: '16px',
-        padding: '20px',
+        borderRadius: '20px',
+        padding: '24px',
         marginBottom: '16px',
         cursor: 'pointer',
-        transition: 'all 0.3s ease',
+        transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
         position: 'relative',
+        height: '180px', // Fixed height instead of minHeight
+        display: 'flex',
+        flexDirection: 'column',
+        boxShadow: isSelected 
+          ? `0 8px 32px ${themeStyles.shadowColor || 'rgba(0,0,0,0.1)'}, 0 0 0 1px ${themeStyles.selectedBorder}20`
+          : `0 4px 16px ${themeStyles.shadowColor || 'rgba(0,0,0,0.05)'}`,
+        backdropFilter: 'blur(10px)',
+        transform: isSelected ? 'translateY(-2px)' : 'translateY(0)',
+        overflow: 'hidden', // Ensure content doesn't overflow
       }}
-      onClick={() => onSelect(service)}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onSelect(service);
+      }}
       onMouseEnter={(e) => {
         if (!isSelected) {
           e.currentTarget.style.background = themeStyles.listItemHover;
+          e.currentTarget.style.transform = 'translateY(-4px)';
+          e.currentTarget.style.boxShadow = `0 12px 40px ${themeStyles.shadowColor || 'rgba(0,0,0,0.15)'}`;
         }
       }}
       onMouseLeave={(e) => {
         if (!isSelected) {
           e.currentTarget.style.background = themeStyles.listItemBg;
+          e.currentTarget.style.transform = 'translateY(0)';
+          e.currentTarget.style.boxShadow = `0 4px 16px ${themeStyles.shadowColor || 'rgba(0,0,0,0.05)'}`;
         }
       }}
     >
@@ -277,7 +298,7 @@ const Services = () => {
         {isInCart && <CheckCircleOutlined />}
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', paddingRight: '40px' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', paddingRight: '40px', height: '100%' }}>
         <div style={{
           padding: '12px',
           borderRadius: '12px',
@@ -285,82 +306,120 @@ const Services = () => {
           color: 'white',
           fontSize: '20px',
           flexShrink: 0,
+          boxShadow: `0 4px 12px ${themeStyles.shadowColor || 'rgba(0,0,0,0.1)'}`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '44px',
+          height: '44px'
         }}>
           {service.icon}
         </div>
         
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <Title level={5} style={{ 
-              color: themeStyles.textPrimary, 
-              margin: 0,
-              fontSize: '16px',
-              fontWeight: '600'
+        <div style={{ 
+          flex: 1, 
+          minWidth: 0, 
+          display: 'flex', 
+          flexDirection: 'column', 
+          height: '100%',
+          justifyContent: 'space-between'
+        }}>
+          {/* Header section - fixed space */}
+          <div style={{ flex: '0 0 auto' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
+              <Title level={5} style={{ 
+                color: themeStyles.textPrimary, 
+                margin: 0,
+                fontSize: '15px',
+                fontWeight: '700',
+                letterSpacing: '-0.01em',
+                lineHeight: '1.2'
+              }}>
+                {service.title}
+              </Title>
+              <Badge 
+                count={service.category} 
+                style={{ 
+                  background: themeStyles.gradientSecondary,
+                  fontSize: '10px',
+                  height: '18px',
+                  lineHeight: '18px',
+                  border: 'none',
+                  color: '#1f2937',
+                  fontWeight: '600',
+                  borderRadius: '9px',
+                  padding: '0 6px'
+                }} 
+              />
+            </div>
+            
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '6px',
+              marginBottom: '10px'
             }}>
-              {service.title}
-            </Title>
-            <Badge 
-              count={service.category} 
-              style={{ 
-                background: themeStyles.gradientSecondary,
-                fontSize: '10px',
-                height: '18px',
-                lineHeight: '18px',
-                border: 'none',
-                color: '#1f2937'
-              }} 
-            />
-          </div>
-          
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '8px',
-            marginBottom: '8px'
-          }}>
-            <CalendarOutlined style={{ color: themeStyles.textSecondary, fontSize: '12px' }} />
-            <Text style={{ color: themeStyles.textSecondary, fontSize: '12px' }}>
-              {service.duration}
-            </Text>
+              <CalendarOutlined style={{ color: themeStyles.textSecondary, fontSize: '12px' }} />
+              <Text style={{ color: themeStyles.textSecondary, fontSize: '12px', fontWeight: '500' }}>
+                {service.duration}
+              </Text>
+            </div>
           </div>
 
-          <Paragraph style={{ 
-            color: themeStyles.textSecondary,
-            fontSize: '13px',
-            margin: 0,
-            lineHeight: '1.4',
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden'
-          }}>
-            {service.description}
-          </Paragraph>
+          {/* Description section - fills remaining space */}
+          <div style={{ flex: '1 1 auto', overflow: 'hidden' }}>
+            <div style={{ 
+              color: themeStyles.textSecondary,
+              fontSize: '13px',
+              margin: 0,
+              lineHeight: '1.3',
+              display: '-webkit-box',
+              WebkitLineClamp: 3,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+              fontWeight: '400',
+              letterSpacing: '0.005em',
+              textOverflow: 'ellipsis',
+              wordBreak: 'break-word',
+              hyphens: 'auto'
+            }}>
+              {service.description}
+            </div>
+          </div>
         </div>
       </div>
     </div>
-  );
+  ));
 
-  const CourseDetailsPanel = ({ service }) => {
+  const CourseDetailsPanel = memo(({ service }) => {
+    const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+
+    // Reset expanded state when service changes
+    React.useEffect(() => {
+      setIsDescriptionExpanded(false);
+    }, [service?.id]);
+
     if (!service) {
       return (
         <div style={{
           background: themeStyles.cardBg,
           border: `1px solid ${themeStyles.cardBorder}`,
-          borderRadius: '20px',
-          padding: '40px',
+          borderRadius: '24px',
+          padding: '48px',
           height: '500px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          boxShadow: `0 8px 32px ${themeStyles.shadowColor || 'rgba(0,0,0,0.08)'}`,
+          backdropFilter: 'blur(20px)',
         }}>
           <Empty 
             description={
-              <Text style={{ color: themeStyles.textSecondary }}>
+              <Text style={{ color: themeStyles.textSecondary, fontSize: '16px', fontWeight: '500' }}>
                 Select a course to view details
               </Text>
             }
-            imageStyle={{ height: 100 }}
+            imageStyle={{ height: 120 }}
           />
         </div>
       );
@@ -370,85 +429,159 @@ const Services = () => {
       <div style={{
         background: themeStyles.cardBg,
         border: `1px solid ${themeStyles.cardBorder}`,
-        borderRadius: '20px',
-        padding: '24px',
+        borderRadius: '24px',
+        padding: '32px',
         height: 'fit-content',
         minHeight: '500px',
+        boxShadow: `0 8px 32px ${themeStyles.shadowColor || 'rgba(0,0,0,0.08)'}`,
+        backdropFilter: 'blur(20px)',
       }}>
         {/* Header */}
         <div style={{ 
           display: 'flex', 
           alignItems: 'flex-start', 
-          gap: '16px',
-          marginBottom: '24px'
+          gap: '20px',
+          marginBottom: '32px'
         }}>
           <div style={{
-            padding: '16px',
-            borderRadius: '12px',
+            padding: '20px',
+            borderRadius: '18px',
             background: themeStyles.gradientPrimary,
             color: 'white',
-            fontSize: '28px',
+            fontSize: '32px',
             flexShrink: 0,
+            boxShadow: `0 6px 24px ${themeStyles.shadowColor || 'rgba(0,0,0,0.15)'}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}>
             {service.icon}
           </div>
           <div style={{ flex: 1 }}>
-            <Title level={3} style={{ 
+            <Title level={2} style={{ 
               color: themeStyles.textPrimary, 
-              margin: '0 0 8px 0',
-              fontSize: '20px'
+              margin: '0 0 12px 0',
+              fontSize: '28px',
+              fontWeight: '800',
+              letterSpacing: '-0.03em',
+              lineHeight: '1.2'
             }}>
               {service.title}
             </Title>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', flexWrap: 'wrap' }}>
               <Badge count={service.category} style={{ 
                 background: themeStyles.gradientSecondary,
                 border: 'none',
-                color: '#1f2937'
+                color: '#1f2937',
+                fontSize: '12px',
+                fontWeight: '600',
+                padding: '2px 12px',
+                height: '24px',
+                lineHeight: '20px',
+                borderRadius: '12px'
               }} />
-              <Text style={{ color: themeStyles.textSecondary, fontSize: '12px' }}>
-                <CalendarOutlined /> {service.duration}
-              </Text>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <CalendarOutlined style={{ color: themeStyles.textSecondary, fontSize: '14px' }} />
+                <Text style={{ color: themeStyles.textSecondary, fontSize: '14px', fontWeight: '500' }}>
+                  {service.duration}
+                </Text>
+              </div>
             </div>
           </div>
         </div>
 
-        <Paragraph style={{ 
-          color: themeStyles.textSecondary,
-          fontSize: '14px',
-          lineHeight: '1.6',
-          marginBottom: '24px'
-        }}>
-          {service.description}
-        </Paragraph>
-
-        {/* Key Features */}
-        <div style={{ marginBottom: '24px' }}>
-          <Title level={5} style={{ 
+        {/* Description with Read More */}
+        <div style={{ marginBottom: '32px' }}>
+          <Title level={4} style={{ 
             color: themeStyles.textPrimary,
             marginBottom: '16px',
-            fontSize: '15px'
+            fontSize: '18px',
+            fontWeight: '700'
           }}>
-            Key Features:
+            About This Program
           </Title>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ position: 'relative' }}>
+            <Paragraph style={{ 
+              color: themeStyles.textSecondary,
+              fontSize: '16px',
+              lineHeight: '1.6',
+              margin: 0,
+              fontWeight: '400',
+              letterSpacing: '0.01em',
+              ...(isDescriptionExpanded ? {
+                // Expanded state - show full text
+                maxHeight: 'none'
+              } : {
+                // Collapsed state - show exactly 5 lines
+                display: '-webkit-box',
+                WebkitLineClamp: 5,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+                maxHeight: '128px', // Max height for exactly 5 lines (16px * 1.6 * 5)
+                textOverflow: 'ellipsis'
+              })
+            }}>
+              {service.description}
+            </Paragraph>
+            {service.description && service.description.length > 120 && (
+              <Button
+                type="link"
+                onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                style={{
+                  padding: '8px 0',
+                  height: 'auto',
+                  color: themeStyles.priceColor,
+                  fontWeight: '600',
+                  fontSize: '14px',
+                  marginTop: '12px',
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                {isDescriptionExpanded ? '← Read Less' : 'Read More →'}
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Key Features */}
+        <div style={{ marginBottom: '32px' }}>
+          <Title level={4} style={{ 
+            color: themeStyles.textPrimary,
+            marginBottom: '20px',
+            fontSize: '18px',
+            fontWeight: '700'
+          }}>
+            What's Included
+          </Title>
+          <div style={{ 
+            display: 'grid', 
+            gap: '16px',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))'
+          }}>
             {service.includes.map((item, index) => (
               <div key={index} style={{ 
                 display: 'flex', 
                 alignItems: 'flex-start', 
-                gap: '8px',
-                padding: '6px 0'
+                gap: '12px',
+                padding: '16px',
+                background: theme === 'dark' 
+                  ? 'rgba(67, 127, 151, 0.08)' 
+                  : 'rgba(238, 225, 179, 0.08)',
+                borderRadius: '16px',
+                border: `1px solid ${theme === 'dark' ? 'rgba(67, 127, 151, 0.15)' : 'rgba(238, 225, 179, 0.15)'}`,
+                transition: 'all 0.3s ease'
               }}>
                 <CheckCircleOutlined style={{ 
                   color: themeStyles.priceColor, 
-                  fontSize: '14px',
+                  fontSize: '18px',
                   marginTop: '2px',
                   flexShrink: 0
                 }} />
                 <Text style={{ 
                   color: themeStyles.textSecondary, 
-                  fontSize: '13px',
-                  lineHeight: '1.4'
+                  fontSize: '15px',
+                  lineHeight: '1.5',
+                  fontWeight: '500'
                 }}>
                   {item}
                 </Text>
@@ -458,51 +591,72 @@ const Services = () => {
         </div>
 
         {/* Pricing */}
-        <div style={{ marginBottom: '24px' }}>
-          <Title level={5} style={{ 
+        <div style={{ marginBottom: '32px' }}>
+          <Title level={4} style={{ 
             color: themeStyles.textPrimary,
-            marginBottom: '16px',
-            fontSize: '15px'
+            marginBottom: '20px',
+            fontSize: '18px',
+            fontWeight: '700'
           }}>
-            Pricing Options:
+            Investment Options
           </Title>
           <div style={{
             background: theme === 'dark' 
-              ? 'rgba(67, 127, 151, 0.1)' 
-              : 'rgba(238, 225, 179, 0.15)',
-            borderRadius: '12px',
-            padding: '16px',
-            border: `1px solid ${theme === 'dark' ? 'rgba(67, 127, 151, 0.2)' : 'rgba(238, 225, 179, 0.3)'}`
+              ? 'rgba(67, 127, 151, 0.12)' 
+              : 'rgba(238, 225, 179, 0.20)',
+            borderRadius: '20px',
+            padding: '24px',
+            border: `2px solid ${theme === 'dark' ? 'rgba(67, 127, 151, 0.25)' : 'rgba(238, 225, 179, 0.35)'}`,
+            boxShadow: `0 4px 20px ${themeStyles.shadowColor || 'rgba(0,0,0,0.05)'}`
           }}>
             {service.options.map((option, index) => (
               <div key={index} style={{ 
                 display: 'flex', 
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                marginBottom: index < service.options.length - 1 ? '12px' : '0'
+                padding: '20px',
+                marginBottom: index < service.options.length - 1 ? '16px' : '0',
+                background: themeStyles.cardBg,
+                borderRadius: '16px',
+                border: `1px solid ${themeStyles.cardBorder}`,
+                transition: 'all 0.3s ease'
               }}>
                 <div>
                   <Text strong style={{ 
                     color: themeStyles.textPrimary,
-                    fontSize: '14px',
-                    display: 'block'
+                    fontSize: '16px',
+                    display: 'block',
+                    fontWeight: '700',
+                    marginBottom: '4px'
                   }}>
                     {option.type}
                   </Text>
                   <Text style={{ 
                     color: themeStyles.textSecondary,
-                    fontSize: '12px'
+                    fontSize: '14px',
+                    fontWeight: '500'
                   }}>
-                    {option.duration}
+                    Duration: {option.duration}
                   </Text>
                 </div>
-                <Text strong style={{ 
-                  color: themeStyles.priceColor,
-                  fontSize: '18px',
-                  fontWeight: '700'
-                }}>
-                  ₹{option.price}
-                </Text>
+                <div style={{ textAlign: 'right' }}>
+                  <Text strong style={{ 
+                    color: themeStyles.priceColor,
+                    fontSize: '24px',
+                    fontWeight: '800',
+                    display: 'block',
+                    lineHeight: '1'
+                  }}>
+                    ₹{option.price}
+                  </Text>
+                  <Text style={{ 
+                    color: themeStyles.textSecondary,
+                    fontSize: '12px',
+                    opacity: 0.8
+                  }}>
+                    per {option.duration.toLowerCase()}
+                  </Text>
+                </div>
               </div>
             ))}
           </div>
@@ -516,64 +670,47 @@ const Services = () => {
           style={{
             background: themeStyles.gradientPrimary,
             border: 'none',
-            borderRadius: '12px',
-            height: '48px',
-            fontWeight: '600'
+            borderRadius: '16px',
+            height: '56px',
+            fontWeight: '700',
+            fontSize: '16px',
+            boxShadow: `0 6px 24px ${themeStyles.shadowColor || 'rgba(0,0,0,0.15)'}`,
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            position: 'relative',
+            overflow: 'hidden'
           }}
-          icon={<InfoCircleOutlined />}
+          icon={<InfoCircleOutlined style={{ fontSize: '18px' }} />}
           onClick={() => handleBookNow(service)}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.boxShadow = `0 8px 32px ${themeStyles.shadowColor || 'rgba(0,0,0,0.25)'}`;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = `0 6px 24px ${themeStyles.shadowColor || 'rgba(0,0,0,0.15)'}`;
+          }}
         >
-          Book Now
+          Book This Program
         </Button>
       </div>
     );
-  };
+  });
 
   const TabContent = ({ groupServices }) => {
     // Auto-select first course when tab changes
     React.useEffect(() => {
-      if (groupServices.length > 0 && !selectedCourse) {
+      if (groupServices.length > 0) {
         setSelectedCourse(groupServices[0]);
       }
-    }, [groupServices]);
+    }, [groupServices, setSelectedCourse]);
+
+    // Handle course selection
+    const handleCourseSelect = useCallback((course) => {
+      setSelectedCourse(course);
+    }, [setSelectedCourse]);
 
     return (
       <div>
-        {/* Selection Summary */}
-        {selectedCourses.length > 0 && (
-          <div style={{
-            background: themeStyles.selectedBg,
-            border: `2px solid ${themeStyles.selectedBorder}`,
-            borderRadius: '16px',
-            padding: '16px',
-            marginBottom: '24px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between'
-          }}>
-            <div>
-              <Text strong style={{ color: themeStyles.textPrimary }}>
-                {selectedCourses.length} course{selectedCourses.length > 1 ? 's' : ''} selected
-              </Text>
-              <br />
-              <Text style={{ color: themeStyles.textSecondary, fontSize: '12px' }}>
-                Click "Book Now" to start your booking
-              </Text>
-            </div>
-            <Button 
-              type="primary"
-              style={{
-                background: themeStyles.gradientPrimary,
-                border: 'none',
-                borderRadius: '8px'
-              }}
-              icon={<ArrowRightOutlined />}
-              onClick={() => handleBookNow(null)} // Pass null since multiple services are selected
-            >
-              Get Started
-            </Button>
-          </div>
-        )}
 
         {/* Two Panel Layout */}
         <Row gutter={24}>
@@ -582,17 +719,47 @@ const Services = () => {
             <div style={{
               background: themeStyles.cardBg,
               border: `1px solid ${themeStyles.cardBorder}`,
-              borderRadius: '20px',
-              padding: '20px',
-              maxHeight: '600px',
-              overflowY: 'auto'
+              borderRadius: '24px',
+              padding: '28px',
+              maxHeight: '700px',
+              overflowY: 'auto',
+              boxShadow: `0 8px 32px ${themeStyles.shadowColor}`,
+              backdropFilter: 'blur(16px)',
+              position: 'relative',
+              '&::-webkit-scrollbar': {
+                width: '8px',
+              },
+              '&::-webkit-scrollbar-track': {
+                background: 'transparent',
+              },
+              '&::-webkit-scrollbar-thumb': {
+                background: themeStyles.cardBorder,
+                borderRadius: '10px',
+              }
             }}>
-              <Title level={4} style={{ 
+              <Title level={3} style={{ 
                 color: themeStyles.textPrimary,
-                marginBottom: '20px',
-                fontSize: '18px'
+                marginBottom: '28px',
+                fontSize: '22px',
+                fontWeight: '800',
+                letterSpacing: '-0.02em',
+                background: themeStyles.gradientPrimary,
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+                position: 'relative',
+                paddingBottom: '16px'
               }}>
-                Available Courses
+                Available Programs
+                <div style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  width: '60px',
+                  height: '3px',
+                  background: themeStyles.gradientPrimary,
+                  borderRadius: '2px'
+                }}></div>
               </Title>
               {groupServices.map((service) => (
                 <CourseListItem
@@ -600,7 +767,7 @@ const Services = () => {
                   service={service}
                   isSelected={selectedCourse?.id === service.id}
                   isInCart={selectedCourses.includes(service.id)}
-                  onSelect={setSelectedCourse}
+                  onSelect={handleCourseSelect}
                   onToggleCart={toggleCourseSelection}
                 />
               ))}
@@ -616,51 +783,164 @@ const Services = () => {
     );
   };
 
-  const tabItems = serviceGroups.map(group => ({
-    key: group.id,
-    label: (
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        {getTabIcon(group.id)}
-        <span>{group.title}</span>
-        <Badge 
-          count={servicesData.filter(service => 
-            service.category && group.title &&
-            service.category.toLowerCase().trim() === group.title.toLowerCase().trim()
-          ).length} 
-          style={{ 
-            background: themeStyles.gradientAccent,
-            fontSize: '10px',
-            border: 'none',
-            color: '#1f2937'
-          }} 
+  const tabItems = serviceGroups.map(group => {
+    const groupServices = servicesData.filter(service => 
+      service.category && group.title &&
+      service.category.toLowerCase().trim() === group.title.toLowerCase().trim()
+    );
+
+    return {
+      key: group.id,
+      label: (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {getTabIcon(group.id)}
+          <span>{group.title}</span>
+          <Badge 
+            count={groupServices.length} 
+            style={{ 
+              background: themeStyles.gradientAccent,
+              fontSize: '10px',
+              border: 'none',
+              color: '#1f2937'
+            }} 
+          />
+        </div>
+      ),
+      children: (
+        <TabContent 
+          key={`${group.id}-${groupServices.length}`} // Force re-render with key
+          groupServices={groupServices}
         />
+      )
+    };
+  });
+
+  // Skeleton Loading Component
+  const SkeletonLoader = () => (
+    <div style={{ 
+      background: themeStyles.background, 
+      minHeight: '100vh',
+    }}>
+      {/* Hero Skeleton */}
+      <div style={{ 
+        background: themeStyles.containerBg,
+        padding: '80px 20px',
+        textAlign: 'center'
+      }}>
+        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+          <Skeleton.Input 
+            style={{ width: '400px', height: '48px', marginBottom: '16px' }} 
+            active 
+            size="large"
+          />
+          <Skeleton 
+            paragraph={{ rows: 2, width: ['100%', '80%'] }} 
+            title={false} 
+            active 
+          />
+        </div>
       </div>
-    ),
-    children: (
-      <TabContent 
-        groupServices={servicesData.filter(service => 
-          service.category && group.title &&
-          service.category.toLowerCase().trim() === group.title.toLowerCase().trim()
-        )}
-      />
-    )
-  }));
+
+      {/* Main Content Skeleton */}
+      <div style={{ 
+        maxWidth: '1400px', 
+        margin: '0 auto', 
+        padding: '0 20px 80px'
+      }}>
+        <div style={{
+          background: themeStyles.containerBg,
+          borderRadius: '24px',
+          padding: '32px',
+        }}>
+          {/* Tabs Skeleton */}
+          <div style={{
+            background: themeStyles.cardBg,
+            borderRadius: '16px',
+            padding: '16px',
+            marginBottom: '32px',
+            display: 'flex',
+            justifyContent: 'center',
+            gap: '16px'
+          }}>
+            {[1, 2, 3, 4].map(i => (
+              <Skeleton.Button 
+                key={i}
+                style={{ width: '120px', height: '40px' }} 
+                active 
+                size="large"
+              />
+            ))}
+          </div>
+
+          {/* Content Skeleton */}
+          <Row gutter={24}>
+            {/* Left Panel Skeleton */}
+            <Col xs={24} lg={10}>
+              <div style={{
+                background: themeStyles.cardBg,
+                borderRadius: '20px',
+                padding: '20px'
+              }}>
+                <Skeleton.Input 
+                  style={{ width: '200px', height: '24px', marginBottom: '20px' }} 
+                  active 
+                />
+                {[1, 2, 3].map(i => (
+                  <div key={i} style={{
+                    background: themeStyles.listItemBg,
+                    borderRadius: '16px',
+                    padding: '20px',
+                    marginBottom: '16px'
+                  }}>
+                    <div style={{ display: 'flex', gap: '16px' }}>
+                      <Skeleton.Avatar size={48} active />
+                      <div style={{ flex: 1 }}>
+                        <Skeleton 
+                          paragraph={{ rows: 2, width: ['80%', '60%'] }} 
+                          title={{ width: '40%' }} 
+                          active 
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Col>
+
+            {/* Right Panel Skeleton */}
+            <Col xs={24} lg={14}>
+              <div style={{
+                background: themeStyles.cardBg,
+                borderRadius: '20px',
+                padding: '24px',
+                minHeight: '500px'
+              }}>
+                <div style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>
+                  <Skeleton.Avatar size={64} active />
+                  <div style={{ flex: 1 }}>
+                    <Skeleton 
+                      paragraph={{ rows: 3, width: ['60%', '40%', '80%'] }} 
+                      title={{ width: '50%' }} 
+                      active 
+                    />
+                  </div>
+                </div>
+                <Skeleton paragraph={{ rows: 4 }} active />
+                <Skeleton.Button 
+                  style={{ width: '100%', height: '48px', marginTop: '24px' }} 
+                  active 
+                  size="large"
+                />
+              </div>
+            </Col>
+          </Row>
+        </div>
+      </div>
+    </div>
+  );
 
   if (loading) {
-    return (
-      <div style={{ 
-        background: themeStyles.background, 
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
-        <Spin 
-          size="large" 
-          indicator={<LoadingOutlined style={{ fontSize: 48, color: themeStyles.priceColor }} spin />}
-        />
-      </div>
-    );
+    return <SkeletonLoader />;
   }
 
   if (error) {
@@ -708,30 +988,31 @@ const Services = () => {
       }}>
         <div style={{
           background: themeStyles.containerBg,
-          borderRadius: '24px',
-          padding: '32px',
-          backdropFilter: 'blur(20px)',
+          borderRadius: '32px',
+          padding: '40px',
+          backdropFilter: 'blur(32px)',
           border: `1px solid ${themeStyles.cardBorder}`,
           boxShadow: theme === 'dark' 
-            ? '0 20px 60px rgba(0, 0, 0, 0.3)' 
-            : '0 20px 60px rgba(0, 0, 0, 0.1)',
+            ? `0 24px 80px ${themeStyles.shadowColor}, 0 8px 32px ${themeStyles.shadowColorStrong}` 
+            : `0 24px 80px ${themeStyles.shadowColor}, 0 8px 32px ${themeStyles.shadowColorStrong}`,
+          position: 'relative',
+          overflow: 'hidden',
+          animation: 'slideInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
         }}>
           {serviceGroups.length > 0 ? (
             <Tabs
               activeKey={activeTab}
-              onChange={(key) => {
-                setActiveTab(key);
-                setSelectedCourse(null); // Reset selection when switching tabs
-                setSelectedCourses([]);
-              }}
+              onChange={handleTabChange}
               items={tabItems}
               className={`services-tabs ${theme === 'dark' ? 'dark-tabs' : 'light-tabs'}`}
               tabBarStyle={{
                 background: themeStyles.cardBg,
-                borderRadius: '16px',
-                padding: '8px',
-                marginBottom: '32px',
+                borderRadius: '20px',
+                padding: '12px',
+                marginBottom: '40px',
                 border: `1px solid ${themeStyles.cardBorder}`,
+                boxShadow: `0 8px 32px ${themeStyles.shadowColor}`,
+                backdropFilter: 'blur(16px)',
               }}
               size="large"
               centered

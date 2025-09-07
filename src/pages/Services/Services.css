@@ -278,6 +278,54 @@
   }
 }
 
+/* Professional slide-in animation */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Enhanced hover animations */
+@keyframes pulseGlow {
+  0% {
+    box-shadow: 0 4px 16px rgba(67, 127, 151, 0.2);
+  }
+  50% {
+    box-shadow: 0 8px 32px rgba(67, 127, 151, 0.4);
+  }
+  100% {
+    box-shadow: 0 4px 16px rgba(67, 127, 151, 0.2);
+  }
+}
+
+/* Professional gradient animations */
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Enhanced card hover states with professional gradients */
+.professional-card-hover {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  background-size: 200% 200%;
+}
+
+.professional-card-hover:hover {
+  animation: gradientShift 3s ease-in-out infinite;
+}
+
 /* Accessibility improvements */
 .course-card:focus {
   outline: 2px solid #667eea;
