@@ -4,7 +4,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { HeartOutlined, UserOutlined, LoginOutlined, LogoutOutlined, CalendarOutlined } from '@ant-design/icons';
 import { Button, Avatar, Dropdown, Menu, Tooltip } from 'antd';
-import { useTheme } from './ParticleBackground'; // Corrected import path
+import { useTheme } from '../contexts/ThemeContext';
 import ThemeToggle from './ThemeToggle';
 import { ExpandableTabs } from './ui/expandable-tabs';
 import { useAuth } from '../contexts/AuthContext';
@@ -15,7 +15,7 @@ const IconWrapper = ({ AntIcon, ...props }) => {
 };
  
 const MainHeader = () => {
-  const { theme } = useTheme();
+  const { theme, getThemeStyles } = useTheme();
   const navigate = useNavigate();
   const { currentUser, logout } = useAuth();
 
@@ -51,41 +51,22 @@ const MainHeader = () => {
     }
   ];
 
-  const getThemeStyles = () => {
-    if (theme === 'dark') {
-      return {
-        header: {
-          background: 'rgba(0, 0, 0, 0.85)',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
-          backdropFilter: 'blur(12px)'
-        },
-        logoColor: '#ffffff',
-        brandColor: '#ffffff',
-        signInBg: '#ffffff',
-        signInText: '#000000',
-        signInHover: '#f0f0f0',
-        menuBg: '#1f1f1f',
-        menuText: '#ffffff'
-      };
-    } else {
-      return {
-        header: {
-          background: 'rgba(255, 255, 255, 0.85)',
-          borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
-          backdropFilter: 'blur(12px)'
-        },
-        logoColor: '#000000',
-        brandColor: '#000000',
-        signInBg: '#000000',
-        signInText: '#ffffff',
-        signInHover: '#333333',
-        menuBg: '#ffffff',
-        menuText: '#000000'
-      };
-    }
-  };
-
   const themeStyles = getThemeStyles();
+  
+  const headerStyles = {
+    header: {
+      background: themeStyles.headerBg,
+      borderBottom: `1px solid ${themeStyles.headerBorder}`,
+      backdropFilter: 'blur(20px)'
+    },
+    logoColor: theme === 'dark' ? themeStyles.textPrimary : themeStyles.textPrimary,
+    brandColor: themeStyles.textPrimary,
+    signInBg: themeStyles.accentPrimary,
+    signInText: '#ffffff',
+    signInHover: theme === 'dark' ? themeStyles.accentSecondary : themeStyles.accentPrimary,
+    menuBg: themeStyles.cardBg,
+    menuText: themeStyles.textPrimary
+  };
 
   const profileMenu = (
     <Menu style={{ background: themeStyles.menuBg, border: '1px solid rgba(128, 128, 128, 0.2)' }}>

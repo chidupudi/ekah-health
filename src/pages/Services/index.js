@@ -1,6 +1,5 @@
-// pages/Services/index.js
-import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
-import { Tabs, Row, Col, Typography, Card, Button, Badge, Empty, Spin, Alert, Skeleton } from 'antd';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Tabs, Row, Col, Typography, Card, Button, Badge, Empty, Spin, Alert } from 'antd';
 import { 
   CheckCircleOutlined,
   ArrowRightOutlined,
@@ -10,8 +9,7 @@ import {
   MedicineBoxOutlined,
   ThunderboltOutlined,
   WomanOutlined,
-  InfoCircleOutlined,
-  LoadingOutlined
+  InfoCircleOutlined
 } from '@ant-design/icons';
 import { useTheme } from '../../components/ParticleBackground';
 import ServicesHero from './components/ServicesHero';
@@ -27,16 +25,17 @@ const Services = () => {
   const { theme } = useTheme();
   const { currentUser } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('consultation');
+  
+  // State management
+  const [activeTab, setActiveTab] = useState('');
   const [selectedCourse, setSelectedCourse] = useState(null);
-  const [selectedCourses, setSelectedCourses] = useState([]);
   const [servicesData, setServicesData] = useState([]);
   const [serviceGroups, setServiceGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const getServiceIcon = useCallback((service) => {
-    // Map service titles to icons since we can't store React elements in Firestore
+  // Icon mapping function
+  const getServiceIcon = (service) => {
     const iconMap = {
       'YONI AROGYA': <WomanOutlined style={{ fontSize: '24px', color: '#e91e63' }} />,
       'SWASTHA AROGYA': <HeartOutlined style={{ fontSize: '24px', color: '#2196f3' }} />,
@@ -48,74 +47,35 @@ const Services = () => {
       'NATUROPATHY DIAGNOSIS': <UserOutlined style={{ fontSize: '24px', color: '#ff5722' }} />,
       'ACUPUNCTURE': <UserOutlined style={{ fontSize: '24px', color: '#3f51b5' }} />,
       'WEEKEND SPECIALS': <ThunderboltOutlined style={{ fontSize: '24px', color: '#8bc34a' }} />,
-      'YONI YOGA': <UserOutlined style={{ fontSize: '24px', color: '#e91e63' }} />,
-      'SWSTHA YOGA': <HeartOutlined style={{ fontSize: '24px', color: '#4caf50' }} />
     };
 
-    // Check by title first, then by category as fallback
     if (service.title && iconMap[service.title.toUpperCase()]) {
       return iconMap[service.title.toUpperCase()];
     }
 
-    // Fallback based on category
-    if (service.category) {
-      const categoryIcons = {
-        'Consultation': <MedicineBoxOutlined style={{ fontSize: '24px', color: '#795548' }} />,
-        'Online yoga': <UserOutlined style={{ fontSize: '24px', color: '#4caf50' }} />,
-        'Programs': <HeartOutlined style={{ fontSize: '24px', color: '#2196f3' }} />,
-        'Specials': <ThunderboltOutlined style={{ fontSize: '24px', color: '#8bc34a' }} />,
-        'Women & Pregnancy': <WomanOutlined style={{ fontSize: '24px', color: '#e91e63' }} />
-      };
-      return categoryIcons[service.category] || <UserOutlined style={{ fontSize: '24px', color: '#666' }} />;
-    }
+    const categoryIcons = {
+      'Consultation': <MedicineBoxOutlined style={{ fontSize: '24px', color: '#795548' }} />,
+      'Online yoga': <UserOutlined style={{ fontSize: '24px', color: '#4caf50' }} />,
+      'Programs': <HeartOutlined style={{ fontSize: '24px', color: '#2196f3' }} />,
+      'Specials': <ThunderboltOutlined style={{ fontSize: '24px', color: '#8bc34a' }} />,
+      'Women & Pregnancy': <WomanOutlined style={{ fontSize: '24px', color: '#e91e63' }} />
+    };
+    
+    return categoryIcons[service.category] || <UserOutlined style={{ fontSize: '24px', color: '#666' }} />;
+  };
 
-    return <UserOutlined style={{ fontSize: '24px', color: '#666' }} />;
-  }, []);
+  // Tab icon mapping
+  const getTabIcon = (groupId) => {
+    const iconMap = {
+      consultation: <MedicineBoxOutlined />,
+      specials: <ThunderboltOutlined />,
+      'women-pregnancy': <WomanOutlined />,
+      programs: <HeartOutlined />
+    };
+    return iconMap[groupId] || <UserOutlined />;
+  };
 
-  const loadData = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const [services, categories] = await Promise.all([
-        servicesDB.getAll(),
-        categoriesDB.getAll()
-      ]);
-
-      // Transform services data to match expected format
-      const transformedServices = services.map(service => ({
-        ...service,
-        id: parseInt(service.id) || service.id,
-        icon: getServiceIcon(service) // Add back the icon
-      }));
-
-      setServicesData(transformedServices);
-      setServiceGroups(categories);
-
-      // Debug logging
-      console.log('Services Data:', transformedServices);
-      console.log('Categories:', categories);
-      console.log('Service categories:', transformedServices.map(s => s.category));
-      console.log('Category titles:', categories.map(c => c.title));
-
-      // Set default active tab to first category
-      if (categories.length > 0) {
-        setActiveTab(categories[0].id);
-      }
-    } catch (err) {
-      console.error('Error loading data:', err);
-      setError('Failed to load services data. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  }, [getServiceIcon]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-
-
+  // Theme styles
   const getThemeStyles = useMemo(() => {
     if (theme === 'dark') {
       return {
@@ -130,13 +90,8 @@ const Services = () => {
         textPrimary: '#ffffff',
         textSecondary: 'rgba(255, 255, 255, 0.75)',
         gradientPrimary: 'linear-gradient(135deg, #437F97 0%, #5A9BB8 50%, #EEEIB3 100%)',
-        gradientSecondary: 'linear-gradient(135deg, #FFB5C2 0%, #FF8A9B 50%, #437F97 100%)',
-        gradientAccent: 'linear-gradient(135deg, #EEEIB3 0%, #F5F0C4 50%, #FFB5C2 100%)',
         priceColor: '#EEEIB3',
-        accentColor: '#FFB5C2',
         shadowColor: 'rgba(67, 127, 151, 0.4)',
-        shadowColorStrong: 'rgba(67, 127, 151, 0.6)',
-        glowColor: 'rgba(238, 225, 179, 0.3)',
       };
     } else {
       return {
@@ -151,251 +106,288 @@ const Services = () => {
         textPrimary: '#1a202c',
         textSecondary: '#4a5568',
         gradientPrimary: 'linear-gradient(135deg, #437F97 0%, #5A9BB8 50%, #EEEIB3 100%)',
-        gradientSecondary: 'linear-gradient(135deg, #FFB5C2 0%, #FF8A9B 50%, #437F97 100%)',
-        gradientAccent: 'linear-gradient(135deg, #EEEIB3 0%, #F5F0C4 50%, #FFB5C2 100%)',
         priceColor: '#437F97',
-        accentColor: '#FFB5C2',
         shadowColor: 'rgba(67, 127, 151, 0.15)',
-        shadowColorStrong: 'rgba(67, 127, 151, 0.25)',
-        glowColor: 'rgba(238, 225, 179, 0.4)',
       };
     }
   }, [theme]);
 
   const themeStyles = getThemeStyles;
 
-  const getTabIcon = useCallback((groupId) => {
-    const iconMap = {
-      consultation: <MedicineBoxOutlined />,
-      specials: <ThunderboltOutlined />,
-      'women-pregnancy': <WomanOutlined />,
-      programs: <HeartOutlined />
-    };
-    return iconMap[groupId] || <UserOutlined />;
+  // Load data
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const [services, categories] = await Promise.all([
+        servicesDB.getAll(),
+        categoriesDB.getAll()
+      ]);
+
+      const transformedServices = services.map(service => ({
+        ...service,
+        id: parseInt(service.id) || service.id,
+        icon: getServiceIcon(service)
+      }));
+
+      setServicesData(transformedServices);
+      setServiceGroups(categories);
+
+      // Set default active tab and select first course
+      if (categories.length > 0) {
+        const firstTab = categories[0].id;
+        setActiveTab(firstTab);
+        
+        // Find first course in first tab
+        const firstTabCourses = transformedServices.filter(service => 
+          service.category && categories[0].title &&
+          service.category.toLowerCase().trim() === categories[0].title.toLowerCase().trim()
+        );
+        
+        if (firstTabCourses.length > 0) {
+          setSelectedCourse(firstTabCourses[0]);
+        }
+      }
+    } catch (err) {
+      console.error('Error loading data:', err);
+      setError('Failed to load services data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
   }, []);
 
-  const toggleCourseSelection = useCallback((serviceId) => {
-    setSelectedCourses(prev => {
-      if (prev.includes(serviceId)) {
-        return prev.filter(id => id !== serviceId);
+  // Handle tab change
+  const handleTabChange = (key) => {
+    setActiveTab(key);
+    
+    // Find the group for this tab
+    const selectedGroup = serviceGroups.find(group => group.id === key);
+    if (selectedGroup) {
+      // Find courses for this group
+      const groupCourses = servicesData.filter(service => 
+        service.category && selectedGroup.title &&
+        service.category.toLowerCase().trim() === selectedGroup.title.toLowerCase().trim()
+      );
+      
+      // Select first course in the group
+      if (groupCourses.length > 0) {
+        setSelectedCourse(groupCourses[0]);
       } else {
-        return [...prev, serviceId];
+        setSelectedCourse(null);
       }
-    });
-  }, []);
+    }
+  };
 
-  const handleBookNow = useCallback((service) => {
-    // Check if user is logged in
+  // Handle course selection
+  const handleCourseSelect = (course) => {
+    setSelectedCourse(course);
+  };
+
+  // Handle booking
+  const handleBookNow = (service) => {
     if (!currentUser) {
-      // Store the intended service booking in session storage for after login
-      if (service) {
-        // Remove React elements before storing
-        const serializableService = {
-          ...service,
-          icon: undefined // Remove the React element
-        };
-        sessionStorage.setItem('intendedServiceBooking', JSON.stringify(serializableService));
-      }
-      // Redirect to sign-in page
+      const serializableService = {
+        ...service,
+        icon: undefined
+      };
+      sessionStorage.setItem('intendedServiceBooking', JSON.stringify(serializableService));
       navigate('/signin');
       return;
     }
     
-    // Clean service data by removing React elements
     const cleanService = service ? {
       ...service,
-      icon: undefined // Remove React element
+      icon: undefined
     } : null;
     
-    const cleanSelectedServices = selectedCourses.length > 0 
-      ? servicesData.filter(s => selectedCourses.includes(s.id)).map(s => ({
-          ...s,
-          icon: undefined // Remove React elements
-        }))
-      : cleanService ? [cleanService] : [];
-    
-    // If user is logged in, proceed to booking flow
     navigate('/booking', { 
       state: { 
         service: cleanService,
-        selectedServices: cleanSelectedServices
+        selectedServices: cleanService ? [cleanService] : []
       } 
     });
-  }, [currentUser, navigate, selectedCourses, servicesData]);
+  };
 
-  const handleTabChange = useCallback((key) => {
-    setActiveTab(key);
-    setSelectedCourse(null); // Reset selection when switching tabs
-    setSelectedCourses([]);
-    // The useEffect in TabContent will auto-select the first course in the new tab
-  }, []);
-
-  const CourseListItem = memo(({ service, isSelected, isInCart, onSelect, onToggleCart }) => (
+  // Course List Item Component
+  const CourseListItem = ({ service, isSelected, onSelect }) => (
     <div
       style={{
         background: isSelected ? themeStyles.selectedBg : themeStyles.listItemBg,
         border: `2px solid ${isSelected ? themeStyles.selectedBorder : themeStyles.cardBorder}`,
-        borderRadius: '20px',
-        padding: '24px',
-        marginBottom: '16px',
+        borderRadius: '16px',
+        padding: '20px',
+        marginBottom: '12px',
         cursor: 'pointer',
-        transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-        position: 'relative',
-        height: '180px', // Fixed height instead of minHeight
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        boxShadow: isSelected 
+          ? `0 8px 32px ${themeStyles.shadowColor}`
+          : `0 4px 16px ${themeStyles.shadowColor}`,
+        transform: isSelected ? 'translateY(-2px)' : 'translateY(0)',
+        height: '160px', // Increased uniform height for better content fit
         display: 'flex',
         flexDirection: 'column',
-        boxShadow: isSelected 
-          ? `0 8px 32px ${themeStyles.shadowColor || 'rgba(0,0,0,0.1)'}, 0 0 0 1px ${themeStyles.selectedBorder}20`
-          : `0 4px 16px ${themeStyles.shadowColor || 'rgba(0,0,0,0.05)'}`,
-        backdropFilter: 'blur(10px)',
-        transform: isSelected ? 'translateY(-2px)' : 'translateY(0)',
-        overflow: 'hidden', // Ensure content doesn't overflow
+        justifyContent: 'flex-start',
       }}
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        onSelect(service);
-      }}
+      onClick={() => onSelect(service)}
       onMouseEnter={(e) => {
         if (!isSelected) {
           e.currentTarget.style.background = themeStyles.listItemHover;
-          e.currentTarget.style.transform = 'translateY(-4px)';
-          e.currentTarget.style.boxShadow = `0 12px 40px ${themeStyles.shadowColor || 'rgba(0,0,0,0.15)'}`;
+          e.currentTarget.style.transform = 'translateY(-2px)';
+          e.currentTarget.style.boxShadow = `0 8px 32px ${themeStyles.shadowColor}`;
         }
       }}
       onMouseLeave={(e) => {
         if (!isSelected) {
           e.currentTarget.style.background = themeStyles.listItemBg;
           e.currentTarget.style.transform = 'translateY(0)';
-          e.currentTarget.style.boxShadow = `0 4px 16px ${themeStyles.shadowColor || 'rgba(0,0,0,0.05)'}`;
+          e.currentTarget.style.boxShadow = `0 4px 16px ${themeStyles.shadowColor}`;
         }
       }}
     >
-      {/* Selection Checkbox */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '16px',
-          right: '16px',
-          width: '24px',
-          height: '24px',
-          borderRadius: '50%',
-          border: `2px solid ${isInCart ? themeStyles.accentColor : themeStyles.cardBorder}`,
-          background: isInCart ? themeStyles.gradientAccent : 'transparent',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: isInCart ? '#1f2937' : themeStyles.textSecondary,
-          fontSize: '12px',
-          cursor: 'pointer',
-          transition: 'all 0.2s ease',
-        }}
-        onClick={(e) => {
-          e.stopPropagation();
-          onToggleCart(service.id);
-        }}
-      >
-        {isInCart && <CheckCircleOutlined />}
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', paddingRight: '40px', height: '100%' }}>
+      {/* Header Section - Fixed Height */}
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'flex-start', 
+        gap: '12px', 
+        marginBottom: '12px',
+        height: '50px', // Reduced header height for tighter spacing
+        minHeight: '50px'
+      }}>
         <div style={{
-          padding: '12px',
-          borderRadius: '12px',
+          padding: '8px',
+          borderRadius: '10px',
           background: themeStyles.gradientPrimary,
           color: 'white',
-          fontSize: '20px',
+          fontSize: '16px',
           flexShrink: 0,
-          boxShadow: `0 4px 12px ${themeStyles.shadowColor || 'rgba(0,0,0,0.1)'}`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          width: '44px',
-          height: '44px'
+          width: '36px',
+          height: '36px',
+          boxShadow: `0 4px 12px ${themeStyles.shadowColor}`
         }}>
           {service.icon}
         </div>
         
-        <div style={{ 
-          flex: 1, 
-          minWidth: 0, 
-          display: 'flex', 
-          flexDirection: 'column', 
-          height: '100%',
-          justifyContent: 'space-between'
-        }}>
-          {/* Header section - fixed space */}
-          <div style={{ flex: '0 0 auto' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
-              <Title level={5} style={{ 
-                color: themeStyles.textPrimary, 
-                margin: 0,
-                fontSize: '15px',
-                fontWeight: '700',
-                letterSpacing: '-0.01em',
-                lineHeight: '1.2'
-              }}>
-                {service.title}
-              </Title>
-              <Badge 
-                count={service.category} 
-                style={{ 
-                  background: themeStyles.gradientSecondary,
-                  fontSize: '10px',
-                  height: '18px',
-                  lineHeight: '18px',
-                  border: 'none',
-                  color: '#1f2937',
-                  fontWeight: '600',
-                  borderRadius: '9px',
-                  padding: '0 6px'
-                }} 
-              />
-            </div>
-            
+        <div style={{ flex: 1, minWidth: 0, height: '100%', display: 'flex', flexDirection: 'column' }}>
+          {/* Title Section */}
+          <div style={{ 
+            marginBottom: '6px'
+          }}>
+            <Title level={5} style={{ 
+              color: themeStyles.textPrimary, 
+              margin: 0,
+              marginBottom: '2px',
+              fontSize: '13px',
+              fontWeight: '700',
+              lineHeight: '1.2',
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              maxHeight: '31px' // 2 lines max with tighter spacing
+            }}>
+              {service.title}
+            </Title>
+          </div>
+          
+          {/* Duration and Badge Row */}
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'space-between',
+            gap: '6px'
+          }}>
             <div style={{ 
               display: 'flex', 
               alignItems: 'center', 
-              gap: '6px',
-              marginBottom: '10px'
+              gap: '4px',
+              flex: 1,
+              minWidth: '0'
             }}>
-              <CalendarOutlined style={{ color: themeStyles.textSecondary, fontSize: '12px' }} />
-              <Text style={{ color: themeStyles.textSecondary, fontSize: '12px', fontWeight: '500' }}>
+              <CalendarOutlined style={{ 
+                color: themeStyles.textSecondary, 
+                fontSize: '10px',
+                flexShrink: 0 
+              }} />
+              <Text style={{ 
+                color: themeStyles.textSecondary, 
+                fontSize: '10px',
+                fontWeight: '500',
+                lineHeight: '1.1',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}>
                 {service.duration}
               </Text>
             </div>
-          </div>
-
-          {/* Description section - fills remaining space */}
-          <div style={{ flex: '1 1 auto', overflow: 'hidden' }}>
-            <div style={{ 
-              color: themeStyles.textSecondary,
-              fontSize: '13px',
-              margin: 0,
-              lineHeight: '1.3',
-              display: '-webkit-box',
-              WebkitLineClamp: 3,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-              fontWeight: '400',
-              letterSpacing: '0.005em',
-              textOverflow: 'ellipsis',
-              wordBreak: 'break-word',
-              hyphens: 'auto'
-            }}>
-              {service.description}
-            </div>
+            <Badge 
+              count={service.category} 
+              style={{ 
+                background: themeStyles.gradientPrimary,
+                fontSize: '8px',
+                height: '14px',
+                lineHeight: '14px',
+                border: 'none',
+                color: '#1f2937',
+                fontWeight: '600',
+                borderRadius: '7px',
+                padding: '0 4px',
+                flexShrink: 0,
+                maxWidth: '80px',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }} 
+            />
           </div>
         </div>
       </div>
-    </div>
-  ));
 
-  const CourseDetailsPanel = memo(({ service }) => {
+      {/* Description Section - Exactly 3 Lines */}
+      <div style={{ 
+        flex: 1, 
+        minHeight: '0',
+        height: '84px', // Fixed height for exactly 3 lines (28px per line)
+        overflow: 'hidden'
+      }}>
+        <Text style={{ 
+          color: themeStyles.textSecondary,
+          fontSize: '11px',
+          lineHeight: '1.45', // Better line height for readability
+          display: '-webkit-box',
+          WebkitLineClamp: 3, // Exactly 3 lines
+          WebkitBoxOrient: 'vertical',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          margin: 0,
+          fontWeight: '400',
+          letterSpacing: '0.005em',
+          wordBreak: 'break-word',
+          hyphens: 'auto',
+          height: '100%',
+          maxHeight: '48px' // 3 lines * 16px line height
+        }}>
+          {service.description}
+        </Text>
+      </div>
+    </div>
+  );
+
+  // Course Details Component
+  const CourseDetailsPanel = ({ service }) => {
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
     // Reset expanded state when service changes
-    React.useEffect(() => {
+    useEffect(() => {
       setIsDescriptionExpanded(false);
     }, [service?.id]);
 
@@ -410,20 +402,21 @@ const Services = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          boxShadow: `0 8px 32px ${themeStyles.shadowColor || 'rgba(0,0,0,0.08)'}`,
-          backdropFilter: 'blur(20px)',
+          boxShadow: `0 8px 32px ${themeStyles.shadowColor}`,
         }}>
           <Empty 
             description={
-              <Text style={{ color: themeStyles.textSecondary, fontSize: '16px', fontWeight: '500' }}>
+              <Text style={{ color: themeStyles.textSecondary, fontSize: '16px' }}>
                 Select a course to view details
               </Text>
             }
-            imageStyle={{ height: 120 }}
           />
         </div>
       );
     }
+
+    // Check if description needs truncation (rough estimation)
+    const needsTruncation = service.description && service.description.length > 150;
 
     return (
       <div style={{
@@ -431,9 +424,8 @@ const Services = () => {
         border: `1px solid ${themeStyles.cardBorder}`,
         borderRadius: '24px',
         padding: '32px',
-        height: 'fit-content',
         minHeight: '500px',
-        boxShadow: `0 8px 32px ${themeStyles.shadowColor || 'rgba(0,0,0,0.08)'}`,
+        boxShadow: `0 8px 32px ${themeStyles.shadowColor}`,
         backdropFilter: 'blur(20px)',
       }}>
         {/* Header */}
@@ -450,10 +442,10 @@ const Services = () => {
             color: 'white',
             fontSize: '32px',
             flexShrink: 0,
-            boxShadow: `0 6px 24px ${themeStyles.shadowColor || 'rgba(0,0,0,0.15)'}`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            boxShadow: `0 6px 24px ${themeStyles.shadowColor}`,
           }}>
             {service.icon}
           </div>
@@ -463,14 +455,14 @@ const Services = () => {
               margin: '0 0 12px 0',
               fontSize: '28px',
               fontWeight: '800',
-              letterSpacing: '-0.03em',
+              letterSpacing: '-0.02em',
               lineHeight: '1.2'
             }}>
               {service.title}
             </Title>
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', flexWrap: 'wrap' }}>
               <Badge count={service.category} style={{ 
-                background: themeStyles.gradientSecondary,
+                background: themeStyles.gradientPrimary,
                 border: 'none',
                 color: '#1f2937',
                 fontSize: '12px',
@@ -490,18 +482,19 @@ const Services = () => {
           </div>
         </div>
 
-        {/* Description with Read More */}
+        {/* Description with See More/Less */}
         <div style={{ marginBottom: '32px' }}>
           <Title level={4} style={{ 
             color: themeStyles.textPrimary,
             marginBottom: '16px',
             fontSize: '18px',
-            fontWeight: '700'
+            fontWeight: '700',
+            letterSpacing: '-0.01em'
           }}>
             About This Program
           </Title>
           <div style={{ position: 'relative' }}>
-            <Paragraph style={{ 
+            <div style={{ 
               color: themeStyles.textSecondary,
               fontSize: '16px',
               lineHeight: '1.6',
@@ -517,13 +510,14 @@ const Services = () => {
                 WebkitLineClamp: 5,
                 WebkitBoxOrient: 'vertical',
                 overflow: 'hidden',
-                maxHeight: '128px', // Max height for exactly 5 lines (16px * 1.6 * 5)
+                maxHeight: '128px', // 16px * 1.6 * 5 lines
                 textOverflow: 'ellipsis'
               })
             }}>
               {service.description}
-            </Paragraph>
-            {service.description && service.description.length > 120 && (
+            </div>
+            
+            {needsTruncation && (
               <Button
                 type="link"
                 onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
@@ -534,28 +528,50 @@ const Services = () => {
                   fontWeight: '600',
                   fontSize: '14px',
                   marginTop: '12px',
-                  transition: 'all 0.3s ease'
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  border: 'none',
+                  boxShadow: 'none',
+                  background: 'transparent'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = themeStyles.textPrimary;
+                  e.currentTarget.style.transform = 'translateX(4px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = themeStyles.priceColor;
+                  e.currentTarget.style.transform = 'translateX(0)';
                 }}
               >
-                {isDescriptionExpanded ? '← Read Less' : 'Read More →'}
+                {isDescriptionExpanded ? (
+                  <>
+                    <ArrowRightOutlined style={{ transform: 'rotate(180deg)', marginRight: '6px', fontSize: '12px' }} />
+                    See Less
+                  </>
+                ) : (
+                  <>
+                    See More
+                    <ArrowRightOutlined style={{ marginLeft: '6px', fontSize: '12px' }} />
+                  </>
+                )}
               </Button>
             )}
           </div>
         </div>
 
-        {/* Key Features */}
+        {/* Features */}
         <div style={{ marginBottom: '32px' }}>
           <Title level={4} style={{ 
             color: themeStyles.textPrimary,
             marginBottom: '20px',
             fontSize: '18px',
-            fontWeight: '700'
+            fontWeight: '700',
+            letterSpacing: '-0.01em'
           }}>
             What's Included
           </Title>
           <div style={{ 
             display: 'grid', 
-            gap: '16px',
+            gap: '12px',
             gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))'
           }}>
             {service.includes.map((item, index) => (
@@ -569,8 +585,18 @@ const Services = () => {
                   : 'rgba(238, 225, 179, 0.08)',
                 borderRadius: '16px',
                 border: `1px solid ${theme === 'dark' ? 'rgba(67, 127, 151, 0.15)' : 'rgba(238, 225, 179, 0.15)'}`,
-                transition: 'all 0.3s ease'
-              }}>
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                cursor: 'default'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = `0 8px 24px ${themeStyles.shadowColor}`;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+              >
                 <CheckCircleOutlined style={{ 
                   color: themeStyles.priceColor, 
                   fontSize: '18px',
@@ -581,7 +607,8 @@ const Services = () => {
                   color: themeStyles.textSecondary, 
                   fontSize: '15px',
                   lineHeight: '1.5',
-                  fontWeight: '500'
+                  fontWeight: '500',
+                  letterSpacing: '0.01em'
                 }}>
                   {item}
                 </Text>
@@ -596,7 +623,8 @@ const Services = () => {
             color: themeStyles.textPrimary,
             marginBottom: '20px',
             fontSize: '18px',
-            fontWeight: '700'
+            fontWeight: '700',
+            letterSpacing: '-0.01em'
           }}>
             Investment Options
           </Title>
@@ -607,7 +635,7 @@ const Services = () => {
             borderRadius: '20px',
             padding: '24px',
             border: `2px solid ${theme === 'dark' ? 'rgba(67, 127, 151, 0.25)' : 'rgba(238, 225, 179, 0.35)'}`,
-            boxShadow: `0 4px 20px ${themeStyles.shadowColor || 'rgba(0,0,0,0.05)'}`
+            boxShadow: `0 4px 20px ${themeStyles.shadowColor}`
           }}>
             {service.options.map((option, index) => (
               <div key={index} style={{ 
@@ -619,15 +647,26 @@ const Services = () => {
                 background: themeStyles.cardBg,
                 borderRadius: '16px',
                 border: `1px solid ${themeStyles.cardBorder}`,
-                transition: 'all 0.3s ease'
-              }}>
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                cursor: 'default'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.boxShadow = `0 8px 24px ${themeStyles.shadowColor}`;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+              >
                 <div>
                   <Text strong style={{ 
                     color: themeStyles.textPrimary,
                     fontSize: '16px',
                     display: 'block',
                     fontWeight: '700',
-                    marginBottom: '4px'
+                    marginBottom: '4px',
+                    letterSpacing: '-0.01em'
                   }}>
                     {option.type}
                   </Text>
@@ -645,14 +684,16 @@ const Services = () => {
                     fontSize: '24px',
                     fontWeight: '800',
                     display: 'block',
-                    lineHeight: '1'
+                    lineHeight: '1',
+                    letterSpacing: '-0.02em'
                   }}>
                     ₹{option.price}
                   </Text>
                   <Text style={{ 
                     color: themeStyles.textSecondary,
                     fontSize: '12px',
-                    opacity: 0.8
+                    opacity: 0.8,
+                    fontWeight: '500'
                   }}>
                     per {option.duration.toLowerCase()}
                   </Text>
@@ -662,7 +703,7 @@ const Services = () => {
           </div>
         </div>
 
-        {/* Book Now Button */}
+        {/* Book Button */}
         <Button
           type="primary"
           block
@@ -674,115 +715,76 @@ const Services = () => {
             height: '56px',
             fontWeight: '700',
             fontSize: '16px',
-            boxShadow: `0 6px 24px ${themeStyles.shadowColor || 'rgba(0,0,0,0.15)'}`,
+            boxShadow: `0 6px 24px ${themeStyles.shadowColor}`,
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             position: 'relative',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            letterSpacing: '-0.01em'
           }}
           icon={<InfoCircleOutlined style={{ fontSize: '18px' }} />}
           onClick={() => handleBookNow(service)}
           onMouseEnter={(e) => {
             e.currentTarget.style.transform = 'translateY(-2px)';
-            e.currentTarget.style.boxShadow = `0 8px 32px ${themeStyles.shadowColor || 'rgba(0,0,0,0.25)'}`;
+            e.currentTarget.style.boxShadow = `0 8px 32px ${themeStyles.shadowColor}`;
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = `0 6px 24px ${themeStyles.shadowColor || 'rgba(0,0,0,0.15)'}`;
+            e.currentTarget.style.boxShadow = `0 6px 24px ${themeStyles.shadowColor}`;
           }}
         >
           Book This Program
         </Button>
       </div>
     );
-  });
+  };
 
+  // Tab Content Component
   const TabContent = ({ groupServices }) => {
-    // Auto-select first course when tab changes
-    React.useEffect(() => {
-      if (groupServices.length > 0) {
-        setSelectedCourse(groupServices[0]);
-      }
-    }, [groupServices, setSelectedCourse]);
-
-    // Handle course selection
-    const handleCourseSelect = useCallback((course) => {
-      setSelectedCourse(course);
-    }, [setSelectedCourse]);
-
     return (
-      <div>
-
-        {/* Two Panel Layout */}
-        <Row gutter={24}>
-          {/* Left Panel - Course List */}
-          <Col xs={24} lg={10}>
-            <div style={{
-              background: themeStyles.cardBg,
-              border: `1px solid ${themeStyles.cardBorder}`,
-              borderRadius: '24px',
-              padding: '28px',
-              maxHeight: '700px',
-              overflowY: 'auto',
-              boxShadow: `0 8px 32px ${themeStyles.shadowColor}`,
-              backdropFilter: 'blur(16px)',
-              position: 'relative',
-              '&::-webkit-scrollbar': {
-                width: '8px',
-              },
-              '&::-webkit-scrollbar-track': {
-                background: 'transparent',
-              },
-              '&::-webkit-scrollbar-thumb': {
-                background: themeStyles.cardBorder,
-                borderRadius: '10px',
-              }
+      <Row gutter={24}>
+        {/* Left Panel - Course List */}
+        <Col xs={24} lg={10}>
+          <div style={{
+            background: themeStyles.cardBg,
+            border: `1px solid ${themeStyles.cardBorder}`,
+            borderRadius: '24px',
+            padding: '28px',
+            maxHeight: '700px',
+            overflowY: 'auto',
+            boxShadow: `0 8px 32px ${themeStyles.shadowColor}`,
+          }}>
+            <Title level={3} style={{ 
+              color: themeStyles.textPrimary,
+              marginBottom: '28px',
+              fontSize: '22px',
+              fontWeight: '800',
+              background: themeStyles.gradientPrimary,
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
             }}>
-              <Title level={3} style={{ 
-                color: themeStyles.textPrimary,
-                marginBottom: '28px',
-                fontSize: '22px',
-                fontWeight: '800',
-                letterSpacing: '-0.02em',
-                background: themeStyles.gradientPrimary,
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-                position: 'relative',
-                paddingBottom: '16px'
-              }}>
-                Available Programs
-                <div style={{
-                  position: 'absolute',
-                  bottom: 0,
-                  left: 0,
-                  width: '60px',
-                  height: '3px',
-                  background: themeStyles.gradientPrimary,
-                  borderRadius: '2px'
-                }}></div>
-              </Title>
-              {groupServices.map((service) => (
-                <CourseListItem
-                  key={service.id}
-                  service={service}
-                  isSelected={selectedCourse?.id === service.id}
-                  isInCart={selectedCourses.includes(service.id)}
-                  onSelect={handleCourseSelect}
-                  onToggleCart={toggleCourseSelection}
-                />
-              ))}
-            </div>
-          </Col>
+              Available Programs
+            </Title>
+            {groupServices.map((service) => (
+              <CourseListItem
+                key={service.id}
+                service={service}
+                isSelected={selectedCourse?.id === service.id}
+                onSelect={handleCourseSelect}
+              />
+            ))}
+          </div>
+        </Col>
 
-          {/* Right Panel - Course Details */}
-          <Col xs={24} lg={14}>
-            <CourseDetailsPanel service={selectedCourse} />
-          </Col>
-        </Row>
-      </div>
+        {/* Right Panel - Course Details */}
+        <Col xs={24} lg={14}>
+          <CourseDetailsPanel service={selectedCourse} />
+        </Col>
+      </Row>
     );
   };
 
+  // Create tab items
   const tabItems = serviceGroups.map(group => {
     const groupServices = servicesData.filter(service => 
       service.category && group.title &&
@@ -798,7 +800,7 @@ const Services = () => {
           <Badge 
             count={groupServices.length} 
             style={{ 
-              background: themeStyles.gradientAccent,
+              background: themeStyles.gradientPrimary,
               fontSize: '10px',
               border: 'none',
               color: '#1f2937'
@@ -806,141 +808,22 @@ const Services = () => {
           />
         </div>
       ),
-      children: (
-        <TabContent 
-          key={`${group.id}-${groupServices.length}`} // Force re-render with key
-          groupServices={groupServices}
-        />
-      )
+      children: <TabContent groupServices={groupServices} />
     };
   });
 
-  // Skeleton Loading Component
-  const SkeletonLoader = () => (
-    <div style={{ 
-      background: themeStyles.background, 
-      minHeight: '100vh',
-    }}>
-      {/* Hero Skeleton */}
-      <div style={{ 
-        background: themeStyles.containerBg,
-        padding: '80px 20px',
-        textAlign: 'center'
-      }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-          <Skeleton.Input 
-            style={{ width: '400px', height: '48px', marginBottom: '16px' }} 
-            active 
-            size="large"
-          />
-          <Skeleton 
-            paragraph={{ rows: 2, width: ['100%', '80%'] }} 
-            title={false} 
-            active 
-          />
-        </div>
-      </div>
-
-      {/* Main Content Skeleton */}
-      <div style={{ 
-        maxWidth: '1400px', 
-        margin: '0 auto', 
-        padding: '0 20px 80px'
-      }}>
-        <div style={{
-          background: themeStyles.containerBg,
-          borderRadius: '24px',
-          padding: '32px',
-        }}>
-          {/* Tabs Skeleton */}
-          <div style={{
-            background: themeStyles.cardBg,
-            borderRadius: '16px',
-            padding: '16px',
-            marginBottom: '32px',
-            display: 'flex',
-            justifyContent: 'center',
-            gap: '16px'
-          }}>
-            {[1, 2, 3, 4].map(i => (
-              <Skeleton.Button 
-                key={i}
-                style={{ width: '120px', height: '40px' }} 
-                active 
-                size="large"
-              />
-            ))}
-          </div>
-
-          {/* Content Skeleton */}
-          <Row gutter={24}>
-            {/* Left Panel Skeleton */}
-            <Col xs={24} lg={10}>
-              <div style={{
-                background: themeStyles.cardBg,
-                borderRadius: '20px',
-                padding: '20px'
-              }}>
-                <Skeleton.Input 
-                  style={{ width: '200px', height: '24px', marginBottom: '20px' }} 
-                  active 
-                />
-                {[1, 2, 3].map(i => (
-                  <div key={i} style={{
-                    background: themeStyles.listItemBg,
-                    borderRadius: '16px',
-                    padding: '20px',
-                    marginBottom: '16px'
-                  }}>
-                    <div style={{ display: 'flex', gap: '16px' }}>
-                      <Skeleton.Avatar size={48} active />
-                      <div style={{ flex: 1 }}>
-                        <Skeleton 
-                          paragraph={{ rows: 2, width: ['80%', '60%'] }} 
-                          title={{ width: '40%' }} 
-                          active 
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Col>
-
-            {/* Right Panel Skeleton */}
-            <Col xs={24} lg={14}>
-              <div style={{
-                background: themeStyles.cardBg,
-                borderRadius: '20px',
-                padding: '24px',
-                minHeight: '500px'
-              }}>
-                <div style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>
-                  <Skeleton.Avatar size={64} active />
-                  <div style={{ flex: 1 }}>
-                    <Skeleton 
-                      paragraph={{ rows: 3, width: ['60%', '40%', '80%'] }} 
-                      title={{ width: '50%' }} 
-                      active 
-                    />
-                  </div>
-                </div>
-                <Skeleton paragraph={{ rows: 4 }} active />
-                <Skeleton.Button 
-                  style={{ width: '100%', height: '48px', marginTop: '24px' }} 
-                  active 
-                  size="large"
-                />
-              </div>
-            </Col>
-          </Row>
-        </div>
-      </div>
-    </div>
-  );
-
   if (loading) {
-    return <SkeletonLoader />;
+    return (
+      <div style={{ 
+        background: themeStyles.background, 
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <Spin size="large" />
+      </div>
+    );
   }
 
   if (error) {
@@ -965,7 +848,6 @@ const Services = () => {
                 Try Again
               </Button>
             }
-            style={{ borderRadius: '12px' }}
           />
         </div>
       </div>
@@ -990,14 +872,8 @@ const Services = () => {
           background: themeStyles.containerBg,
           borderRadius: '32px',
           padding: '40px',
-          backdropFilter: 'blur(32px)',
           border: `1px solid ${themeStyles.cardBorder}`,
-          boxShadow: theme === 'dark' 
-            ? `0 24px 80px ${themeStyles.shadowColor}, 0 8px 32px ${themeStyles.shadowColorStrong}` 
-            : `0 24px 80px ${themeStyles.shadowColor}, 0 8px 32px ${themeStyles.shadowColorStrong}`,
-          position: 'relative',
-          overflow: 'hidden',
-          animation: 'slideInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
+          boxShadow: `0 24px 80px ${themeStyles.shadowColor}`,
         }}>
           {serviceGroups.length > 0 ? (
             <Tabs
@@ -1012,16 +888,12 @@ const Services = () => {
                 marginBottom: '40px',
                 border: `1px solid ${themeStyles.cardBorder}`,
                 boxShadow: `0 8px 32px ${themeStyles.shadowColor}`,
-                backdropFilter: 'blur(16px)',
               }}
               size="large"
               centered
             />
           ) : (
-            <Empty 
-              description="No services available"
-              style={{ padding: '60px 0' }}
-            />
+            <Empty description="No services available" />
           )}
         </div>
       </div>

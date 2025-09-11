@@ -198,6 +198,7 @@ const AdminDashboard = () => {
       <div className="admin-content">
         {renderContent()}
       </div>
+      
     </div>
   );
 };
