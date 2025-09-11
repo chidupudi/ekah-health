@@ -69,29 +69,29 @@ const MainHeader = () => {
   };
 
   const profileMenu = (
-    <Menu style={{ background: themeStyles.menuBg, border: '1px solid rgba(128, 128, 128, 0.2)' }}>
+    <Menu style={{ background: headerStyles.menuBg, border: `1px solid ${themeStyles.cardBorder}` }}>
       <Menu.Item 
         key="profile" 
-        icon={<UserOutlined style={{ color: themeStyles.menuText }} />} 
+        icon={<UserOutlined style={{ color: headerStyles.menuText }} />} 
         onClick={() => navigate('/profile')}
-        style={{ color: themeStyles.menuText }}
+        style={{ color: headerStyles.menuText }}
       >
         Profile
       </Menu.Item>
       <Menu.Item 
         key="my-bookings" 
-        icon={<CalendarOutlined style={{ color: themeStyles.menuText }} />} 
+        icon={<CalendarOutlined style={{ color: headerStyles.menuText }} />} 
         onClick={() => navigate('/my-bookings')}
-        style={{ color: themeStyles.menuText }}
+        style={{ color: headerStyles.menuText }}
       >
         My Bookings
       </Menu.Item>
       <Menu.Divider />
       <Menu.Item 
         key="logout" 
-        icon={<LogoutOutlined style={{ color: themeStyles.menuText }} />} 
+        icon={<LogoutOutlined style={{ color: headerStyles.menuText }} />} 
         onClick={handleLogout}
-        style={{ color: themeStyles.menuText }}
+        style={{ color: headerStyles.menuText }}
       >
         Logout
       </Menu.Item>
@@ -105,7 +105,7 @@ const MainHeader = () => {
       left: 0,
       right: 0,
       zIndex: 1000,
-      ...themeStyles.header,
+      ...headerStyles.header,
       boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
       padding: '0'
     }}>
@@ -133,7 +133,7 @@ const MainHeader = () => {
             width: '40px',
             height: '40px',
             borderRadius: '12px',
-            background: themeStyles.logoColor,
+            background: headerStyles.logoColor,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -142,13 +142,13 @@ const MainHeader = () => {
           }}>
             <HeartOutlined style={{ 
               fontSize: '22px',
-              color: theme === 'dark' ? '#000000' : '#ffffff'
+              color: theme === 'dark' ? '#1f2937' : '#ffffff'
             }} />
           </div>
           <span style={{
             fontSize: '22px',
             fontWeight: '700',
-            color: themeStyles.brandColor,
+            color: headerStyles.brandColor,
             letterSpacing: '-0.5px'
           }}>
             EkahHealth
@@ -166,7 +166,7 @@ const MainHeader = () => {
           <ExpandableTabs
             tabs={navigationTabs}
             onTabClick={(tab) => navigate(`/${tab.value}`)}
-            activeColor={themeStyles.brandColor}
+            activeColor={headerStyles.brandColor}
           />
         </div>
         
@@ -185,8 +185,8 @@ const MainHeader = () => {
               <Tooltip title={currentUser.displayName || currentUser.email}>
                 <Avatar 
                   style={{
-                    backgroundColor: themeStyles.signInBg,
-                    color: themeStyles.signInText,
+                    backgroundColor: headerStyles.signInBg,
+                    color: headerStyles.signInText,
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
                     boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
@@ -215,9 +215,9 @@ const MainHeader = () => {
               type="primary"
               icon={<LoginOutlined />}
               style={{
-                backgroundColor: themeStyles.signInBg,
-                borderColor: themeStyles.signInBg,
-                color: themeStyles.signInText,
+                backgroundColor: headerStyles.signInBg,
+                borderColor: headerStyles.signInBg,
+                color: headerStyles.signInText,
                 borderRadius: '8px',
                 height: '36px',
                 fontWeight: '600',
@@ -225,14 +225,14 @@ const MainHeader = () => {
                 transition: 'all 0.2s ease-in-out'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = themeStyles.signInHover;
-                e.currentTarget.style.borderColor = themeStyles.signInHover;
+                e.currentTarget.style.backgroundColor = headerStyles.signInHover;
+                e.currentTarget.style.borderColor = headerStyles.signInHover;
                 e.currentTarget.style.transform = 'translateY(-1px)';
                 e.currentTarget.style.boxShadow = theme === 'dark' ? '0 4px 12px rgba(255, 255, 255, 0.2)' : '0 4px 12px rgba(0, 0, 0, 0.2)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = themeStyles.signInBg;
-                e.currentTarget.style.borderColor = themeStyles.signInBg;
+                e.currentTarget.style.backgroundColor = headerStyles.signInBg;
+                e.currentTarget.style.borderColor = headerStyles.signInBg;
                 e.currentTarget.style.transform = 'translateY(0)';
                 e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
               }}

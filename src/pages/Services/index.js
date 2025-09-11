@@ -11,7 +11,7 @@ import {
   WomanOutlined,
   InfoCircleOutlined
 } from '@ant-design/icons';
-import { useTheme } from '../../components/ParticleBackground';
+import { useTheme } from '../../contexts/ThemeContext';
 import ServicesHero from './components/ServicesHero';
 import CallToAction from './components/CallToAction';
 import { servicesDB, categoriesDB } from '../../services/firebase/database';
@@ -22,7 +22,7 @@ import './Services.css';
 const { Title, Text, Paragraph } = Typography;
 
 const Services = () => {
-  const { theme } = useTheme();
+  const { theme, getThemeStyles } = useTheme();
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   
