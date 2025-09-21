@@ -75,44 +75,8 @@ const Services = () => {
     return iconMap[groupId] || <UserOutlined />;
   };
 
-  // Theme styles
-  const getThemeStyles = useMemo(() => {
-    if (theme === 'dark') {
-      return {
-        background: 'linear-gradient(135deg, #0a0b0f 0%, #1a1d23 50%, #0f1117 100%)',
-        containerBg: 'rgba(67, 127, 151, 0.08)',
-        cardBg: 'rgba(67, 127, 151, 0.12)',
-        cardBorder: 'rgba(67, 127, 151, 0.25)',
-        listItemBg: 'rgba(67, 127, 151, 0.08)',
-        listItemHover: 'rgba(67, 127, 151, 0.15)',
-        selectedBg: 'rgba(238, 225, 179, 0.15)',
-        selectedBorder: '#EEEIB3',
-        textPrimary: '#ffffff',
-        textSecondary: 'rgba(255, 255, 255, 0.75)',
-        gradientPrimary: 'linear-gradient(135deg, #437F97 0%, #5A9BB8 50%, #EEEIB3 100%)',
-        priceColor: '#EEEIB3',
-        shadowColor: 'rgba(67, 127, 151, 0.4)',
-      };
-    } else {
-      return {
-        background: 'linear-gradient(135deg, #fafbfc 0%, rgba(238, 225, 179, 0.08) 50%, #f8fafc 100%)',
-        containerBg: 'rgba(67, 127, 151, 0.06)',
-        cardBg: 'rgba(255, 255, 255, 0.95)',
-        cardBorder: 'rgba(67, 127, 151, 0.15)',
-        listItemBg: 'rgba(255, 255, 255, 0.9)',
-        listItemHover: 'rgba(67, 127, 151, 0.08)',
-        selectedBg: 'rgba(238, 225, 179, 0.25)',
-        selectedBorder: '#437F97',
-        textPrimary: '#1a202c',
-        textSecondary: '#4a5568',
-        gradientPrimary: 'linear-gradient(135deg, #437F97 0%, #5A9BB8 50%, #EEEIB3 100%)',
-        priceColor: '#437F97',
-        shadowColor: 'rgba(67, 127, 151, 0.15)',
-      };
-    }
-  }, [theme]);
-
-  const themeStyles = getThemeStyles;
+  // Get consistent theme styles from context
+  const themeStyles = getThemeStyles();
 
   // Load data
   const loadData = async () => {
@@ -249,28 +213,29 @@ const Services = () => {
         }
       }}
     >
-      {/* Header Section - Fixed Height */}
+      {/* Header Section - Professional Layout */}
       <div style={{ 
         display: 'flex', 
         alignItems: 'flex-start', 
-        gap: '12px', 
-        marginBottom: '12px',
-        height: '50px', // Reduced header height for tighter spacing
-        minHeight: '50px'
+        gap: '14px', 
+        marginBottom: '14px',
+        height: '56px',
+        minHeight: '56px'
       }}>
         <div style={{
-          padding: '8px',
-          borderRadius: '10px',
+          padding: '10px',
+          borderRadius: '12px',
           background: themeStyles.gradientPrimary,
-          color: 'white',
-          fontSize: '16px',
+          color: '#1f2937',
+          fontSize: '18px',
           flexShrink: 0,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          width: '36px',
-          height: '36px',
-          boxShadow: `0 4px 12px ${themeStyles.shadowColor}`
+          width: '40px',
+          height: '40px',
+          boxShadow: `0 6px 16px ${themeStyles.shadowColor}`,
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
         }}>
           {service.icon}
         </div>
@@ -452,11 +417,15 @@ const Services = () => {
           <div style={{ flex: 1 }}>
             <Title level={2} style={{ 
               color: themeStyles.textPrimary, 
-              margin: '0 0 12px 0',
-              fontSize: '28px',
+              margin: '0 0 16px 0',
+              fontSize: '32px',
               fontWeight: '800',
               letterSpacing: '-0.02em',
-              lineHeight: '1.2'
+              lineHeight: '1.2',
+              background: themeStyles.gradientPrimary,
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text'
             }}>
               {service.title}
             </Title>
@@ -630,12 +599,14 @@ const Services = () => {
           </Title>
           <div style={{
             background: theme === 'dark' 
-              ? 'rgba(67, 127, 151, 0.12)' 
-              : 'rgba(238, 225, 179, 0.20)',
-            borderRadius: '20px',
-            padding: '24px',
-            border: `2px solid ${theme === 'dark' ? 'rgba(67, 127, 151, 0.25)' : 'rgba(238, 225, 179, 0.35)'}`,
-            boxShadow: `0 4px 20px ${themeStyles.shadowColor}`
+              ? 'rgba(67, 127, 151, 0.15)' 
+              : 'rgba(238, 225, 179, 0.25)',
+            borderRadius: '24px',
+            padding: '28px',
+            border: `2px solid ${theme === 'dark' ? 'rgba(67, 127, 151, 0.3)' : 'rgba(238, 225, 179, 0.4)'}`,
+            boxShadow: `0 8px 32px ${themeStyles.shadowColor}`,
+            position: 'relative',
+            overflow: 'hidden'
           }}>
             {service.options.map((option, index) => (
               <div key={index} style={{ 
@@ -711,25 +682,31 @@ const Services = () => {
           style={{
             background: themeStyles.gradientPrimary,
             border: 'none',
-            borderRadius: '16px',
-            height: '56px',
+            borderRadius: '20px',
+            height: '64px',
             fontWeight: '700',
-            fontSize: '16px',
-            boxShadow: `0 6px 24px ${themeStyles.shadowColor}`,
+            fontSize: '18px',
+            color: '#1f2937',
+            boxShadow: `0 8px 32px ${themeStyles.shadowColor}`,
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             position: 'relative',
             overflow: 'hidden',
-            letterSpacing: '-0.01em'
+            letterSpacing: '-0.01em',
+            textTransform: 'uppercase',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '12px'
           }}
-          icon={<InfoCircleOutlined style={{ fontSize: '18px' }} />}
+          icon={<InfoCircleOutlined style={{ fontSize: '20px' }} />}
           onClick={() => handleBookNow(service)}
           onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateY(-2px)';
-            e.currentTarget.style.boxShadow = `0 8px 32px ${themeStyles.shadowColor}`;
+            e.currentTarget.style.transform = 'translateY(-3px) scale(1.02)';
+            e.currentTarget.style.boxShadow = `0 12px 40px ${themeStyles.shadowColor}`;
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = `0 6px 24px ${themeStyles.shadowColor}`;
+            e.currentTarget.style.transform = 'translateY(0) scale(1)';
+            e.currentTarget.style.boxShadow = `0 8px 32px ${themeStyles.shadowColor}`;
           }}
         >
           Book This Program

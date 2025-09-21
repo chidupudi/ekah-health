@@ -10,7 +10,7 @@ import About from './pages/About';
 import Services from './pages/Services/index'; // Updated import for new modular Services
 import PrivacyPolicy from './pages/PrivacyPolicy'; // New import for Privacy Policy
 import MainHeader from './components/MainHeader';
-import { ThemeProvider } from './components/ParticleBackground';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { AnimatedSignIn } from './components/ui/sign-in';
 import { AuthProvider } from './contexts/AuthContext';
 import { AdminAuthProvider } from './contexts/AdminAuthContext';

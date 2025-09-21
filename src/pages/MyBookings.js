@@ -37,7 +37,7 @@ import {
 } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 import { bookingsDB } from '../services/firebase/database';
-import { useTheme } from '../components/ParticleBackground';
+import { useTheme } from '../contexts/ThemeContext';
 import { useNavigate } from 'react-router-dom';
 import { JitsiMeetingRoom, JitsiPreJoin } from '../components/JitsiMeeting';
 import moment from 'moment';
@@ -55,7 +55,7 @@ const MyBookings = () => {
   const [patientName, setPatientName] = useState('');
   const [meetingPassword, setMeetingPassword] = useState('');
   const { currentUser } = useAuth();
-  const { theme } = useTheme();
+  const { theme, getThemeStyles } = useTheme();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -84,42 +84,12 @@ const MyBookings = () => {
     }
   };
 
-  const getThemeStyles = () => {
-    if (theme === 'dark') {
-      return {
-        background: 'linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 50%, #0f0f0f 100%)',
-        cardBg: 'rgba(67, 127, 151, 0.12)',
-        cardBorder: 'rgba(67, 127, 151, 0.25)',
-        textPrimary: '#ffffff',
-        textSecondary: 'rgba(255, 255, 255, 0.75)',
-        primaryColor: '#437F97',
-        accentColor: '#FFB5C2',
-        successColor: '#52c41a',
-        warningColor: '#faad14',
-        errorColor: '#f5222d',
-      };
-    } else {
-      return {
-        background: 'linear-gradient(135deg, #f8fafc 0%, rgba(238, 225, 179, 0.1) 50%, #f8fafc 100%)',
-        cardBg: 'rgba(255, 255, 255, 0.95)',
-        cardBorder: 'rgba(67, 127, 151, 0.15)',
-        textPrimary: '#1f2937',
-        textSecondary: '#6b7280',
-        primaryColor: '#437F97',
-        accentColor: '#FFB5C2',
-        successColor: '#52c41a',
-        warningColor: '#faad14',
-        errorColor: '#f5222d',
-      };
-    }
-  };
-
   const themeStyles = getThemeStyles();
 
   const getStatusColor = (status) => {
     const colors = {
       pending: themeStyles.warningColor,
-      confirmed: themeStyles.primaryColor,
+      confirmed: themeStyles.accentPrimary,
       completed: themeStyles.successColor,
       cancelled: themeStyles.errorColor
     };
