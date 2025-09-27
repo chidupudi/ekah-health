@@ -12,7 +12,7 @@ import BookingsTable from '../../components/admin/BookingsTable';
 import UsersManagement from '../../components/admin/UsersManagement';
 import PaymentsManagement from '../../components/admin/PaymentsManagement';
 import { useAuth } from '../../contexts/AuthContext';
-import { useTheme } from '../../contexts/ThemeContext';
+import { useTheme } from '../../components/ParticleBackground';
 
 import './AdminDashboard.css';
 

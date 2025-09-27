@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from 'antd';
 import { BulbOutlined, BulbFilled } from '@ant-design/icons';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme } from './ParticleBackground';
 
 const ThemeToggle = ({ style = {} }) => {
   const { theme, toggleTheme, getThemeStyles } = useTheme();

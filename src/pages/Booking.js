@@ -43,7 +43,7 @@ import {
   CreditCardOutlined
 } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme } from '../components/ParticleBackground';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { collection, getDocs, addDoc, query, where, orderBy } from 'firebase/firestore';
 import { db } from '../services/firebase/config';

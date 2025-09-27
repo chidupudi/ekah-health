@@ -45,7 +45,7 @@ import {
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, storage } from '../../services/firebase/config';
-import { useTheme } from '../../contexts/ThemeContext';
+import { useTheme } from '../ParticleBackground';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;

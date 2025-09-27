@@ -252,7 +252,7 @@ const JitsiMeeting = ({
   return (
     <Card 
       style={{ width: '100%' }}
-      bodyStyle={{ padding: '12px' }}
+      styles={{ body: { padding: '12px' } }}
       title={
         <Space>
           <VideoCameraOutlined />

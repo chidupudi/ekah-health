@@ -11,7 +11,7 @@ import About from './pages/About';
 import Services from './pages/Services/index'; // Updated import for new modular Services
 import PrivacyPolicy from './pages/PrivacyPolicy'; // New import for Privacy Policy
 import MainHeader from './components/MainHeader';
-import { ThemeProvider } from './contexts/ThemeContext';
+import { ThemeProvider } from './components/ParticleBackground';
 import { AnimatedSignIn } from './components/ui/sign-in';
 import { AuthProvider } from './contexts/AuthContext';
 import { AdminAuthProvider } from './contexts/AdminAuthContext';
@@ -20,6 +20,7 @@ import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import BookingFlow from './pages/BookingFlow';
 import MyBookings from './pages/MyBookings';
+import BookingDetails from './pages/BookingDetails';
 import Profile from './pages/Profile';
 
 const PageWrapper = ({ children }) => (
@@ -151,6 +152,7 @@ const App = () => {
               <Route path="/privacy-policy" element={<PageWrapper><PrivacyPolicy /></PageWrapper>} />
               <Route path="/booking" element={<PageWrapper><BookingFlow /></PageWrapper>} />
               <Route path="/my-bookings" element={<PageWrapper><MyBookings /></PageWrapper>} />
+              <Route path="/booking-details/:bookingId" element={<PageWrapper><BookingDetails /></PageWrapper>} />
               <Route path="/contact" element={
                 <PageWrapper>
                   <div style={{ 

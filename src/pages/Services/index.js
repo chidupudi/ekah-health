@@ -11,7 +11,7 @@ import {
   WomanOutlined,
   InfoCircleOutlined
 } from '@ant-design/icons';
-import { useTheme } from '../../contexts/ThemeContext';
+import { useTheme } from '../../components/ParticleBackground';
 import ServicesHero from './components/ServicesHero';
 import CallToAction from './components/CallToAction';
 import { servicesDB, categoriesDB } from '../../services/firebase/database';

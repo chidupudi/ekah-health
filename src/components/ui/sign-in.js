@@ -38,17 +38,31 @@ const AnimatedSignIn = () => {
   });
 
   const { theme } = useTheme();
-  const { login, loginWithGoogle, register, error, clearError, forgotPassword } = useAuth();
+  const { login, loginWithGoogle, register, error, clearError, forgotPassword, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     setMounted(true);
-    
+
     // Clear any previous auth errors when component mounts
     if (clearError) {
       clearError();
     }
   }, [clearError]);
+
+  // Redirect if user is already authenticated
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      // Check if there's a stored intended destination
+      const intendedDestination = localStorage.getItem('intendedDestination');
+      if (intendedDestination) {
+        localStorage.removeItem('intendedDestination');
+        navigate(intendedDestination);
+      } else {
+        navigate('/');
+      }
+    }
+  }, [isAuthenticated, isLoading, navigate]);
 
   // Therapy-themed cards for the display
   const therapyCards = [
@@ -339,6 +353,10 @@ const AnimatedSignIn = () => {
           0%, 100% { transform: translateY(0px); }
           50% { transform: translateY(-10px); }
         }
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
         @media (max-width: 768px) {
           .signin-container {
             flex-direction: column !important;
@@ -517,6 +535,37 @@ const AnimatedSignIn = () => {
       setLoading(false);
     }
   };
+
+  // Show loading spinner while checking authentication
+  if (isLoading) {
+    return (
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        background: theme === 'dark' ? '#000000' : '#ffffff'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{
+            width: '40px',
+            height: '40px',
+            border: `3px solid ${theme === 'dark' ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)'}`,
+            borderTopColor: theme === 'dark' ? '#ffffff' : '#000000',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 16px'
+          }} />
+          <Text style={{
+            color: theme === 'dark' ? '#ffffff' : '#000000',
+            fontSize: '16px'
+          }}>
+            Checking authentication...
+          </Text>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={styles.pageContainer}>

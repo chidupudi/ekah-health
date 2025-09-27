@@ -30,7 +30,7 @@ import {
 } from '@ant-design/icons';
 import { collection, getDocs, query, orderBy, where } from 'firebase/firestore';
 import { db } from '../../services/firebase/config';
-import { useTheme } from '../../contexts/ThemeContext';
+import { useTheme } from '../ParticleBackground';
 
 const { Title, Text } = Typography;
 const { Search } = Input;

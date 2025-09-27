@@ -439,6 +439,46 @@ body.dark-theme .focus-ring:focus {
   }
 }
 
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 .fade-in-up {
   animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -447,8 +487,73 @@ body.dark-theme .focus-ring:focus {
   animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.slide-in-right {
+  animation: slideInFromRight 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.scale-in {
+  animation: scaleIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 .pulse-glow {
   animation: pulseGlow 2s ease-in-out infinite;
+}
+
+.float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  background-size: 200px 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Enhanced MyBookings Specific Styles */
+.booking-card-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.booking-card-hover:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15) !important;
+}
+
+body.dark-theme .booking-card-hover:hover {
+  box-shadow: 0 20px 60px rgba(67, 127, 151, 0.3) !important;
+}
+
+.stats-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.stats-card:hover {
+  transform: translateY(-8px) scale(1.03);
+}
+
+.timeline-dot-glow {
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+/* Gradient text effects */
+.gradient-text {
+  background: var(--gradient-primary-light);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+body.dark-theme .gradient-text {
+  background: var(--gradient-primary-dark);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 /* Responsive Design */
@@ -477,6 +582,143 @@ body.dark-theme .focus-ring:focus {
   }
 }
 
+/* Timeline Components - Dark Mode Enhancements */
+body.dark-theme .ant-timeline {
+  color: var(--text-primary-dark) !important;
+}
+
+body.dark-theme .ant-timeline-item-tail {
+  border-left: 2px solid rgba(67, 127, 151, 0.3) !important;
+}
+
+body.dark-theme .ant-timeline-item-content {
+  color: var(--text-primary-dark) !important;
+}
+
+body.light-theme .ant-timeline-item-tail {
+  border-left: 2px solid rgba(67, 127, 151, 0.2) !important;
+}
+
+/* Badge and Tag Components - Dark Mode */
+body.dark-theme .ant-badge {
+  color: var(--text-primary-dark) !important;
+}
+
+body.dark-theme .ant-tag {
+  background: rgba(67, 127, 151, 0.2) !important;
+  border: 1px solid rgba(67, 127, 151, 0.3) !important;
+  color: var(--text-primary-dark) !important;
+}
+
+body.dark-theme .ant-statistic {
+  color: var(--text-primary-dark) !important;
+}
+
+body.dark-theme .ant-statistic-title {
+  color: var(--text-secondary-dark) !important;
+}
+
+body.dark-theme .ant-statistic-content {
+  color: var(--text-primary-dark) !important;
+}
+
+/* Alert Components - Dark Mode */
+body.dark-theme .ant-alert {
+  background: rgba(67, 127, 151, 0.15) !important;
+  border: 1px solid rgba(67, 127, 151, 0.25) !important;
+  color: var(--text-primary-dark) !important;
+}
+
+body.dark-theme .ant-alert-info {
+  background: rgba(67, 127, 151, 0.2) !important;
+  border: 1px solid rgba(67, 127, 151, 0.3) !important;
+}
+
+/* Modal Components - Enhanced Dark Mode */
+body.dark-theme .ant-modal-content {
+  background: rgba(26, 29, 35, 0.98) !important;
+  backdrop-filter: blur(20px) !important;
+  border: 2px solid rgba(67, 127, 151, 0.3) !important;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6) !important;
+}
+
+body.dark-theme .ant-modal-header {
+  background: rgba(26, 29, 35, 0.98) !important;
+  border-bottom: 2px solid rgba(67, 127, 151, 0.3) !important;
+  backdrop-filter: blur(20px) !important;
+}
+
+body.dark-theme .ant-modal-title {
+  color: var(--text-primary-dark) !important;
+  font-weight: 700 !important;
+  font-size: 20px !important;
+}
+
+body.dark-theme .ant-modal-footer {
+  background: rgba(26, 29, 35, 0.98) !important;
+  border-top: 2px solid rgba(67, 127, 151, 0.3) !important;
+  backdrop-filter: blur(20px) !important;
+}
+
+body.dark-theme .ant-modal-body {
+  background: rgba(26, 29, 35, 0.98) !important;
+  color: var(--text-primary-dark) !important;
+}
+
+/* Descriptions Component - Dark Mode */
+body.dark-theme .ant-descriptions {
+  color: var(--text-primary-dark) !important;
+}
+
+body.dark-theme .ant-descriptions-header {
+  background: rgba(67, 127, 151, 0.15) !important;
+  border-bottom: 1px solid rgba(67, 127, 151, 0.3) !important;
+}
+
+body.dark-theme .ant-descriptions-title {
+  color: var(--text-primary-dark) !important;
+  font-weight: 600 !important;
+}
+
+body.dark-theme .ant-descriptions-item-label {
+  color: var(--text-secondary-dark) !important;
+  font-weight: 600 !important;
+  background: rgba(67, 127, 151, 0.1) !important;
+  border-right: 1px solid rgba(67, 127, 151, 0.2) !important;
+}
+
+body.dark-theme .ant-descriptions-item-content {
+  color: var(--text-primary-dark) !important;
+  background: rgba(67, 127, 151, 0.05) !important;
+}
+
+body.dark-theme .ant-descriptions-row {
+  border-bottom: 1px solid rgba(67, 127, 151, 0.2) !important;
+}
+
+body.dark-theme .ant-descriptions-bordered .ant-descriptions-item {
+  border-right: 1px solid rgba(67, 127, 151, 0.2) !important;
+}
+
+/* Close button styling */
+body.dark-theme .ant-modal-close {
+  color: var(--text-secondary-dark) !important;
+}
+
+body.dark-theme .ant-modal-close:hover {
+  color: var(--text-primary-dark) !important;
+  background: rgba(67, 127, 151, 0.1) !important;
+}
+
+/* Empty Component - Dark Mode */
+body.dark-theme .ant-empty {
+  color: var(--text-secondary-dark) !important;
+}
+
+body.dark-theme .ant-empty-description {
+  color: var(--text-secondary-dark) !important;
+}
+
 /* Professional Print Styles */
 @media print {
   body {
@@ -484,11 +726,11 @@ body.dark-theme .focus-ring:focus {
     color: black !important;
     font-size: 12pt;
   }
-  
+
   .no-print {
     display: none !important;
   }
-  
+
   .professional-card {
     border: 1px solid #ddd !important;
     background: white !important;
@@ -496,7 +738,7 @@ body.dark-theme .focus-ring:focus {
     break-inside: avoid;
     margin-bottom: 1rem;
   }
-  
+
   .gradient-bg-light,
   .gradient-bg-dark {
     background: white !important;

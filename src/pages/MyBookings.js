@@ -11,8 +11,6 @@ import {
   Col,
   Empty,
   Spin,
-  Modal,
-  Descriptions,
   Badge,
   Divider,
   Alert,
@@ -33,13 +31,16 @@ import {
   UserOutlined,
   CopyOutlined,
   WhatsAppOutlined,
-  DownloadOutlined
+  DownloadOutlined,
+  LinkOutlined,
+  ShareAltOutlined,
+  GlobalOutlined
 } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 import { bookingsDB } from '../services/firebase/database';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../services/firebase/config';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme } from '../components/ParticleBackground';
 import { useNavigate } from 'react-router-dom';
 import { JitsiMeetingRoom, JitsiPreJoin } from '../components/JitsiMeeting';
 import moment from 'moment';
@@ -49,8 +50,6 @@ const { Title, Text, Paragraph } = Typography;
 const MyBookings = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedBooking, setSelectedBooking] = useState(null);
-  const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [showJitsiMeeting, setShowJitsiMeeting] = useState(false);
   const [showPreJoin, setShowPreJoin] = useState(false);
   const [meetingRoomName, setMeetingRoomName] = useState('');
@@ -191,7 +190,6 @@ const MyBookings = () => {
       setMeetingRoomName(roomName);
       setPatientName(`${booking.firstName} ${booking.lastName}`);
       setMeetingPassword(''); // No password for generated rooms
-      setSelectedBooking(booking);
       setShowPreJoin(true);
     }
   };
@@ -207,21 +205,100 @@ const MyBookings = () => {
   const handleMeetingEnd = () => {
     setShowJitsiMeeting(false);
     setShowPreJoin(false);
-    setSelectedBooking(null);
     notification.success({
       message: 'Meeting Ended',
       description: 'Thank you for using EkahHealth video consultation!'
     });
   };
 
-  // Copy meeting link
+  // Detect if user is on mobile device
+  const isMobileDevice = () => {
+    const userAgent = navigator.userAgent.toLowerCase();
+    return /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+  };
+
+  // Copy meeting link with enhanced functionality
   const copyMeetingLink = (booking) => {
     const meetingURL = booking.meetingURL || `https://meet.jit.si/${generateMeetingRoom(booking)}`;
-    navigator.clipboard.writeText(meetingURL);
-    notification.success({
-      message: 'Link Copied!',
-      description: 'Meeting link copied to clipboard'
-    });
+
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(meetingURL).then(() => {
+        notification.success({
+          message: 'Link Copied!',
+          description: 'Meeting link copied to clipboard',
+          duration: 3
+        });
+      }).catch(() => {
+        // Fallback for older browsers
+        fallbackCopyTextToClipboard(meetingURL);
+      });
+    } else {
+      // Fallback for older browsers
+      fallbackCopyTextToClipboard(meetingURL);
+    }
+  };
+
+  // Fallback copy function for older browsers
+  const fallbackCopyTextToClipboard = (text) => {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.position = "fixed";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    try {
+      document.execCommand('copy');
+      notification.success({
+        message: 'Link Copied!',
+        description: 'Meeting link copied to clipboard',
+        duration: 3
+      });
+    } catch (err) {
+      notification.error({
+        message: 'Copy Failed',
+        description: 'Unable to copy link. Please copy manually.',
+        duration: 5
+      });
+    }
+
+    document.body.removeChild(textArea);
+  };
+
+  // Enhanced join meeting function with platform detection
+  const handleJoinMeetingEnhanced = (booking) => {
+    const meetingURL = booking.meetingURL || `https://meet.jit.si/${generateMeetingRoom(booking)}`;
+
+    if (isMobileDevice()) {
+      // On mobile, try to open in Jitsi app first, fallback to browser
+      const jitsiAppURL = meetingURL.replace('https://meet.jit.si/', 'org.jitsi.meet://');
+
+      // Try to open in app
+      const appLink = document.createElement('a');
+      appLink.href = jitsiAppURL;
+      appLink.click();
+
+      // Fallback to browser after short delay
+      setTimeout(() => {
+        window.open(meetingURL, '_blank');
+      }, 1000);
+
+      notification.info({
+        message: 'Opening Meeting',
+        description: 'Trying to open in Jitsi app. If app is not installed, it will open in browser.',
+        duration: 4
+      });
+    } else {
+      // On desktop, open in new tab
+      window.open(meetingURL, '_blank');
+      notification.success({
+        message: 'Meeting Opened',
+        description: 'Meeting opened in new tab',
+        duration: 3
+      });
+    }
   };
 
   // Download Jitsi app
@@ -245,8 +322,7 @@ const MyBookings = () => {
   };
 
   const showBookingDetails = (booking) => {
-    setSelectedBooking(booking);
-    setDetailModalVisible(true);
+    navigate(`/booking-details/${booking.id}`);
   };
 
   // Check if appointment is soon (within 30 minutes)
@@ -335,137 +411,440 @@ const MyBookings = () => {
       padding: '40px 20px'
     }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <Title level={2} style={{ color: themeStyles.textPrimary, marginBottom: '8px' }}>
+        {/* Enhanced Header */}
+        <div style={{
+          textAlign: 'center',
+          marginBottom: '48px',
+          position: 'relative',
+          padding: '32px 0'
+        }}>
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: '100px',
+            height: '4px',
+            background: themeStyles.gradientPrimary,
+            borderRadius: '2px',
+            marginBottom: '24px'
+          }} />
+          <Title
+            level={1}
+            style={{
+              color: themeStyles.textPrimary,
+              marginBottom: '16px',
+              marginTop: '16px',
+              fontSize: '2.5rem',
+              fontWeight: '800',
+              background: themeStyles.gradientPrimary,
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              letterSpacing: '-0.02em'
+            }}
+          >
             My Appointments
           </Title>
-          <Text style={{ color: themeStyles.textSecondary, fontSize: '16px' }}>
-            Manage your video consultations and appointment history
+          <Text style={{
+            color: themeStyles.textSecondary,
+            fontSize: '18px',
+            fontWeight: '500',
+            lineHeight: '1.6',
+            maxWidth: '600px',
+            margin: '0 auto',
+            display: 'block'
+          }}>
+            Manage your video consultations and appointment history with ease
           </Text>
         </div>
 
-        {/* Statistics Cards */}
-        <Row gutter={[16, 16]} style={{ marginBottom: '32px' }}>
+        {/* Enhanced Statistics Cards */}
+        <Row gutter={[24, 24]} style={{ marginBottom: '48px' }}>
           <Col xs={24} sm={6}>
             <Card style={{
               background: themeStyles.cardBg,
-              border: `1px solid ${themeStyles.cardBorder}`,
-              borderRadius: '12px'
+              border: `2px solid ${theme === 'dark' ? 'rgba(67, 127, 151, 0.3)' : 'rgba(67, 127, 151, 0.2)'}`,
+              borderRadius: '20px',
+              overflow: 'hidden',
+              position: 'relative',
+              boxShadow: `0 8px 32px ${themeStyles.shadowColor}`,
+              backdropFilter: 'blur(20px)',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-4px)';
+              e.currentTarget.style.boxShadow = `0 12px 48px ${themeStyles.shadowColor}`;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = `0 8px 32px ${themeStyles.shadowColor}`;
             }}>
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: '4px',
+                background: 'linear-gradient(90deg, #437F97 0%, #5A9BB8 100%)'
+              }} />
               <Statistic
-                title={<span style={{ color: themeStyles.textSecondary }}>Total Appointments</span>}
+                title={<span style={{ color: themeStyles.textSecondary, fontSize: '14px', fontWeight: '600' }}>Total Appointments</span>}
                 value={stats.total}
-                prefix={<CalendarOutlined />}
-                valueStyle={{ color: themeStyles.textPrimary }}
+                prefix={<CalendarOutlined style={{ color: themeStyles.primaryColor, fontSize: '20px' }} />}
+                valueStyle={{ color: themeStyles.textPrimary, fontSize: '28px', fontWeight: '700' }}
               />
             </Card>
           </Col>
           <Col xs={24} sm={6}>
             <Card style={{
               background: themeStyles.cardBg,
-              border: `1px solid ${themeStyles.cardBorder}`,
-              borderRadius: '12px'
+              border: `2px solid ${theme === 'dark' ? 'rgba(67, 127, 151, 0.3)' : 'rgba(67, 127, 151, 0.2)'}`,
+              borderRadius: '20px',
+              overflow: 'hidden',
+              position: 'relative',
+              boxShadow: `0 8px 32px ${themeStyles.shadowColor}`,
+              backdropFilter: 'blur(20px)',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-4px)';
+              e.currentTarget.style.boxShadow = `0 12px 48px ${themeStyles.shadowColor}`;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = `0 8px 32px ${themeStyles.shadowColor}`;
             }}>
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: '4px',
+                background: 'linear-gradient(90deg, #2563eb 0%, #3b82f6 100%)'
+              }} />
               <Statistic
-                title={<span style={{ color: themeStyles.textSecondary }}>Upcoming</span>}
+                title={<span style={{ color: themeStyles.textSecondary, fontSize: '14px', fontWeight: '600' }}>Upcoming</span>}
                 value={stats.upcoming}
-                valueStyle={{ color: themeStyles.primaryColor }}
-                prefix={<ClockCircleOutlined />}
+                valueStyle={{ color: themeStyles.primaryColor, fontSize: '28px', fontWeight: '700' }}
+                prefix={<ClockCircleOutlined style={{ color: themeStyles.primaryColor, fontSize: '20px' }} />}
               />
             </Card>
           </Col>
           <Col xs={24} sm={6}>
             <Card style={{
               background: themeStyles.cardBg,
-              border: `1px solid ${themeStyles.cardBorder}`,
-              borderRadius: '12px'
+              border: `2px solid ${theme === 'dark' ? 'rgba(67, 127, 151, 0.3)' : 'rgba(67, 127, 151, 0.2)'}`,
+              borderRadius: '20px',
+              overflow: 'hidden',
+              position: 'relative',
+              boxShadow: `0 8px 32px ${themeStyles.shadowColor}`,
+              backdropFilter: 'blur(20px)',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-4px)';
+              e.currentTarget.style.boxShadow = `0 12px 48px ${themeStyles.shadowColor}`;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = `0 8px 32px ${themeStyles.shadowColor}`;
             }}>
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: '4px',
+                background: 'linear-gradient(90deg, #059669 0%, #10b981 100%)'
+              }} />
               <Statistic
-                title={<span style={{ color: themeStyles.textSecondary }}>Completed</span>}
+                title={<span style={{ color: themeStyles.textSecondary, fontSize: '14px', fontWeight: '600' }}>Completed</span>}
                 value={stats.completed}
-                valueStyle={{ color: themeStyles.successColor }}
-                prefix={<CheckCircleOutlined />}
+                valueStyle={{ color: themeStyles.successColor, fontSize: '28px', fontWeight: '700' }}
+                prefix={<CheckCircleOutlined style={{ color: themeStyles.successColor, fontSize: '20px' }} />}
               />
             </Card>
           </Col>
           <Col xs={24} sm={6}>
             <Card style={{
               background: themeStyles.cardBg,
-              border: `1px solid ${themeStyles.cardBorder}`,
-              borderRadius: '12px'
+              border: `2px solid ${theme === 'dark' ? 'rgba(67, 127, 151, 0.3)' : 'rgba(67, 127, 151, 0.2)'}`,
+              borderRadius: '20px',
+              overflow: 'hidden',
+              position: 'relative',
+              boxShadow: `0 8px 32px ${themeStyles.shadowColor}`,
+              backdropFilter: 'blur(20px)',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-4px)';
+              e.currentTarget.style.boxShadow = `0 12px 48px ${themeStyles.shadowColor}`;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = `0 8px 32px ${themeStyles.shadowColor}`;
             }}>
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: '4px',
+                background: 'linear-gradient(90deg, #dc2626 0%, #ef4444 100%)'
+              }} />
               <Statistic
-                title={<span style={{ color: themeStyles.textSecondary }}>Cancelled</span>}
+                title={<span style={{ color: themeStyles.textSecondary, fontSize: '14px', fontWeight: '600' }}>Cancelled</span>}
                 value={stats.cancelled}
-                valueStyle={{ color: themeStyles.errorColor }}
-                prefix={<ExclamationCircleOutlined />}
+                valueStyle={{ color: themeStyles.errorColor, fontSize: '28px', fontWeight: '700' }}
+                prefix={<ExclamationCircleOutlined style={{ color: themeStyles.errorColor, fontSize: '20px' }} />}
               />
             </Card>
           </Col>
         </Row>
 
-        {/* Jitsi Meet Info */}
-        <Alert
-          message="🎥 Video Consultations Powered by Jitsi Meet"
-          description="Secure, free video meetings right in your browser. No downloads required! Click 'Join Meeting' when it's time for your appointment."
-          type="info"
-          showIcon
-          closable
-          action={
-            <Button size="small" icon={<DownloadOutlined />} onClick={downloadJitsiApp}>
-              Get Mobile App
-            </Button>
-          }
-          style={{ 
-            marginBottom: '32px',
-            background: themeStyles.cardBg,
-            border: `1px solid ${themeStyles.cardBorder}`
-          }}
-        />
-
-        {/* Quick Actions */}
-        <Card style={{
-          background: themeStyles.cardBg,
-          border: `1px solid ${themeStyles.cardBorder}`,
-          borderRadius: '16px',
-          marginBottom: '32px'
+        {/* Enhanced Jitsi Meet Info */}
+        <div style={{
+          background: theme === 'dark'
+            ? 'linear-gradient(135deg, rgba(67, 127, 151, 0.2) 0%, rgba(67, 127, 151, 0.1) 100%)'
+            : 'linear-gradient(135deg, rgba(67, 127, 151, 0.08) 0%, rgba(238, 225, 179, 0.1) 100%)',
+          border: `2px solid ${theme === 'dark' ? 'rgba(67, 127, 151, 0.3)' : 'rgba(67, 127, 151, 0.2)'}`,
+          borderRadius: '20px',
+          padding: '24px',
+          marginBottom: '48px',
+          backdropFilter: 'blur(20px)',
+          boxShadow: `0 8px 32px ${themeStyles.shadowColor}`,
+          position: 'relative',
+          overflow: 'hidden'
         }}>
-          <Row justify="space-between" align="middle">
-            <Col>
-              <Title level={4} style={{ color: themeStyles.textPrimary, margin: 0 }}>
-                Need to book another appointment?
-              </Title>
-              <Text style={{ color: themeStyles.textSecondary }}>
-                Browse our services and schedule your next consultation
-              </Text>
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '4px',
+            background: 'linear-gradient(90deg, #2563eb 0%, #06b6d4 100%)'
+          }} />
+          <Row align="middle" justify="space-between">
+            <Col xs={24} lg={18}>
+              <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <VideoCameraOutlined style={{
+                    fontSize: '24px',
+                    color: theme === 'dark' ? '#06b6d4' : '#2563eb',
+                    background: theme === 'dark' ? 'rgba(6, 182, 212, 0.2)' : 'rgba(37, 99, 235, 0.1)',
+                    padding: '8px',
+                    borderRadius: '50%',
+                    width: '40px',
+                    height: '40px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }} />
+                  <Title level={4} style={{
+                    color: themeStyles.textPrimary,
+                    margin: 0,
+                    fontSize: '20px',
+                    fontWeight: '700'
+                  }}>
+                    Video Consultations Powered by Jitsi Meet
+                  </Title>
+                </div>
+                <Text style={{
+                  color: themeStyles.textSecondary,
+                  fontSize: '16px',
+                  lineHeight: '1.6'
+                }}>
+                  Secure, free video meetings right in your browser. No downloads required! Click 'Join Meeting' when it's time for your appointment.
+                </Text>
+              </Space>
             </Col>
-            <Col>
+            <Col xs={24} lg={6} style={{ textAlign: 'right' }}>
+              <Button
+                size="large"
+                icon={<DownloadOutlined />}
+                onClick={downloadJitsiApp}
+                style={{
+                  background: 'linear-gradient(135deg, #2563eb 0%, #06b6d4 100%)',
+                  border: 'none',
+                  borderRadius: '12px',
+                  color: 'white',
+                  fontWeight: '600',
+                  height: '48px',
+                  paddingLeft: '24px',
+                  paddingRight: '24px',
+                  boxShadow: '0 4px 16px rgba(37, 99, 235, 0.3)',
+                  transition: 'all 0.3s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 8px 24px rgba(37, 99, 235, 0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 16px rgba(37, 99, 235, 0.3)';
+                }}
+              >
+                Get Mobile App
+              </Button>
+            </Col>
+          </Row>
+        </div>
+
+        {/* Enhanced Quick Actions */}
+        <div style={{
+          background: theme === 'dark'
+            ? 'linear-gradient(135deg, rgba(67, 127, 151, 0.15) 0%, rgba(238, 225, 179, 0.1) 100%)'
+            : 'linear-gradient(135deg, rgba(238, 225, 179, 0.1) 0%, rgba(67, 127, 151, 0.08) 100%)',
+          border: `2px solid ${theme === 'dark' ? 'rgba(238, 225, 179, 0.3)' : 'rgba(238, 225, 179, 0.2)'}`,
+          borderRadius: '24px',
+          padding: '32px',
+          marginBottom: '48px',
+          backdropFilter: 'blur(20px)',
+          boxShadow: `0 8px 32px ${themeStyles.shadowColor}`,
+          position: 'relative',
+          overflow: 'hidden',
+          transition: 'all 0.3s ease'
+        }}>
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '4px',
+            background: 'linear-gradient(90deg, #f59e0b 0%, #eab308 100%)'
+          }} />
+          <Row justify="space-between" align="middle" gutter={[24, 24]}>
+            <Col xs={24} lg={16}>
+              <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <div style={{
+                    background: theme === 'dark' ? 'rgba(238, 225, 179, 0.2)' : 'rgba(238, 225, 179, 0.3)',
+                    borderRadius: '50%',
+                    width: '48px',
+                    height: '48px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <CalendarOutlined style={{
+                      fontSize: '24px',
+                      color: theme === 'dark' ? '#EEE1B3' : '#f59e0b'
+                    }} />
+                  </div>
+                  <Title level={3} style={{
+                    color: themeStyles.textPrimary,
+                    margin: 0,
+                    fontSize: '24px',
+                    fontWeight: '700'
+                  }}>
+                    Need to book another appointment?
+                  </Title>
+                </div>
+                <Text style={{
+                  color: themeStyles.textSecondary,
+                  fontSize: '16px',
+                  lineHeight: '1.6',
+                  marginLeft: '64px'
+                }}>
+                  Browse our services and schedule your next consultation with ease
+                </Text>
+              </Space>
+            </Col>
+            <Col xs={24} lg={8} style={{ textAlign: 'right' }}>
               <Button
                 type="primary"
                 size="large"
                 onClick={() => navigate('/services')}
                 style={{
-                  background: themeStyles.primaryColor,
-                  borderColor: themeStyles.primaryColor,
-                  borderRadius: '8px'
+                  background: themeStyles.gradientPrimary,
+                  border: 'none',
+                  borderRadius: '16px',
+                  color: '#1f2937',
+                  fontWeight: '700',
+                  fontSize: '16px',
+                  height: '56px',
+                  paddingLeft: '32px',
+                  paddingRight: '32px',
+                  boxShadow: `0 8px 24px ${themeStyles.shadowColor}`,
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-3px) scale(1.02)';
+                  e.currentTarget.style.boxShadow = `0 12px 32px ${themeStyles.shadowColor}`;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                  e.currentTarget.style.boxShadow = `0 8px 24px ${themeStyles.shadowColor}`;
                 }}
               >
-                Book New Appointment
+                <Space>
+                  <HeartOutlined />
+                  Book New Appointment
+                </Space>
               </Button>
             </Col>
           </Row>
-        </Card>
+        </div>
 
-        {/* Bookings List */}
-        <Card style={{
+        {/* Enhanced Bookings List */}
+        <div style={{
           background: themeStyles.cardBg,
-          border: `1px solid ${themeStyles.cardBorder}`,
-          borderRadius: '16px'
+          border: `2px solid ${themeStyles.borderColor}`,
+          borderRadius: '24px',
+          padding: '32px',
+          backdropFilter: 'blur(20px)',
+          boxShadow: `0 12px 48px ${themeStyles.shadowColor}`,
+          position: 'relative',
+          overflow: 'hidden'
         }}>
-          <Title level={4} style={{ color: themeStyles.textPrimary, marginBottom: '24px' }}>
-            Appointment History
-          </Title>
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '4px',
+            background: themeStyles.gradientPrimary
+          }} />
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '16px',
+            marginBottom: '32px'
+          }}>
+            <div style={{
+              background: theme === 'dark' ? 'rgba(67, 127, 151, 0.2)' : 'rgba(67, 127, 151, 0.1)',
+              borderRadius: '50%',
+              width: '48px',
+              height: '48px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <CalendarOutlined style={{
+                fontSize: '24px',
+                color: themeStyles.accentPrimary
+              }} />
+            </div>
+            <Title level={2} style={{
+              color: themeStyles.textPrimary,
+              margin: 0,
+              fontSize: '28px',
+              fontWeight: '800',
+              background: themeStyles.gradientPrimary,
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text'
+            }}>
+              Appointment History
+            </Title>
+          </div>
           
           {bookings.length === 0 ? (
             <Empty
@@ -504,13 +883,16 @@ const MyBookings = () => {
                       <div style={{
                         background: getStatusColor(booking.status, booking.paymentStatus),
                         borderRadius: '50%',
-                        width: '24px',
-                        height: '24px',
+                        width: '28px',
+                        height: '28px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: 'white',
-                        fontSize: '12px'
+                        color: '#ffffff',
+                        fontSize: '14px',
+                        border: `2px solid ${theme === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)'}`,
+                        boxShadow: `0 4px 12px ${themeStyles.shadowColor}`,
+                        transition: 'all 0.3s ease'
                       }}>
                         {getStatusIcon(booking.status)}
                       </div>
@@ -518,13 +900,58 @@ const MyBookings = () => {
                   >
                     <Card
                       size="small"
+                      hoverable
+                      onClick={() => showBookingDetails(booking)}
                       style={{
-                        background: isUpcoming ? `${themeStyles.primaryColor}10` : themeStyles.cardBg,
-                        border: `1px solid ${isUpcoming ? themeStyles.primaryColor : themeStyles.cardBorder}`,
-                        borderRadius: '12px',
-                        marginBottom: '16px'
+                        background: isUpcoming
+                          ? theme === 'dark'
+                            ? 'rgba(67, 127, 151, 0.2)'
+                            : 'rgba(67, 127, 151, 0.08)'
+                          : themeStyles.cardBg,
+                        border: `2px solid ${isUpcoming ? themeStyles.primaryColor : themeStyles.cardBorder}`,
+                        borderRadius: '16px',
+                        marginBottom: '16px',
+                        boxShadow: `0 4px 16px ${themeStyles.shadowColor}`,
+                        backdropFilter: 'blur(10px)',
+                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                        cursor: 'pointer',
+                        position: 'relative',
+                        overflow: 'hidden'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.boxShadow = `0 8px 32px ${themeStyles.shadowColor}`;
+                        e.currentTarget.style.borderColor = themeStyles.accentPrimary;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = `0 4px 16px ${themeStyles.shadowColor}`;
+                        e.currentTarget.style.borderColor = isUpcoming ? themeStyles.primaryColor : themeStyles.cardBorder;
                       }}
                     >
+                      {/* Clickable indicator */}
+                      <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        right: 0,
+                        width: '0',
+                        height: '0',
+                        borderStyle: 'solid',
+                        borderWidth: '0 20px 20px 0',
+                        borderColor: `transparent ${themeStyles.accentPrimary} transparent transparent`,
+                        opacity: 0.7
+                      }} />
+                      <div style={{
+                        position: 'absolute',
+                        top: '2px',
+                        right: '2px',
+                        color: 'white',
+                        fontSize: '10px',
+                        fontWeight: 'bold',
+                        zIndex: 1
+                      }}>
+                        <EyeOutlined />
+                      </div>
                       <Row justify="space-between" align="top">
                         <Col xs={24} lg={16}>
                           <Space direction="vertical" size="small" style={{ width: '100%' }}>
@@ -601,55 +1028,224 @@ const MyBookings = () => {
                                 {booking.sessionType?.charAt(0).toUpperCase() + booking.sessionType?.slice(1)} Session
                               </Text>
                             </Space>
+
+                            {/* Meeting Link Display - Enhanced */}
+                            {booking.status === 'confirmed' && (
+                              <div style={{
+                                background: theme === 'dark'
+                                  ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(37, 99, 235, 0.1) 100%)'
+                                  : 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(37, 99, 235, 0.05) 100%)',
+                                borderRadius: '12px',
+                                padding: '12px',
+                                marginTop: '12px',
+                                border: `1px solid ${theme === 'dark'
+                                  ? 'rgba(16, 185, 129, 0.3)'
+                                  : 'rgba(16, 185, 129, 0.2)'
+                                }`,
+                                position: 'relative',
+                                overflow: 'hidden'
+                              }}>
+                                <div style={{
+                                  position: 'absolute',
+                                  top: 0,
+                                  left: 0,
+                                  right: 0,
+                                  height: '2px',
+                                  background: 'linear-gradient(90deg, #10b981 0%, #2563eb 100%)'
+                                }} />
+                                <div style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '8px',
+                                  marginBottom: '8px'
+                                }}>
+                                  <VideoCameraOutlined style={{
+                                    color: '#10b981',
+                                    fontSize: '16px'
+                                  }} />
+                                  <Text strong style={{
+                                    color: themeStyles.textPrimary,
+                                    fontSize: '14px',
+                                    fontWeight: '600'
+                                  }}>
+                                    Video Meeting
+                                  </Text>
+                                  <Badge
+                                    count="Ready"
+                                    style={{
+                                      backgroundColor: '#10b981',
+                                      fontSize: '10px',
+                                      height: '18px',
+                                      lineHeight: '18px',
+                                      minWidth: '40px'
+                                    }}
+                                  />
+                                </div>
+
+                                <div style={{
+                                  background: theme === 'dark'
+                                    ? 'rgba(26, 29, 35, 0.8)'
+                                    : 'rgba(255, 255, 255, 0.9)',
+                                  borderRadius: '8px',
+                                  padding: '8px 12px',
+                                  border: `1px solid ${theme === 'dark'
+                                    ? 'rgba(255, 255, 255, 0.1)'
+                                    : 'rgba(0, 0, 0, 0.1)'
+                                  }`,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '8px'
+                                }}>
+                                  <GlobalOutlined style={{
+                                    color: themeStyles.accentPrimary,
+                                    fontSize: '14px'
+                                  }} />
+                                  <Text
+                                    code
+                                    style={{
+                                      flex: 1,
+                                      fontSize: '12px',
+                                      color: themeStyles.textPrimary,
+                                      fontFamily: 'monospace',
+                                      wordBreak: 'break-all',
+                                      background: 'transparent',
+                                      border: 'none',
+                                      padding: 0
+                                    }}
+                                  >
+                                    {booking.meetingURL || `https://meet.jit.si/${generateMeetingRoom(booking)}`}
+                                  </Text>
+                                  <Button
+                                    size="small"
+                                    type="text"
+                                    icon={<CopyOutlined />}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      copyMeetingLink(booking);
+                                    }}
+                                    style={{
+                                      color: themeStyles.accentPrimary,
+                                      border: 'none',
+                                      padding: '4px'
+                                    }}
+                                    title="Copy meeting link"
+                                  />
+                                </div>
+
+                                {/* Quick Access Buttons */}
+                                <div style={{
+                                  marginTop: '8px',
+                                  display: 'flex',
+                                  gap: '4px',
+                                  flexWrap: 'wrap'
+                                }}>
+                                  {canJoinMeeting && (
+                                    <Button
+                                      size="small"
+                                      type="primary"
+                                      icon={<VideoCameraOutlined />}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleJoinMeetingEnhanced(booking);
+                                      }}
+                                      style={{
+                                        background: '#10b981',
+                                        borderColor: '#10b981',
+                                        fontSize: '11px',
+                                        height: '24px',
+                                        paddingLeft: '6px',
+                                        paddingRight: '6px'
+                                      }}
+                                    >
+                                      Join
+                                    </Button>
+                                  )}
+                                  <Button
+                                    size="small"
+                                    icon={<LinkOutlined />}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      copyMeetingLink(booking);
+                                    }}
+                                    style={{
+                                      borderColor: themeStyles.accentPrimary,
+                                      color: themeStyles.accentPrimary,
+                                      fontSize: '11px',
+                                      height: '24px',
+                                      paddingLeft: '6px',
+                                      paddingRight: '6px'
+                                    }}
+                                  >
+                                    Copy
+                                  </Button>
+                                  <Button
+                                    size="small"
+                                    icon={<EyeOutlined />}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      showBookingDetails(booking);
+                                    }}
+                                    style={{
+                                      borderColor: themeStyles.textSecondary,
+                                      color: themeStyles.textSecondary,
+                                      fontSize: '11px',
+                                      height: '24px',
+                                      paddingLeft: '6px',
+                                      paddingRight: '6px'
+                                    }}
+                                  >
+                                    Details
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
                           </Space>
                         </Col>
                         
                         <Col xs={24} lg={8} style={{ textAlign: 'right' }}>
-                          <Space direction="vertical" size="small" style={{ width: '100%' }}>
-                            <Text style={{ color: themeStyles.textSecondary, fontSize: '12px' }}>
-                              Booked: {moment(booking.createdAt?.toDate?.() || booking.createdAt).format('MMM DD, YYYY')}
-                            </Text>
-                            
-                            <Space direction="vertical" size="small">
-                              {canJoinMeeting && (
-                                <Button
-                                  type="primary"
-                                  icon={<VideoCameraOutlined />}
-                                  onClick={() => handleJoinMeeting(booking)}
-                                  style={{
-                                    background: '#52c41a',
-                                    borderColor: '#52c41a'
-                                  }}
-                                  size="small"
-                                >
-                                  Join Video Meeting
-                                </Button>
-                              )}
-                              
+                          <div onClick={(e) => e.stopPropagation()}>
+                            <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                              <Text style={{ color: themeStyles.textSecondary, fontSize: '12px' }}>
+                                Booked: {moment(booking.createdAt?.toDate?.() || booking.createdAt).format('MMM DD, YYYY')}
+                              </Text>
+
+                              {/* Additional Actions */}
                               <Space>
+                                {canJoinMeeting && (
+                                  <Button
+                                    type="primary"
+                                    icon={<VideoCameraOutlined />}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleJoinMeetingEnhanced(booking);
+                                    }}
+                                    style={{
+                                      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                      borderColor: 'transparent',
+                                      boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+                                    }}
+                                    size="small"
+                                  >
+                                    {isMobileDevice() ? 'Open Meeting' : 'Join Meeting'}
+                                  </Button>
+                                )}
                                 <Button
                                   size="small"
                                   icon={<EyeOutlined />}
-                                  onClick={() => showBookingDetails(booking)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    showBookingDetails(booking);
+                                  }}
                                   style={{
                                     borderColor: themeStyles.primaryColor,
                                     color: themeStyles.primaryColor
                                   }}
                                 >
-                                  Details
+                                  Full Details
                                 </Button>
-                                
-                                {(canJoinMeeting || booking.meetingURL) && (
-                                  <Button
-                                    size="small"
-                                    icon={<CopyOutlined />}
-                                    onClick={() => copyMeetingLink(booking)}
-                                    title="Copy meeting link"
-                                  />
-                                )}
                               </Space>
                             </Space>
-                          </Space>
+                          </div>
                         </Col>
                       </Row>
                     </Card>
@@ -658,299 +1254,9 @@ const MyBookings = () => {
               })}
             </Timeline>
           )}
-        </Card>
+        </div>
       </div>
 
-      {/* Booking Details Modal */}
-      <Modal
-        title={
-          <span style={{ color: themeStyles.textPrimary }}>
-            Appointment Details - {selectedBooking?.confirmationNumber}
-            {selectedBooking?.meetingURL && (
-              <Tag color="green" style={{ marginLeft: 8 }}>
-                <VideoCameraOutlined /> Video Ready
-              </Tag>
-            )}
-          </span>
-        }
-        open={detailModalVisible}
-        onCancel={() => setDetailModalVisible(false)}
-        footer={[
-          <Button key="close" onClick={() => setDetailModalVisible(false)}>
-            Close
-          </Button>,
-          selectedBooking && (selectedBooking.status === 'confirmed' && (isAppointmentSoon(selectedBooking) || selectedBooking.meetingURL)) && (
-            <Button 
-              key="join" 
-              type="primary"
-              icon={<VideoCameraOutlined />}
-              onClick={() => {
-                setDetailModalVisible(false);
-                handleJoinMeeting(selectedBooking);
-              }}
-              style={{ background: '#52c41a', borderColor: '#52c41a' }}
-            >
-              Join Video Meeting
-            </Button>
-          )
-        ]}
-        width={700}
-      >
-        {selectedBooking && (
-          <div>
-            <Descriptions bordered column={2} size="small">
-              <Descriptions.Item label="Status" span={2}>
-                <Space>
-                  <Tag color={getStatusColor(selectedBooking.status, selectedBooking.paymentStatus)}>
-                    {selectedBooking.status?.toUpperCase()}
-                  </Tag>
-                  <Tag color={getPaymentStatusColor(selectedBooking.paymentStatus)}>
-                    💳 Payment: {selectedBooking.paymentStatus?.toUpperCase() || 'UNPAID'}
-                  </Tag>
-                  {selectedBooking.meetingURL && (
-                    <Tag color="green">
-                      <VideoCameraOutlined /> Video Meeting Ready
-                    </Tag>
-                  )}
-                </Space>
-              </Descriptions.Item>
-              
-              <Descriptions.Item label="Date">
-                {selectedBooking.preferredDate ? 
-                  moment(selectedBooking.preferredDate.toDate?.() || selectedBooking.preferredDate)
-                    .format('MMMM DD, YYYY') : 'Not set'
-                }
-              </Descriptions.Item>
-              <Descriptions.Item label="Time">
-                {selectedBooking.preferredTime ? 
-                  moment(selectedBooking.preferredTime.toDate?.() || selectedBooking.preferredTime)
-                    .format('HH:mm') : 'Not set'
-                }
-              </Descriptions.Item>
-              
-              <Descriptions.Item label="Session Type">
-                <Space>
-                  {getSessionTypeIcon(selectedBooking.sessionType)}
-                  {selectedBooking.sessionType?.charAt(0).toUpperCase() + selectedBooking.sessionType?.slice(1)}
-                </Space>
-              </Descriptions.Item>
-              <Descriptions.Item label="Duration">
-                30-60 minutes
-              </Descriptions.Item>
-              
-              <Descriptions.Item label="Phone">
-                <a href={`tel:${selectedBooking.phone}`}>{selectedBooking.phone}</a>
-              </Descriptions.Item>
-              <Descriptions.Item label="Email">
-                <a href={`mailto:${selectedBooking.email}`}>{selectedBooking.email}</a>
-              </Descriptions.Item>
-              
-              {/* Video Meeting Details */}
-              {selectedBooking.meetingURL && (
-                <Descriptions.Item label="Video Meeting" span={2}>
-                  <Space direction="vertical" style={{ width: '100%' }}>
-                    <Alert
-                      message="Video Meeting Information"
-                      description={
-                        <div>
-                          <p><strong>Meeting Link:</strong></p>
-                          <div style={{ 
-                            background: '#f6f8fa', 
-                            padding: '8px 12px', 
-                            borderRadius: '4px',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            marginBottom: '10px'
-                          }}>
-                            <Text code style={{ fontSize: '12px', wordBreak: 'break-all' }}>
-                              {selectedBooking.meetingURL}
-                            </Text>
-                            <Button 
-                              size="small"
-                              icon={<CopyOutlined />}
-                              onClick={() => copyMeetingLink(selectedBooking)}
-                            />
-                          </div>
-                          
-                          {selectedBooking.meetingPassword && (
-                            <p><strong>Password:</strong> <Text code>{selectedBooking.meetingPassword}</Text></p>
-                          )}
-                          
-                          <div style={{ marginTop: '10px' }}>
-                            <Text type="secondary">
-                              💡 <strong>Tip:</strong> Click the meeting link 5 minutes before your appointment time
-                            </Text>
-                          </div>
-                        </div>
-                      }
-                      type="info"
-                      showIcon
-                    />
-                    
-                    <Space>
-                      <Button 
-                        type="primary"
-                        icon={<VideoCameraOutlined />}
-                        onClick={() => {
-                          setDetailModalVisible(false);
-                          handleJoinMeeting(selectedBooking);
-                        }}
-                        style={{ background: '#52c41a', borderColor: '#52c41a' }}
-                      >
-                        Join Meeting
-                      </Button>
-                      <Button 
-                        icon={<DownloadOutlined />}
-                        onClick={downloadJitsiApp}
-                      >
-                        Get Mobile App
-                      </Button>
-                    </Space>
-                  </Space>
-                </Descriptions.Item>
-              )}
-              
-              <Descriptions.Item label="Current Concerns" span={2}>
-                {selectedBooking.currentConcerns || 'Not provided'}
-              </Descriptions.Item>
-              
-              <Descriptions.Item label="Special Requests" span={2}>
-                {selectedBooking.specialRequests || 'None'}
-              </Descriptions.Item>
-              
-              <Descriptions.Item label="Booked On">
-                {moment(selectedBooking.createdAt?.toDate?.() || selectedBooking.createdAt)
-                  .format('MMMM DD, YYYY HH:mm')}
-              </Descriptions.Item>
-              <Descriptions.Item label="Last Updated">
-                {moment(selectedBooking.updatedAt?.toDate?.() || selectedBooking.updatedAt || selectedBooking.createdAt?.toDate?.() || selectedBooking.createdAt)
-                  .format('MMMM DD, YYYY HH:mm')}
-              </Descriptions.Item>
-            </Descriptions>
-            
-            {selectedBooking.selectedServices && selectedBooking.selectedServices.length > 0 && (
-              <div style={{ marginTop: 16 }}>
-                <Title level={5} style={{ color: themeStyles.textPrimary }}>
-                  Selected Services
-                </Title>
-                <Space wrap>
-                  {selectedBooking.selectedServices.map((service, index) => (
-                    <Tag key={index} icon={<HeartOutlined />} color="blue">
-                      {service.title} - {service.category}
-                    </Tag>
-                  ))}
-                </Space>
-              </div>
-            )}
-
-            {/* Payment Details */}
-            {selectedBooking.paymentDetails && (
-              <div style={{ marginTop: 16 }}>
-                <Title level={5} style={{ color: themeStyles.textPrimary }}>
-                  Payment Information
-                </Title>
-                <Card size="small" style={{
-                  background: themeStyles.cardBg,
-                  border: `1px solid ${themeStyles.cardBorder}`
-                }}>
-                  <Row gutter={[16, 8]}>
-                    <Col span={12}>
-                      <Text style={{ color: themeStyles.textSecondary }}>Amount:</Text>
-                      <div style={{ color: themeStyles.textPrimary, fontWeight: 'bold' }}>
-                        ₹{selectedBooking.paymentDetails.amount || 0}
-                      </div>
-                    </Col>
-                    <Col span={12}>
-                      <Text style={{ color: themeStyles.textSecondary }}>Status:</Text>
-                      <div>
-                        <Tag color={getPaymentStatusColor(selectedBooking.paymentStatus)}>
-                          {selectedBooking.paymentStatus?.toUpperCase() || 'UNPAID'}
-                        </Tag>
-                      </div>
-                    </Col>
-                    <Col span={12}>
-                      <Text style={{ color: themeStyles.textSecondary }}>Submitted:</Text>
-                      <div style={{ color: themeStyles.textPrimary }}>
-                        {selectedBooking.paymentDetails.createdAt?.toDate ?
-                          moment(selectedBooking.paymentDetails.createdAt.toDate()).format('MMM DD, YYYY HH:mm') :
-                          'N/A'
-                        }
-                      </div>
-                    </Col>
-                    {selectedBooking.paymentDetails.screenshotUrl && (
-                      <Col span={12}>
-                        <Text style={{ color: themeStyles.textSecondary }}>Screenshot:</Text>
-                        <div>
-                          <Button
-                            size="small"
-                            icon={<EyeOutlined />}
-                            onClick={() => window.open(selectedBooking.paymentDetails.screenshotUrl, '_blank')}
-                          >
-                            View
-                          </Button>
-                        </div>
-                      </Col>
-                    )}
-                  </Row>
-                  {selectedBooking.paymentStatus === 'rejected' && (
-                    <Alert
-                      message="Payment Rejected"
-                      description="Your payment was rejected. Please contact support for assistance."
-                      type="error"
-                      style={{ marginTop: '12px' }}
-                    />
-                  )}
-                  {selectedBooking.paymentStatus === 'pending' && (
-                    <Alert
-                      message="Payment Under Review"
-                      description="Your payment is being reviewed by our admin team. You will be notified once approved."
-                      type="info"
-                      style={{ marginTop: '12px' }}
-                    />
-                  )}
-                  {selectedBooking.paymentStatus === 'approved' && (
-                    <Alert
-                      message="Payment Approved"
-                      description="Your payment has been approved. Your booking is confirmed!"
-                      type="success"
-                      style={{ marginTop: '12px' }}
-                    />
-                  )}
-                </Card>
-              </div>
-            )}
-
-            {/* Meeting Instructions */}
-            {selectedBooking.status === 'confirmed' && (
-              <div style={{ marginTop: 16 }}>
-                <Alert
-                  message="How to Join Your Video Consultation"
-                  description={
-                    <div>
-                      <ol style={{ paddingLeft: '20px' }}>
-                        <li><strong>5 minutes before:</strong> Click "Join Video Meeting" button</li>
-                        <li><strong>Allow permissions:</strong> Enable camera and microphone when prompted</li>
-                        <li><strong>Wait for doctor:</strong> Your healthcare provider will join shortly</li>
-                        <li><strong>Backup plan:</strong> Call +91 63617 43098 if you have technical issues</li>
-                      </ol>
-                      
-                      <div style={{ marginTop: '10px', padding: '8px', background: '#f0f9ff', borderRadius: '4px' }}>
-                        <Text type="secondary">
-                          📱 <strong>Mobile users:</strong> Download the free "Jitsi Meet" app for the best experience, or use your mobile browser
-                        </Text>
-                      </div>
-                    </div>
-                  }
-                  type="success"
-                  showIcon={false}
-                  style={{ marginTop: 16 }}
-                />
-              </div>
-            )}
-          </div>
-        )}
-      </Modal>
     </div>
   );
 };

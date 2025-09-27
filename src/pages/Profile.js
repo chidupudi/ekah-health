@@ -36,7 +36,7 @@ import {
   ClockCircleOutlined
 } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme } from '../components/ParticleBackground';
 import { useNavigate } from 'react-router-dom';
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -49,7 +49,7 @@ const { TextArea } = Input;
 
 const Profile = () => {
   const { user, logout } = useAuth();
-  const { isDark } = useTheme();
+  const { theme, getThemeStyles } = useTheme();
   const navigate = useNavigate();
   const [form] = Form.useForm();
 
@@ -141,48 +141,6 @@ const Profile = () => {
     }
   };
 
-  const getThemeStyles = () => {
-    if (isDark) {
-      return {
-        pageBackground: '#0f0f23',
-        cardBackground: 'rgba(255, 255, 255, 0.05)',
-        cardBorder: 'rgba(255, 255, 255, 0.1)',
-        textPrimary: '#f0f6fc',
-        textSecondary: '#8b949e',
-        accentPrimary: '#58a6ff',
-        accentSecondary: '#7c3aed',
-        inputBackground: 'rgba(255, 255, 255, 0.05)',
-        inputBorder: 'rgba(255, 255, 255, 0.2)',
-        buttonPrimary: '#58a6ff',
-        buttonSecondary: 'rgba(255, 255, 255, 0.1)',
-        gradientOverlay: 'linear-gradient(135deg, rgba(88, 166, 255, 0.1) 0%, rgba(124, 58, 237, 0.1) 100%)',
-        avatarBackground: '#58a6ff',
-        successColor: '#3fb950',
-        warningColor: '#f2cc60',
-        errorColor: '#f85149'
-      };
-    } else {
-      return {
-        pageBackground: '#f8fafc',
-        cardBackground: '#ffffff',
-        cardBorder: 'rgba(0, 0, 0, 0.06)',
-        textPrimary: '#1e293b',
-        textSecondary: '#64748b',
-        accentPrimary: '#3b82f6',
-        accentSecondary: '#8b5cf6',
-        inputBackground: '#ffffff',
-        inputBorder: 'rgba(0, 0, 0, 0.15)',
-        buttonPrimary: '#3b82f6',
-        buttonSecondary: 'rgba(0, 0, 0, 0.05)',
-        gradientOverlay: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%)',
-        avatarBackground: '#3b82f6',
-        successColor: '#10b981',
-        warningColor: '#f59e0b',
-        errorColor: '#ef4444'
-      };
-    }
-  };
-
   const themeStyles = getThemeStyles();
 
   const handleSaveProfile = async (values) => {
@@ -251,7 +209,7 @@ const Profile = () => {
   return (
     <div style={{
       minHeight: '100vh',
-      background: themeStyles.pageBackground,
+      background: themeStyles.background,
       padding: '20px'
     }}>
       <div style={{
@@ -284,27 +242,23 @@ const Profile = () => {
             {/* Profile Card */}
             <Card
               style={{
-                background: themeStyles.cardBackground,
-                border: `1px solid ${themeStyles.cardBorder}`,
+                background: themeStyles.cardBg,
+                border: `1px solid ${themeStyles.borderColor}`,
                 borderRadius: '16px',
                 marginBottom: '24px',
                 backdropFilter: 'blur(20px)',
-                boxShadow: isDark
-                  ? '0 8px 32px rgba(0, 0, 0, 0.3)'
-                  : '0 8px 32px rgba(0, 0, 0, 0.1)'
+                boxShadow: `0 8px 32px ${themeStyles.shadowColor || 'rgba(0, 0, 0, 0.1)'}`
               }}
-              bodyStyle={{ padding: '32px', textAlign: 'center' }}
+              styles={{ body: { padding: '32px', textAlign: 'center' } }}
             >
               <div style={{ position: 'relative', display: 'inline-block', marginBottom: '24px' }}>
                 <Avatar
                   size={120}
                   src={profileData.photoURL || user.photoURL}
                   style={{
-                    backgroundColor: themeStyles.avatarBackground,
-                    border: `4px solid ${themeStyles.cardBorder}`,
-                    boxShadow: isDark
-                      ? '0 8px 32px rgba(88, 166, 255, 0.3)'
-                      : '0 8px 32px rgba(59, 130, 246, 0.3)'
+                    backgroundColor: themeStyles.accentPrimary,
+                    border: `4px solid ${themeStyles.borderColor}`,
+                    boxShadow: `0 8px 32px ${themeStyles.shadowColor || 'rgba(0, 0, 0, 0.3)'}`
                   }}
                 >
                   {!profileData.photoURL && !user.photoURL && (
@@ -388,14 +342,16 @@ const Profile = () => {
                 </Space>
               }
               style={{
-                background: themeStyles.cardBackground,
+                background: themeStyles.cardBg,
                 border: `1px solid ${themeStyles.cardBorder}`,
                 borderRadius: '16px',
                 backdropFilter: 'blur(20px)'
               }}
-              headStyle={{
-                borderBottom: `1px solid ${themeStyles.cardBorder}`,
-                color: themeStyles.textPrimary
+              styles={{
+                header: {
+                  borderBottom: `1px solid ${themeStyles.cardBorder}`,
+                  color: themeStyles.textPrimary
+                }
               }}
             >
               <Row gutter={[16, 16]}>
@@ -478,7 +434,7 @@ const Profile = () => {
                           form.resetFields();
                         }}
                         style={{
-                          background: themeStyles.buttonSecondary,
+                          background: themeStyles.listItemHover,
                           borderColor: themeStyles.cardBorder,
                           color: themeStyles.textPrimary
                         }}
@@ -502,19 +458,19 @@ const Profile = () => {
                 </div>
               }
               style={{
-                background: themeStyles.cardBackground,
+                background: themeStyles.cardBg,
                 border: `1px solid ${themeStyles.cardBorder}`,
                 borderRadius: '16px',
                 backdropFilter: 'blur(20px)',
-                boxShadow: isDark
-                  ? '0 8px 32px rgba(0, 0, 0, 0.3)'
-                  : '0 8px 32px rgba(0, 0, 0, 0.1)'
+                boxShadow: `0 8px 32px ${themeStyles.shadowColor || 'rgba(0, 0, 0, 0.1)'}`
               }}
-              headStyle={{
-                borderBottom: `1px solid ${themeStyles.cardBorder}`,
-                color: themeStyles.textPrimary
+              styles={{
+                header: {
+                  borderBottom: `1px solid ${themeStyles.cardBorder}`,
+                  color: themeStyles.textPrimary
+                },
+                body: { padding: '32px' }
               }}
-              bodyStyle={{ padding: '32px' }}
             >
               {isEditing ? (
                 <Form
@@ -534,8 +490,8 @@ const Profile = () => {
                           prefix={<UserOutlined style={{ color: themeStyles.textSecondary }} />}
                           placeholder="Enter your full name"
                           style={{
-                            background: themeStyles.inputBackground,
-                            border: `1px solid ${themeStyles.inputBorder}`,
+                            background: themeStyles.cardBg,
+                            border: `1px solid ${themeStyles.borderColor}`,
                             borderRadius: '8px',
                             color: themeStyles.textPrimary
                           }}
@@ -557,8 +513,8 @@ const Profile = () => {
                           placeholder="Enter your email"
                           disabled
                           style={{
-                            background: themeStyles.buttonSecondary,
-                            border: `1px solid ${themeStyles.inputBorder}`,
+                            background: themeStyles.listItemHover,
+                            border: `1px solid ${themeStyles.borderColor}`,
                             borderRadius: '8px',
                             color: themeStyles.textSecondary
                           }}
@@ -575,8 +531,8 @@ const Profile = () => {
                           prefix={<PhoneOutlined style={{ color: themeStyles.textSecondary }} />}
                           placeholder="Enter your phone number"
                           style={{
-                            background: themeStyles.inputBackground,
-                            border: `1px solid ${themeStyles.inputBorder}`,
+                            background: themeStyles.cardBg,
+                            border: `1px solid ${themeStyles.borderColor}`,
                             borderRadius: '8px',
                             color: themeStyles.textPrimary
                           }}
@@ -593,8 +549,8 @@ const Profile = () => {
                           prefix={<PhoneOutlined style={{ color: themeStyles.textSecondary }} />}
                           placeholder="Emergency contact number"
                           style={{
-                            background: themeStyles.inputBackground,
-                            border: `1px solid ${themeStyles.inputBorder}`,
+                            background: themeStyles.cardBg,
+                            border: `1px solid ${themeStyles.borderColor}`,
                             borderRadius: '8px',
                             color: themeStyles.textPrimary
                           }}
@@ -612,8 +568,8 @@ const Profile = () => {
                           placeholder="Enter your address"
                           rows={3}
                           style={{
-                            background: themeStyles.inputBackground,
-                            border: `1px solid ${themeStyles.inputBorder}`,
+                            background: themeStyles.cardBg,
+                            border: `1px solid ${themeStyles.borderColor}`,
                             borderRadius: '8px',
                             color: themeStyles.textPrimary
                           }}
@@ -632,8 +588,8 @@ const Profile = () => {
                           maxLength={200}
                           showCount
                           style={{
-                            background: themeStyles.inputBackground,
-                            border: `1px solid ${themeStyles.inputBorder}`,
+                            background: themeStyles.cardBg,
+                            border: `1px solid ${themeStyles.borderColor}`,
                             borderRadius: '8px',
                             color: themeStyles.textPrimary
                           }}
@@ -729,15 +685,17 @@ const Profile = () => {
                   </Space>
                 }
                 style={{
-                  background: themeStyles.cardBackground,
+                  background: themeStyles.cardBg,
                   border: `1px solid ${themeStyles.cardBorder}`,
                   borderRadius: '16px',
                   marginTop: '24px',
                   backdropFilter: 'blur(20px)'
                 }}
-                headStyle={{
-                  borderBottom: `1px solid ${themeStyles.cardBorder}`,
-                  color: themeStyles.textPrimary
+                styles={{
+                  header: {
+                    borderBottom: `1px solid ${themeStyles.cardBorder}`,
+                    color: themeStyles.textPrimary
+                  }
                 }}
               >
                 <div style={{ maxHeight: '300px', overflowY: 'auto' }}>

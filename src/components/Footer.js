@@ -21,30 +21,7 @@ const Footer = ({
   legalLinks = null
 }) => {
   const navigate = useNavigate();
-  const { theme } = useTheme();
-
-  const getThemeStyles = () => {
-    if (theme === 'dark') {
-      return {
-        background: '#000000',
-        textColor: '#ffffff',
-        mutedTextColor: '#a0a0a0',
-        borderColor: 'rgba(255, 255, 255, 0.2)',
-        hoverColor: '#ffffff',
-        logoColor: '#ffffff'
-      };
-    } else {
-      return {
-        background: '#ffffff',
-        textColor: '#000000',
-        mutedTextColor: '#666666',
-        borderColor: 'rgba(0, 0, 0, 0.1)',
-        hoverColor: '#000000',
-        logoColor: '#000000'
-      };
-    }
-  };
-
+  const { theme, getThemeStyles } = useTheme();
   const themeStyles = getThemeStyles();
 
   const defaultSections = [
@@ -153,12 +130,12 @@ const Footer = ({
               >
                 <HeartOutlined style={{
                   fontSize: '28px', // Reduced from 32px
-                  color: themeStyles.logoColor
+                  color: themeStyles.accentPrimary
                 }} />
                 <h2 style={{
                   fontSize: '20px', // Reduced from 24px
                   fontWeight: '600',
-                  color: themeStyles.textColor,
+                  color: themeStyles.textPrimary,
                   margin: 0
                 }}>
                   {logo.title}
@@ -168,7 +145,7 @@ const Footer = ({
               <p style={{
                 maxWidth: '320px', // Reduced from 350px
                 fontSize: '14px',
-                color: themeStyles.mutedTextColor,
+                color: themeStyles.textSecondary,
                 lineHeight: '1.5', // Reduced from 1.6
                 margin: 0
               }}>
@@ -180,7 +157,7 @@ const Footer = ({
                 display: 'flex',
                 alignItems: 'center',
                 gap: '20px', // Reduced from 24px
-                color: themeStyles.mutedTextColor,
+                color: themeStyles.textSecondary,
                 listStyle: 'none',
                 padding: 0,
                 margin: 0
@@ -191,8 +168,8 @@ const Footer = ({
                     cursor: 'pointer',
                     transition: 'color 0.2s ease'
                   }}
-                  onMouseEnter={(e) => e.target.style.color = themeStyles.hoverColor}
-                  onMouseLeave={(e) => e.target.style.color = themeStyles.mutedTextColor}
+                  onMouseEnter={(e) => e.target.style.color = themeStyles.accentPrimary}
+                  onMouseLeave={(e) => e.target.style.color = themeStyles.textSecondary}
                   onClick={() => handleNavigation(social.href)}
                   >
                     {social.icon}
@@ -214,7 +191,7 @@ const Footer = ({
                   <h3 style={{
                     marginBottom: '12px', // Reduced from 16px
                     fontWeight: 'bold',
-                    color: themeStyles.textColor,
+                    color: themeStyles.textPrimary,
                     fontSize: '15px', // Reduced from 16px
                     margin: '0 0 12px 0'
                   }}>
@@ -225,7 +202,7 @@ const Footer = ({
                     flexDirection: 'column',
                     gap: '8px', // Reduced from 12px
                     fontSize: '13px', // Reduced from 14px
-                    color: themeStyles.mutedTextColor,
+                    color: themeStyles.textSecondary,
                     listStyle: 'none',
                     padding: 0,
                     margin: 0

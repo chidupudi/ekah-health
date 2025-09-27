@@ -1,13 +1,13 @@
 import React, { useRef, useEffect, useState } from 'react';
 
-const Particles = ({ 
-  className = '', 
-  quantity = 100, 
-  ease = 80, 
-  color = '#000000', 
+const Particles = ({
+  className = '',
+  quantity = 120,
+  ease = 50,
+  color = '#000000',
   refresh = false,
-  size = 1,
-  staticity = 50,
+  size = 1.5,
+  staticity = 30,
   vx = 0,
   vy = 0
 }) => {
@@ -47,68 +47,96 @@ const Particles = ({
           y: Math.random() * canvas.height,
           targetX: Math.random() * canvas.width,
           targetY: Math.random() * canvas.height,
-          vx: (Math.random() - 0.5) * 2 + vx,
-          vy: (Math.random() - 0.5) * 2 + vy,
-          size: Math.random() * size + 0.5,
-          opacity: Math.random() * 0.8 + 0.2,
-          life: Math.random() * 100,
+          vx: (Math.random() - 0.5) * 1.5 + vx,
+          vy: (Math.random() - 0.5) * 1.5 + vy,
+          size: Math.random() * size + 0.8,
+          opacity: Math.random() * 0.6 + 0.3,
+          life: Math.random() * 200,
+          pulseSpeed: Math.random() * 0.02 + 0.008,
+          direction: Math.random() * Math.PI * 2,
         });
       }
     };
 
     const updateParticles = () => {
       particlesRef.current.forEach((particle) => {
-        // Move towards target with easing
+        // Move towards target with enhanced easing
         const dx = particle.targetX - particle.x;
         const dy = particle.targetY - particle.y;
-        
-        particle.x += dx * (ease / 10000) + particle.vx;
-        particle.y += dy * (ease / 10000) + particle.vy;
 
-        // Update velocity with some randomness
-        particle.vx += (Math.random() - 0.5) * 0.01;
-        particle.vy += (Math.random() - 0.5) * 0.01;
+        particle.x += dx * (ease / 8000) + particle.vx;
+        particle.y += dy * (ease / 8000) + particle.vy;
 
-        // Apply friction
-        particle.vx *= 0.999;
-        particle.vy *= 0.999;
+        // Smooth orbital movement
+        particle.direction += particle.pulseSpeed;
+        particle.vx += Math.cos(particle.direction) * 0.008;
+        particle.vy += Math.sin(particle.direction) * 0.008;
 
-        // Update life and opacity
+        // Update velocity with subtle randomness
+        particle.vx += (Math.random() - 0.5) * 0.005;
+        particle.vy += (Math.random() - 0.5) * 0.005;
+
+        // Apply enhanced friction
+        particle.vx *= 0.998;
+        particle.vy *= 0.998;
+
+        // Update life and create pulsing opacity effect
         particle.life += 1;
-        particle.opacity = Math.sin(particle.life * 0.01) * 0.4 + 0.6;
+        const pulse1 = Math.sin(particle.life * particle.pulseSpeed);
+        const pulse2 = Math.cos(particle.life * particle.pulseSpeed * 0.7);
+        particle.opacity = (pulse1 + pulse2) * 0.2 + 0.5;
 
-        // Reset target occasionally for more organic movement
-        if (Math.random() < 0.005) {
+        // Occasional direction change for more organic movement
+        if (Math.random() < 0.003) {
           particle.targetX = Math.random() * canvas.width;
           particle.targetY = Math.random() * canvas.height;
+          particle.direction += (Math.random() - 0.5) * 0.5;
         }
 
-        // Keep particles within bounds
-        if (particle.x < 0 || particle.x > canvas.width) {
-          particle.vx *= -0.5;
-          particle.x = Math.max(0, Math.min(canvas.width, particle.x));
+        // Smooth boundary collision
+        const margin = 50;
+        if (particle.x < margin) {
+          particle.vx += (margin - particle.x) * 0.002;
+        } else if (particle.x > canvas.width - margin) {
+          particle.vx -= (particle.x - (canvas.width - margin)) * 0.002;
         }
-        if (particle.y < 0 || particle.y > canvas.height) {
-          particle.vy *= -0.5;
-          particle.y = Math.max(0, Math.min(canvas.height, particle.y));
+        if (particle.y < margin) {
+          particle.vy += (margin - particle.y) * 0.002;
+        } else if (particle.y > canvas.height - margin) {
+          particle.vy -= (particle.y - (canvas.height - margin)) * 0.002;
         }
 
-        // Static behavior
+        // Enhanced static behavior
         if (staticity > 0) {
-          particle.vx *= (100 - staticity) / 100;
-          particle.vy *= (100 - staticity) / 100;
+          const staticFactor = (100 - staticity) / 100;
+          particle.vx *= staticFactor;
+          particle.vy *= staticFactor;
         }
       });
     };
 
     const drawParticles = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = color;
 
       particlesRef.current.forEach((particle) => {
+        // Create gradient for each particle for more visual appeal
+        const gradient = ctx.createRadialGradient(
+          particle.x, particle.y, 0,
+          particle.x, particle.y, particle.size * 2
+        );
+        gradient.addColorStop(0, color);
+        gradient.addColorStop(1, 'transparent');
+
         ctx.globalAlpha = particle.opacity;
+        ctx.fillStyle = gradient;
         ctx.beginPath();
         ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Add subtle glow effect
+        ctx.globalAlpha = particle.opacity * 0.3;
+        ctx.beginPath();
+        ctx.arc(particle.x, particle.y, particle.size * 1.5, 0, Math.PI * 2);
         ctx.fill();
       });
 
