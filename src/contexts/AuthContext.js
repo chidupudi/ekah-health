@@ -1,4 +1,16 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import {
+  signInWithEmail,
+  signInWithGoogle as firebaseSignInWithGoogle,
+  registerWithEmailAndPassword,
+  resetPassword,
+  logOut as firebaseLogOut,
+  subscribeToAuthChanges,
+  parseAuthError
+} from '../services/firebase/auth';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { getRedirectResult } from 'firebase/auth';
+import { db, auth } from '../services/firebase/config';
 
 const AuthContext = createContext();
 
@@ -138,95 +150,210 @@ export const AuthProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [sessionInfo, setSessionInfo] = useState(null);
-  
+  const [error, setError] = useState(null);
+
   const tokenManager = new SecureTokenManager();
 
-  // Initialize authentication state
+  // Initialize authentication state with Firebase
   useEffect(() => {
-    initializeAuth();
+    // Check for Google Sign-in redirect result on app load
+    const checkRedirectResult = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result) {
+          // User signed in via redirect, create/update user document
+          const userDocRef = doc(db, 'users', result.user.uid);
+          await setDoc(userDocRef, {
+            email: result.user.email,
+            name: result.user.displayName,
+            photoURL: result.user.photoURL,
+            role: 'user',
+            lastLogin: new Date(),
+            createdAt: new Date()
+          }, { merge: true });
+        }
+      } catch (error) {
+        console.error('Redirect result error:', error);
+        setError(parseAuthError(error));
+      }
+    };
+
+    checkRedirectResult();
+
+    const unsubscribe = subscribeToAuthChanges(async (firebaseUser) => {
+      try {
+        setIsLoading(true);
+
+        if (firebaseUser) {
+          // Get additional user data from Firestore
+          const userDocRef = doc(db, 'users', firebaseUser.uid);
+          const userDoc = await getDoc(userDocRef);
+
+          let userData = {
+            id: firebaseUser.uid,
+            email: firebaseUser.email,
+            name: firebaseUser.displayName,
+            photoURL: firebaseUser.photoURL,
+            role: 'user'
+          };
+
+          // If user document exists in Firestore, merge the data
+          if (userDoc.exists()) {
+            userData = { ...userData, ...userDoc.data() };
+          } else {
+            // Create user document in Firestore for new users
+            await setDoc(userDocRef, {
+              email: firebaseUser.email,
+              name: firebaseUser.displayName,
+              role: 'user',
+              createdAt: new Date(),
+              lastLogin: new Date()
+            });
+          }
+
+          // Check for admin credentials for admin login
+          if (firebaseUser.email === 'admin@ekahhealth.com') {
+            userData.role = 'admin';
+          }
+
+          setUser(userData);
+          setSessionInfo({
+            loginTime: new Date(),
+            lastActivity: new Date()
+          });
+          setIsAuthenticated(true);
+        } else {
+          setUser(null);
+          setIsAuthenticated(false);
+          setSessionInfo(null);
+          tokenManager.clearTokens();
+        }
+      } catch (error) {
+        console.error('Auth state change error:', error);
+        setError(parseAuthError(error));
+      } finally {
+        setIsLoading(false);
+      }
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  const initializeAuth = async () => {
+  // Regular email/password login
+  const login = async (email, password) => {
     try {
       setIsLoading(true);
-      const token = tokenManager.getToken();
-      
-      if (token) {
-        // For now, assume token is valid if it exists
-        // In production, verify with backend
-        setUser({
-          id: 'admin_001',
-          email: 'admin@ekahhealth.com',
-          role: 'admin'
-        });
-        
-        setSessionInfo({
-          loginTime: new Date(),
-          lastActivity: new Date()
-        });
-        
-        setIsAuthenticated(true);
-      }
+      setError(null);
+
+      const firebaseUser = await signInWithEmail(email, password);
+
+      // Update last login in Firestore
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      await setDoc(userDocRef, { lastLogin: new Date() }, { merge: true });
+
+      return firebaseUser;
     } catch (error) {
-      console.error('Authentication initialization failed:', error);
-      tokenManager.clearTokens();
+      const errorMessage = parseAuthError(error);
+      setError(errorMessage);
+      throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const login = async (credentials) => {
+  // Google Sign-in
+  const loginWithGoogle = async () => {
     try {
       setIsLoading(true);
-      
-      // Simple admin login for now - replace with actual API call
-      if (credentials.email === 'admin@ekahhealth.com' && credentials.password === 'EkahAdmin@2024') {
-        // Generate a mock JWT token
-        const token = 'mock_admin_token_' + Date.now();
-        
-        const stored = tokenManager.storeToken(token);
-        
-        if (!stored) {
-          throw new Error('Failed to store authentication tokens securely');
-        }
+      setError(null);
 
-        setUser({
-          id: 'admin_001',
-          email: credentials.email,
-          role: 'admin'
-        });
+      const firebaseUser = await firebaseSignInWithGoogle();
 
-        setSessionInfo({
-          loginTime: new Date(),
-          lastActivity: new Date()
-        });
-
-        setIsAuthenticated(true);
-        
-        console.log('Admin authentication successful');
-        return { success: true };
-      } else {
-        throw new Error('Invalid credentials');
+      // If firebaseUser is null, it means redirect was initiated
+      if (!firebaseUser) {
+        // Keep loading state as redirect is happening
+        // Don't call setIsLoading(false) here as the page will redirect
+        return null;
       }
+
+      // Update/create user document in Firestore
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      await setDoc(userDocRef, {
+        email: firebaseUser.email,
+        name: firebaseUser.displayName,
+        photoURL: firebaseUser.photoURL,
+        role: 'user',
+        lastLogin: new Date(),
+        createdAt: new Date()
+      }, { merge: true });
+
+      setIsLoading(false);
+      return firebaseUser;
     } catch (error) {
-      console.error('Login failed:', error);
-      return { success: false, error: error.message };
+      const errorMessage = parseAuthError(error);
+      setError(errorMessage);
+      setIsLoading(false);
+      throw new Error(errorMessage);
+    }
+  };
+
+  // User registration
+  const register = async (email, password, name) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const firebaseUser = await registerWithEmailAndPassword(email, password, name);
+
+      // Create user document in Firestore
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      await setDoc(userDocRef, {
+        email: firebaseUser.email,
+        name: name,
+        role: 'user',
+        createdAt: new Date(),
+        lastLogin: new Date()
+      });
+
+      return firebaseUser;
+    } catch (error) {
+      const errorMessage = parseAuthError(error);
+      setError(errorMessage);
+      throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Forgot password
+  const forgotPassword = async (email) => {
+    try {
+      setError(null);
+      await resetPassword(email);
+    } catch (error) {
+      const errorMessage = parseAuthError(error);
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    }
+  };
+
+  // Logout
   const logout = async () => {
     try {
+      await firebaseLogOut();
       tokenManager.clearTokens();
       setUser(null);
       setIsAuthenticated(false);
       setSessionInfo(null);
-      
-      console.log('Admin logged out successfully');
+      setError(null);
     } catch (error) {
       console.error('Logout failed:', error);
     }
+  };
+
+  // Clear error
+  const clearError = () => {
+    setError(null);
   };
 
   const value = {
@@ -234,8 +361,13 @@ export const AuthProvider = ({ children }) => {
     isLoading,
     isAuthenticated,
     sessionInfo,
+    error,
     login,
+    loginWithGoogle,
+    register,
+    forgotPassword,
     logout,
+    clearError,
     tokenManager
   };
 

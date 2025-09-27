@@ -9,6 +9,8 @@ import {
 } from '@ant-design/icons';
 import BookingsManagement from '../../components/admin/BookingsManagement';
 import BookingsTable from '../../components/admin/BookingsTable';
+import UsersManagement from '../../components/admin/UsersManagement';
+import PaymentsManagement from '../../components/admin/PaymentsManagement';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 
@@ -80,8 +82,10 @@ const AdminDashboard = () => {
         return <BookingsManagement />;
       case 'calendar':
         return <div className="tab-content">📅 Calendar Management (Coming Soon)</div>;
-      case 'patients':
-        return <div className="tab-content">👥 Patient Management (Coming Soon)</div>;
+      case 'users':
+        return <UsersManagement />;
+      case 'payments':
+        return <PaymentsManagement />;
       case 'settings':
         return (
           <div className="tab-content">
@@ -181,13 +185,19 @@ const AdminDashboard = () => {
         >
           📅 Calendar
         </button>
-        <button 
-          className={activeTab === 'patients' ? 'nav-active' : ''}
-          onClick={() => setActiveTab('patients')}
+        <button
+          className={activeTab === 'users' ? 'nav-active' : ''}
+          onClick={() => setActiveTab('users')}
         >
-          👥 Patients
+          👥 Users
         </button>
-        <button 
+        <button
+          className={activeTab === 'payments' ? 'nav-active' : ''}
+          onClick={() => setActiveTab('payments')}
+        >
+          💳 Payments
+        </button>
+        <button
           className={activeTab === 'settings' ? 'nav-active' : ''}
           onClick={() => setActiveTab('settings')}
         >

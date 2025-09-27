@@ -17,7 +17,7 @@ const IconWrapper = ({ AntIcon, ...props }) => {
 const MainHeader = () => {
   const { theme, getThemeStyles } = useTheme();
   const navigate = useNavigate();
-  const { currentUser, logout } = useAuth();
+  const { user: currentUser, logout } = useAuth();
 
   const handleLogout = async () => {
     try {
@@ -29,23 +29,18 @@ const MainHeader = () => {
   };
 
   const navigationTabs = [
-    { 
-      title: "About", 
+    {
+      title: "About",
       value: "about",
       icon: (props) => <IconWrapper AntIcon={UserOutlined} {...props} />
     },
-    { 
-      title: "Services", 
+    {
+      title: "Services",
       value: "services",
       icon: (props) => <IconWrapper AntIcon={HeartOutlined} {...props} />
     },
-    { 
-      title: "Booking", 
-      value: "booking",
-      icon: (props) => <IconWrapper AntIcon={HeartOutlined} {...props} />
-    },
-    { 
-      title: "Contact", 
+    {
+      title: "Contact",
       value: "contact",
       icon: (props) => <IconWrapper AntIcon={HeartOutlined} {...props} />
     }
@@ -182,7 +177,7 @@ const MainHeader = () => {
           
           {currentUser ? (
             <Dropdown overlay={profileMenu} trigger={['click']} placement="bottomRight">
-              <Tooltip title={currentUser.displayName || currentUser.email}>
+              <Tooltip title={currentUser.name || currentUser.email}>
                 <Avatar 
                   style={{
                     backgroundColor: headerStyles.signInBg,
@@ -201,10 +196,10 @@ const MainHeader = () => {
                   }}
                 >
                   {currentUser.photoURL ? (
-                    <img src={currentUser.photoURL} alt="profile" />
+                    <img src={currentUser.photoURL} alt="profile" style={{ width: '100%', height: '100%', borderRadius: '50%' }} />
                   ) : (
-                    currentUser.displayName 
-                      ? currentUser.displayName.charAt(0).toUpperCase()
+                    currentUser.name
+                      ? currentUser.name.charAt(0).toUpperCase()
                       : currentUser.email.charAt(0).toUpperCase()
                   )}
                 </Avatar>

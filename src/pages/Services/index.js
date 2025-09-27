@@ -23,7 +23,7 @@ const { Title, Text, Paragraph } = Typography;
 
 const Services = () => {
   const { theme, getThemeStyles } = useTheme();
-  const { currentUser } = useAuth();
+  const { user: currentUser } = useAuth();
   const navigate = useNavigate();
   
   // State management
@@ -92,7 +92,9 @@ const Services = () => {
       const transformedServices = services.map(service => ({
         ...service,
         id: parseInt(service.id) || service.id,
-        icon: getServiceIcon(service)
+        icon: getServiceIcon(service),
+        // Ensure price is available from options if not set directly
+        price: service.price || (service.options && service.options.length > 0 ? parseInt(service.options[0].price) : 0)
       }));
 
       setServicesData(transformedServices);

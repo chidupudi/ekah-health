@@ -37,6 +37,8 @@ import {
 } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 import { bookingsDB } from '../services/firebase/database';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { db } from '../services/firebase/config';
 import { useTheme } from '../contexts/ThemeContext';
 import { useNavigate } from 'react-router-dom';
 import { JitsiMeetingRoom, JitsiPreJoin } from '../components/JitsiMeeting';
@@ -54,7 +56,7 @@ const MyBookings = () => {
   const [meetingRoomName, setMeetingRoomName] = useState('');
   const [patientName, setPatientName] = useState('');
   const [meetingPassword, setMeetingPassword] = useState('');
-  const { currentUser } = useAuth();
+  const { user: currentUser } = useAuth();
   const { theme, getThemeStyles } = useTheme();
   const navigate = useNavigate();
 
@@ -69,13 +71,50 @@ const MyBookings = () => {
   const loadUserBookings = async () => {
     setLoading(true);
     try {
-      const userBookings = await bookingsDB.getByUserId(currentUser.uid);
+      const userBookings = await bookingsDB.getByUserId(currentUser.id);
+
+      // Fetch payment status for each booking
+      const bookingsWithPayment = await Promise.all(
+        userBookings.map(async (booking) => {
+          try {
+            const paymentsQuery = query(
+              collection(db, 'payments'),
+              where('bookingId', '==', booking.id)
+            );
+            const paymentSnapshot = await getDocs(paymentsQuery);
+
+            let paymentStatus = 'unpaid';
+            let paymentDetails = null;
+
+            if (!paymentSnapshot.empty) {
+              const paymentDoc = paymentSnapshot.docs[0];
+              paymentDetails = { id: paymentDoc.id, ...paymentDoc.data() };
+              paymentStatus = paymentDetails.status || 'pending';
+            }
+
+            return {
+              ...booking,
+              paymentStatus,
+              paymentDetails
+            };
+          } catch (error) {
+            console.error('Error fetching payment for booking:', booking.id, error);
+            return {
+              ...booking,
+              paymentStatus: 'unpaid',
+              paymentDetails: null
+            };
+          }
+        })
+      );
+
       // Sort by creation date (newest first)
-      const sortedBookings = userBookings.sort((a, b) => {
+      const sortedBookings = bookingsWithPayment.sort((a, b) => {
         const aDate = new Date(a.createdAt.toDate ? a.createdAt.toDate() : a.createdAt);
         const bDate = new Date(b.createdAt.toDate ? b.createdAt.toDate() : b.createdAt);
         return bDate - aDate;
       });
+
       setBookings(sortedBookings);
     } catch (error) {
       console.error('Error loading user bookings:', error);
@@ -86,14 +125,34 @@ const MyBookings = () => {
 
   const themeStyles = getThemeStyles();
 
-  const getStatusColor = (status) => {
+  const getStatusColor = (status, paymentStatus) => {
     const colors = {
       pending: themeStyles.warningColor,
       confirmed: themeStyles.accentPrimary,
       completed: themeStyles.successColor,
       cancelled: themeStyles.errorColor
     };
+
+    // Override with payment status colors if payment affects the status
+    if (paymentStatus === 'rejected') {
+      return themeStyles.errorColor;
+    } else if (paymentStatus === 'approved' && status === 'pending') {
+      return themeStyles.successColor;
+    } else if (paymentStatus === 'pending') {
+      return themeStyles.warningColor;
+    }
+
     return colors[status] || themeStyles.textSecondary;
+  };
+
+  const getPaymentStatusColor = (paymentStatus) => {
+    const colors = {
+      unpaid: '#f5222d',      // red
+      pending: '#fa8c16',     // orange
+      approved: '#52c41a',    // green
+      rejected: '#f5222d'     // red
+    };
+    return colors[paymentStatus] || themeStyles.textSecondary;
   };
 
   const getStatusIcon = (status) => {
@@ -443,7 +502,7 @@ const MyBookings = () => {
                     key={booking.id}
                     dot={
                       <div style={{
-                        background: getStatusColor(booking.status),
+                        background: getStatusColor(booking.status, booking.paymentStatus),
                         borderRadius: '50%',
                         width: '24px',
                         height: '24px',
@@ -480,8 +539,11 @@ const MyBookings = () => {
                               }}>
                                 {booking.confirmationNumber}
                               </Text>
-                              <Tag color={getStatusColor(booking.status)}>
+                              <Tag color={getStatusColor(booking.status, booking.paymentStatus)}>
                                 {booking.status?.toUpperCase()}
+                              </Tag>
+                              <Tag color={getPaymentStatusColor(booking.paymentStatus)}>
+                                💳 {booking.paymentStatus?.toUpperCase() || 'UNPAID'}
                               </Tag>
                               {isUpcoming && (
                                 <Badge status="processing" text="Upcoming" />
@@ -639,8 +701,11 @@ const MyBookings = () => {
             <Descriptions bordered column={2} size="small">
               <Descriptions.Item label="Status" span={2}>
                 <Space>
-                  <Tag color={getStatusColor(selectedBooking.status)}>
+                  <Tag color={getStatusColor(selectedBooking.status, selectedBooking.paymentStatus)}>
                     {selectedBooking.status?.toUpperCase()}
+                  </Tag>
+                  <Tag color={getPaymentStatusColor(selectedBooking.paymentStatus)}>
+                    💳 Payment: {selectedBooking.paymentStatus?.toUpperCase() || 'UNPAID'}
                   </Tag>
                   {selectedBooking.meetingURL && (
                     <Tag color="green">
@@ -776,6 +841,83 @@ const MyBookings = () => {
                     </Tag>
                   ))}
                 </Space>
+              </div>
+            )}
+
+            {/* Payment Details */}
+            {selectedBooking.paymentDetails && (
+              <div style={{ marginTop: 16 }}>
+                <Title level={5} style={{ color: themeStyles.textPrimary }}>
+                  Payment Information
+                </Title>
+                <Card size="small" style={{
+                  background: themeStyles.cardBg,
+                  border: `1px solid ${themeStyles.cardBorder}`
+                }}>
+                  <Row gutter={[16, 8]}>
+                    <Col span={12}>
+                      <Text style={{ color: themeStyles.textSecondary }}>Amount:</Text>
+                      <div style={{ color: themeStyles.textPrimary, fontWeight: 'bold' }}>
+                        ₹{selectedBooking.paymentDetails.amount || 0}
+                      </div>
+                    </Col>
+                    <Col span={12}>
+                      <Text style={{ color: themeStyles.textSecondary }}>Status:</Text>
+                      <div>
+                        <Tag color={getPaymentStatusColor(selectedBooking.paymentStatus)}>
+                          {selectedBooking.paymentStatus?.toUpperCase() || 'UNPAID'}
+                        </Tag>
+                      </div>
+                    </Col>
+                    <Col span={12}>
+                      <Text style={{ color: themeStyles.textSecondary }}>Submitted:</Text>
+                      <div style={{ color: themeStyles.textPrimary }}>
+                        {selectedBooking.paymentDetails.createdAt?.toDate ?
+                          moment(selectedBooking.paymentDetails.createdAt.toDate()).format('MMM DD, YYYY HH:mm') :
+                          'N/A'
+                        }
+                      </div>
+                    </Col>
+                    {selectedBooking.paymentDetails.screenshotUrl && (
+                      <Col span={12}>
+                        <Text style={{ color: themeStyles.textSecondary }}>Screenshot:</Text>
+                        <div>
+                          <Button
+                            size="small"
+                            icon={<EyeOutlined />}
+                            onClick={() => window.open(selectedBooking.paymentDetails.screenshotUrl, '_blank')}
+                          >
+                            View
+                          </Button>
+                        </div>
+                      </Col>
+                    )}
+                  </Row>
+                  {selectedBooking.paymentStatus === 'rejected' && (
+                    <Alert
+                      message="Payment Rejected"
+                      description="Your payment was rejected. Please contact support for assistance."
+                      type="error"
+                      style={{ marginTop: '12px' }}
+                    />
+                  )}
+                  {selectedBooking.paymentStatus === 'pending' && (
+                    <Alert
+                      message="Payment Under Review"
+                      description="Your payment is being reviewed by our admin team. You will be notified once approved."
+                      type="info"
+                      style={{ marginTop: '12px' }}
+                    />
+                  )}
+                  {selectedBooking.paymentStatus === 'approved' && (
+                    <Alert
+                      message="Payment Approved"
+                      description="Your payment has been approved. Your booking is confirmed!"
+                      type="success"
+                      style={{ marginTop: '12px' }}
+                    />
+                  )}
+                </Card>
               </div>
             )}
 

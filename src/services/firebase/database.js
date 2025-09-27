@@ -1291,7 +1291,7 @@ export const timeSlotsDB = {
         const booking = bookingDoc.data();
         
         // Validate current state
-        if (booking.status !== 'pending_admin_confirmation') {
+        if (booking.status !== 'pending_admin_confirmation' && booking.status !== 'payment_approved') {
           throw new Error(`Cannot confirm booking with status: ${booking.status}`);
         }
         
@@ -1614,10 +1614,12 @@ export const seedDatabase = async () => {
           duration: service.duration,
           category: service.category,
           description: service.description,
-          rating: service.rating,
+          rating: parseFloat(service.rating) || 0,
           includes: service.includes || [],
           options: service.options || [],
           benefits: service.benefits || [],
+          // Extract the main price from the first option for easy access
+          price: service.options && service.options.length > 0 ? parseInt(service.options[0].price) : 0,
           iconType: service.title, // Store a reference instead
           createdAt: new Date(),
           updatedAt: new Date()

@@ -59,8 +59,17 @@ const BookingsManagement = () => {
     setLoading(true);
     try {
       const allBookings = await bookingsDB.getAll();
-      setBookings(allBookings);
-      calculateStats(allBookings);
+
+      // Filter to show only payment-approved bookings and confirmed bookings
+      const relevantBookings = allBookings.filter(booking =>
+        booking.status === 'payment_approved' ||
+        booking.status === 'confirmed' ||
+        booking.status === 'completed' ||
+        booking.status === 'cancelled'
+      );
+
+      setBookings(relevantBookings);
+      calculateStats(relevantBookings);
     } catch (error) {
       console.error('Error loading bookings:', error);
       message.error('Failed to load bookings');
@@ -72,10 +81,10 @@ const BookingsManagement = () => {
   const calculateStats = (bookingsList) => {
     const stats = {
       total: bookingsList.length,
-      pending: bookingsList.filter(b => b.status === 'pending' || b.status === 'pending_admin_confirmation').length,
+      pending: bookingsList.filter(b => b.status === 'payment_approved').length, // Ready for booking approval
       confirmed: bookingsList.filter(b => b.status === 'confirmed').length,
       completed: bookingsList.filter(b => b.status === 'completed').length,
-      cancelled: bookingsList.filter(b => b.status === 'cancelled' || b.status === 'rejected').length
+      cancelled: bookingsList.filter(b => b.status === 'cancelled' || b.status === 'payment_rejected').length
     };
     setStats(stats);
   };
@@ -179,11 +188,11 @@ const BookingsManagement = () => {
   const getStatusColor = (status) => {
     const colors = {
       pending: 'orange',
-      pending_admin_confirmation: 'gold',
+      payment_approved: 'gold', // Ready for final booking approval
       confirmed: 'blue',
       completed: 'green',
       cancelled: 'red',
-      rejected: 'red'
+      payment_rejected: 'red'
     };
     return colors[status] || 'default';
   };
@@ -325,20 +334,20 @@ const BookingsManagement = () => {
             View
           </Button>
           
-          {/* Show Confirm/Reject buttons for pending admin confirmation */}
-          {record.status === 'pending_admin_confirmation' && (
+          {/* Show Final Approval buttons for payment approved bookings */}
+          {record.status === 'payment_approved' && (
             <Space size="small" style={{ width: '100%' }}>
-              <Button 
-                size="small" 
+              <Button
+                size="small"
                 type="primary"
                 icon={<CheckCircleOutlined />}
                 onClick={() => handleConfirmBooking(record)}
                 loading={loading}
               >
-                Confirm
+                Approve Booking
               </Button>
-              <Button 
-                size="small" 
+              <Button
+                size="small"
                 danger
                 icon={<CloseCircleOutlined />}
                 onClick={() => handleRejectBooking(record)}

@@ -13,7 +13,10 @@ import { auth } from './config';
 
 // Create a Google Auth Provider
 const googleProvider = new GoogleAuthProvider();
-googleProvider.setCustomParameters({ prompt: 'select_account' });
+googleProvider.setCustomParameters({
+  prompt: 'select_account',
+  hd: '', // Allow any domain
+});
 
 /**
  * Register a new user with email and password
@@ -59,8 +62,17 @@ export const signInWithEmail = async (email, password) => {
  */
 export const signInWithGoogle = async () => {
   try {
-    const userCredential = await signInWithPopup(auth, googleProvider);
-    return userCredential.user;
+    const { signInWithRedirect, getRedirectResult } = await import('firebase/auth');
+
+    // Check if we're returning from a redirect
+    const result = await getRedirectResult(auth);
+    if (result) {
+      return result.user;
+    }
+
+    // Use redirect method directly to avoid COOP issues
+    await signInWithRedirect(auth, googleProvider);
+    return null; // Will redirect, so no immediate result
   } catch (error) {
     throw error;
   }

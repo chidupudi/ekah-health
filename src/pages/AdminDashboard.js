@@ -15,7 +15,7 @@ import {
   Badge,
   Alert
 } from 'antd';
-import { 
+import {
   DashboardOutlined,
   SettingOutlined,
   TeamOutlined,
@@ -27,11 +27,14 @@ import {
   EditOutlined,
   PlusOutlined,
   CalendarOutlined,
+  CreditCardOutlined,
 } from '@ant-design/icons';
 import { useAdminAuth } from '../contexts/AdminAuthContext';
 import { useNavigate } from 'react-router-dom';
 import ServicesManagement from '../components/admin/ServicesManagement';
 import BookingsManagement from '../components/admin/BookingsManagement';
+import UsersManagement from '../components/admin/UsersManagement';
+import PaymentsManagement from '../components/admin/PaymentsManagement';
 import ProfessionalCalendarSidebar from '../components/admin/ProfessionalCalendarSidebar';
 import { bookingsDB } from '../services/firebase/database';
 
@@ -110,6 +113,12 @@ const AdminDashboard = () => {
       disabled: !hasPermission('view_services'),
     },
     {
+      key: 'payments',
+      icon: <CreditCardOutlined />,
+      label: 'Payments',
+      disabled: !hasPermission('manage_payments'),
+    },
+    {
       key: 'users',
       icon: <TeamOutlined />,
       label: 'Users',
@@ -131,13 +140,10 @@ const AdminDashboard = () => {
         return <BookingsManagement />;
       case 'services':
         return <ServicesManagement />;
+      case 'payments':
+        return <PaymentsManagement />;
       case 'users':
-        return (
-          <Card>
-            <Title level={3}>Users Management</Title>
-            <Text type="secondary">Users management functionality coming soon...</Text>
-          </Card>
-        );
+        return <UsersManagement />;
       case 'settings':
         return (
           <Card>

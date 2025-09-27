@@ -9,17 +9,18 @@ import {
   DatePicker, 
   TimePicker, 
   Radio, 
-  Checkbox, 
-  Typography, 
-  Row, 
-  Col, 
-  Divider, 
+  Checkbox,
+  Typography,
+  Row,
+  Col,
+  Divider,
   message,
   Result,
   Progress,
   Badge,
   Space,
-  Avatar
+  Avatar,
+  Upload
 } from 'antd';
 import {
   UserOutlined,
@@ -40,6 +41,9 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../components/ParticleBackground';
 import { bookingsDB, timeSlotsDB } from '../services/firebase/database';
+import { collection, getDocs, addDoc, query, where, serverTimestamp } from 'firebase/firestore';
+import { db } from '../services/firebase/config';
+import { uploadPaymentScreenshot } from '../services/cloudStorage';
 import CalendarPicker from '../components/CalendarPicker';
 import moment from 'moment';
 
@@ -50,7 +54,7 @@ const { Option } = Select;
 const BookingFlow = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { currentUser } = useAuth();
+  const { user: currentUser } = useAuth();
   const { theme } = useTheme();
   const [form] = Form.useForm();
   
@@ -60,21 +64,43 @@ const BookingFlow = () => {
   const [bookingComplete, setBookingComplete] = useState(false);
   const [confirmationNumber, setConfirmationNumber] = useState('');
   const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
+  const [paymentMethods, setPaymentMethods] = useState([]);
+  const [bookingId, setBookingId] = useState(null);
   // Get service data from navigation state
   const serviceData = location.state?.service;
   const selectedServices = location.state?.selectedServices || [serviceData].filter(Boolean);
+
 
   useEffect(() => {
     if (!currentUser) {
       navigate('/signin');
       return;
     }
-    
+
     if (!serviceData && selectedServices.length === 0) {
       navigate('/services');
       return;
     }
+
+    fetchPaymentMethods();
   }, [currentUser, serviceData, selectedServices, navigate]);
+
+  const fetchPaymentMethods = async () => {
+    try {
+      const methodsQuery = query(
+        collection(db, 'paymentMethods'),
+        where('isActive', '==', true)
+      );
+      const snapshot = await getDocs(methodsQuery);
+      const methods = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setPaymentMethods(methods);
+    } catch (error) {
+      console.error('Error fetching payment methods:', error);
+    }
+  };
 
   const getThemeStyles = () => {
     if (theme === 'dark') {
@@ -126,6 +152,11 @@ const BookingFlow = () => {
       title: 'Review & Confirm',
       icon: <CheckCircleOutlined />,
       description: 'Final confirmation'
+    },
+    {
+      title: 'Payment',
+      icon: <CreditCardOutlined />,
+      description: 'Complete payment'
     }
   ];
 
@@ -148,9 +179,13 @@ const BookingFlow = () => {
       setFormData(prev => ({ ...prev, ...values }));
       
       if (currentStep < steps.length - 1) {
-        setCurrentStep(currentStep + 1);
+        if (currentStep === 3) { // Review & Confirm step
+          await handleBookingSubmit();
+        } else {
+          setCurrentStep(currentStep + 1);
+        }
       } else {
-        await handleBookingSubmit();
+        await handlePaymentSubmit();
       }
     } catch (error) {
       message.error('Please fill in all required fields');
@@ -171,7 +206,7 @@ const BookingFlow = () => {
       // Prepare booking data for database
       const bookingData = {
         // User Information
-        userId: currentUser.uid,
+        userId: currentUser.id,
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
@@ -231,11 +266,12 @@ const BookingFlow = () => {
       }
       
       console.log('Booking saved successfully:', savedBooking);
-      
+
       setConfirmationNumber(confirmationNum);
-      setBookingComplete(true);
-      
-      message.success('Booking confirmed and time slot reserved!');
+      setBookingId(savedBooking.id);
+
+      message.success('Booking created! Please proceed to payment.');
+      setCurrentStep(currentStep + 1); // Move to payment step
     } catch (error) {
       console.error('Booking submission error:', error);
       message.error(`Booking failed: ${error.message}`);
@@ -243,6 +279,226 @@ const BookingFlow = () => {
       setLoading(false);
     }
   };
+
+  const handlePaymentSubmit = async () => {
+    setLoading(true);
+    try {
+      const values = form.getFieldsValue();
+
+      if (!values.selectedPaymentMethod) {
+        message.error('Please select a payment method');
+        setLoading(false);
+        return;
+      }
+
+      if (!values.paymentScreenshot || values.paymentScreenshot.length === 0) {
+        message.error('Please upload payment screenshot');
+        setLoading(false);
+        return;
+      }
+
+      // Upload screenshot - handle both originFileObj and the file itself
+      const screenshotFile = values.paymentScreenshot[0].originFileObj || values.paymentScreenshot[0];
+
+      if (!screenshotFile) {
+        message.error('Invalid screenshot file');
+        setLoading(false);
+        return;
+      }
+
+      // Upload screenshot using cloud storage service
+      const uploadResult = await uploadPaymentScreenshot(screenshotFile, bookingId);
+      const screenshotUrl = uploadResult.url;
+
+      // Calculate total amount
+      const totalAmount = selectedServices.reduce((sum, service) => sum + service.price, 0);
+
+      // Save payment record with screenshot data
+      await addDoc(collection(db, 'payments'), {
+        bookingId: bookingId,
+        userId: currentUser.id,
+        userEmail: currentUser.email,
+        userName: `${formData.firstName} ${formData.lastName}`,
+        serviceName: selectedServices.map(s => s.title).join(', '),
+        amount: totalAmount,
+        paymentMethodId: values.selectedPaymentMethod,
+        screenshotUrl: screenshotUrl,
+        screenshotData: uploadResult.base64, // Store base64 for admin access
+        screenshotType: uploadResult.type,
+        screenshotSize: uploadResult.size,
+        screenshotFileName: uploadResult.fileName,
+        status: 'pending',
+        createdAt: serverTimestamp()
+      });
+
+      setBookingComplete(true);
+      message.success('Payment submitted for approval! You will be notified once approved.');
+    } catch (error) {
+      console.error('Payment submission error:', error);
+      message.error(`Payment submission failed: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const renderPaymentStep = () => (
+    <div style={{ padding: '20px' }}>
+      <Title level={3} style={{ color: themeStyles.textPrimary, marginBottom: '24px' }}>
+        💳 Complete Payment
+      </Title>
+
+      <Card style={{
+        background: themeStyles.cardBg,
+        border: `1px solid ${themeStyles.cardBorder}`,
+        borderRadius: '12px',
+        marginBottom: '24px'
+      }}>
+        <Title level={4} style={{ color: themeStyles.textPrimary }}>Payment Summary</Title>
+        <div style={{ marginBottom: '16px' }}>
+          <Text style={{ color: themeStyles.textSecondary }}>Services:</Text>
+          <div style={{ marginLeft: '16px' }}>
+            {selectedServices.map((service, index) => (
+              <div key={index} style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                marginBottom: '8px',
+                color: themeStyles.textPrimary
+              }}>
+                <span>{service.title}</span>
+                <span>Rs.{service.price}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <Divider />
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          fontSize: '18px',
+          fontWeight: 'bold',
+          color: themeStyles.textPrimary
+        }}>
+          <span>Total Amount:</span>
+          <span>Rs.{selectedServices.reduce((sum, service) => sum + service.price, 0)}</span>
+        </div>
+      </Card>
+
+      <Form.Item
+        name="selectedPaymentMethod"
+        label={<Text style={{ color: themeStyles.textPrimary }}>Select Payment Method</Text>}
+        rules={[{ required: true, message: 'Please select a payment method' }]}
+      >
+        <Radio.Group style={{ width: '100%' }}>
+          {paymentMethods.map(method => (
+            <Card key={method.id} style={{
+              background: themeStyles.cardBg,
+              border: `1px solid ${themeStyles.cardBorder}`,
+              borderRadius: '8px',
+              marginBottom: '12px',
+              cursor: 'pointer'
+            }}>
+              <Radio value={method.id} style={{ width: '100%' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <div>
+                    <div style={{
+                      fontWeight: '500',
+                      fontSize: '16px',
+                      color: themeStyles.textPrimary
+                    }}>
+                      {method.name}
+                    </div>
+                    <Text style={{ color: themeStyles.textSecondary }}>
+                      UPI ID: {method.upiId}
+                    </Text>
+                    {method.description && (
+                      <div style={{
+                        fontSize: '12px',
+                        color: themeStyles.textSecondary,
+                        marginTop: '4px'
+                      }}>
+                        {method.description}
+                      </div>
+                    )}
+                  </div>
+                  {method.qrCodeUrl && (
+                    <div style={{ marginLeft: 'auto' }}>
+                      <img
+                        src={method.qrCodeUrl}
+                        alt="QR Code"
+                        style={{
+                          width: '80px',
+                          height: '80px',
+                          borderRadius: '8px',
+                          border: `1px solid ${themeStyles.cardBorder}`
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              </Radio>
+            </Card>
+          ))}
+        </Radio.Group>
+      </Form.Item>
+
+      <Form.Item
+        name="paymentScreenshot"
+        label={<Text style={{ color: themeStyles.textPrimary }}>Upload Payment Screenshot</Text>}
+        rules={[{ required: true, message: 'Please upload payment screenshot' }]}
+      >
+        <Upload.Dragger
+          maxCount={1}
+          beforeUpload={() => false}
+          accept="image/*"
+          onChange={(info) => {
+            // Ensure the file list is properly set
+            if (info.fileList.length > 0) {
+              form.setFieldsValue({ paymentScreenshot: info.fileList });
+            }
+          }}
+          style={{
+            background: themeStyles.cardBg,
+            border: `2px dashed ${themeStyles.cardBorder}`,
+            borderRadius: '8px'
+          }}
+        >
+          <div style={{ padding: '40px', textAlign: 'center' }}>
+            <CreditCardOutlined style={{ fontSize: '48px', color: themeStyles.primaryColor }} />
+            <div style={{
+              marginTop: '16px',
+              fontSize: '16px',
+              color: themeStyles.textPrimary
+            }}>
+              Click or drag payment screenshot here
+            </div>
+            <div style={{
+              marginTop: '8px',
+              fontSize: '14px',
+              color: themeStyles.textSecondary
+            }}>
+              Support: JPG, PNG (Max: 10MB)
+            </div>
+          </div>
+        </Upload.Dragger>
+      </Form.Item>
+
+      <div style={{
+        background: themeStyles.cardBg,
+        border: `1px solid ${themeStyles.cardBorder}`,
+        borderRadius: '8px',
+        padding: '16px',
+        marginTop: '16px'
+      }}>
+        <Text style={{ color: themeStyles.textSecondary, fontSize: '14px' }}>
+          <strong>Instructions:</strong>
+          <br />• Make payment using the selected UPI ID or scan the QR code
+          <br />• Take a screenshot of the successful payment
+          <br />• Upload the screenshot above
+          <br />• Your booking will be confirmed once payment is verified by our admin
+        </Text>
+      </div>
+    </div>
+  );
 
   const renderPersonalDetails = () => (
     <Row gutter={[24, 24]}>
@@ -616,6 +872,31 @@ const BookingFlow = () => {
         </Card>
       </Col>
 
+      {/* Total Amount */}
+      <Col xs={24}>
+        <Card
+          style={{
+            background: themeStyles.cardBg,
+            border: `2px solid ${themeStyles.primaryColor}`,
+            borderRadius: '12px',
+            marginBottom: '24px'
+          }}
+        >
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            fontSize: '20px',
+            fontWeight: 'bold'
+          }}>
+            <span style={{ color: themeStyles.textPrimary }}>Total Amount:</span>
+            <span style={{ color: themeStyles.primaryColor }}>
+              Rs.{selectedServices.reduce((sum, service) => sum + service.price, 0)}
+            </span>
+          </div>
+        </Card>
+      </Col>
+
       {/* Terms and Conditions */}
       <Col xs={24}>
         <Form.Item
@@ -648,6 +929,8 @@ const BookingFlow = () => {
         return renderAppointmentDetails();
       case 3:
         return renderReviewConfirm();
+      case 4:
+        return renderPaymentStep();
       default:
         return null;
     }
@@ -852,7 +1135,7 @@ const BookingFlow = () => {
                 borderColor: themeStyles.primaryColor
               }}
             >
-              {currentStep === steps.length - 1 ? 'Confirm Booking' : 'Next'}
+              {currentStep === steps.length - 1 ? 'Submit Payment' : currentStep === 3 ? 'Confirm Booking' : 'Next'}
             </Button>
           </div>
         </Card>

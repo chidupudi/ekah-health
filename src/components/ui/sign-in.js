@@ -453,28 +453,44 @@ const AnimatedSignIn = () => {
   const handleGoogleSignIn = async () => {
     try {
       setLoading(true);
-      await loginWithGoogle();
-      message.success('Signed in with Google successfully!');
-      
-      // Check for intended service booking
+
+      // Store intended booking before redirect
       const intendedBooking = sessionStorage.getItem('intendedServiceBooking');
       if (intendedBooking) {
+        localStorage.setItem('intendedServiceBooking', intendedBooking);
         sessionStorage.removeItem('intendedServiceBooking');
-        const service = JSON.parse(intendedBooking);
-        // Service is already cleaned (no React elements)
-        navigate('/booking', { 
-          state: { 
+      }
+
+      // Show a message about redirect
+      message.info('Redirecting to Google Sign-in...', 2);
+
+      const result = await loginWithGoogle();
+
+      // If result is null, redirect was initiated
+      if (result === null) {
+        // Redirect is happening, don't call setLoading(false)
+        return;
+      }
+
+      // This code will only run if popup was used instead of redirect
+      message.success('Signed in with Google successfully!');
+
+      // Check for intended service booking
+      const storedBooking = localStorage.getItem('intendedServiceBooking');
+      if (storedBooking) {
+        localStorage.removeItem('intendedServiceBooking');
+        const service = JSON.parse(storedBooking);
+        navigate('/booking', {
+          state: {
             service: service,
             selectedServices: [service]
-          } 
+          }
         });
       } else {
-        navigate('/'); // Redirect to home page after Google sign-in
+        navigate('/');
       }
     } catch (error) {
-      // Error is handled by the AuthContext and set to the error state
       message.error(error.message || 'An error occurred during Google sign-in');
-    } finally {
       setLoading(false);
     }
   };
