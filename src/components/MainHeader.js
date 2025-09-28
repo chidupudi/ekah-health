@@ -37,9 +37,18 @@ const IconWrapper = ({ AntIcon, ...props }) => {
 const MainHeader = () => {
   const { theme, getThemeStyles } = useTheme();
   const navigate = useNavigate();
-  const { user: currentUser, logout } = useAuth();
+  const { user: currentUser, logout, isLoading, isAuthenticated } = useAuth();
   const [mobileMenuVisible, setMobileMenuVisible] = useState(false);
   const { isMobile, isTablet, isDesktop } = useResponsive();
+
+  // Debug auth state (remove this in production)
+  useEffect(() => {
+    console.log('Header - Auth State:', {
+      currentUser: currentUser ? { email: currentUser.email, name: currentUser.name } : null,
+      isAuthenticated,
+      isLoading
+    });
+  }, [currentUser, isAuthenticated, isLoading]);
 
   const handleLogout = async () => {
     try {

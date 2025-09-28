@@ -156,11 +156,17 @@ export const AuthProvider = ({ children }) => {
 
   // Initialize authentication state with Firebase
   useEffect(() => {
-    // Check for Google Sign-in redirect result on app load
-    const checkRedirectResult = async () => {
+    let mounted = true;
+
+    const initializeAuth = async () => {
       try {
+        setIsLoading(true);
+
+        // First, check for Google Sign-in redirect result
         const result = await getRedirectResult(auth);
-        if (result) {
+        if (result && mounted) {
+          console.log('Google redirect result detected:', result.user.email);
+
           // User signed in via redirect, create/update user document
           const userDocRef = doc(db, 'users', result.user.uid);
           await setDoc(userDocRef, {
@@ -179,20 +185,28 @@ export const AuthProvider = ({ children }) => {
             sessionStorage.setItem('postAuthBooking', intendedBooking);
             localStorage.removeItem('intendedServiceBooking');
           }
+
+          console.log('Google redirect user document updated successfully');
         }
       } catch (error) {
         console.error('Redirect result error:', error);
-        setError(parseAuthError(error));
-
-        // Clear any stored auth tokens if redirect failed
-        tokenManager.clearTokens();
+        if (mounted) {
+          setError(parseAuthError(error));
+          // Clear any stored auth tokens if redirect failed
+          tokenManager.clearTokens();
+        }
       }
     };
 
-    checkRedirectResult();
+    // Initialize redirect check
+    initializeAuth();
 
+    // Subscribe to auth state changes
     const unsubscribe = subscribeToAuthChanges(async (firebaseUser) => {
       try {
+        if (!mounted) return;
+
+        console.log('Auth state changed:', firebaseUser ? firebaseUser.email : 'No user');
         setIsLoading(true);
 
         if (firebaseUser) {
@@ -227,13 +241,25 @@ export const AuthProvider = ({ children }) => {
             userData.role = 'admin';
           }
 
+          console.log('Setting user data:', userData);
           setUser(userData);
           setSessionInfo({
             loginTime: new Date(),
             lastActivity: new Date()
           });
           setIsAuthenticated(true);
+          setError(null); // Clear any previous errors
+
+          // Handle post-auth navigation for Google sign-in
+          if (firebaseUser.providerData.some(provider => provider.providerId === 'google.com')) {
+            const postAuthBooking = sessionStorage.getItem('postAuthBooking');
+            if (postAuthBooking) {
+              console.log('Found post-auth booking, will navigate after state update');
+              // Navigate will be handled by sign-in component
+            }
+          }
         } else {
+          console.log('No user - clearing auth state');
           setUser(null);
           setIsAuthenticated(false);
           setSessionInfo(null);
@@ -241,13 +267,20 @@ export const AuthProvider = ({ children }) => {
         }
       } catch (error) {
         console.error('Auth state change error:', error);
-        setError(parseAuthError(error));
+        if (mounted) {
+          setError(parseAuthError(error));
+        }
       } finally {
-        setIsLoading(false);
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      mounted = false;
+      unsubscribe();
+    };
   }, []);
 
   // Regular email/password login
