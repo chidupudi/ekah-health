@@ -115,22 +115,33 @@ export const getRedirectURIs = () => {
  */
 export const logDomainInfo = () => {
   const config = getDomainConfig();
-  const origins = getAuthorizedOrigins();
-  const redirects = getRedirectURIs();
 
-  console.group('🔐 Auth Domain Configuration');
+  console.group('🔐 Firebase Auth Domain Configuration');
   console.log('Current Domain:', config);
-  console.log('Authorized Origins:', origins);
-  console.log('Redirect URIs:', redirects);
+  console.log('Environment:', config.isLocalhost ? 'Development' : 'Production');
+  console.log('Domain Type:', config.isFirebaseHosting ? 'Firebase Hosting' : config.isCustomDomain ? 'Custom Domain' : 'Localhost');
   console.groupEnd();
 
-  // Warning for production
+  // Warning for production custom domains
   if (config.isCustomDomain) {
     console.warn(
-      '⚠️ Custom domain detected. Ensure the following are configured in Google Cloud Console:\n' +
-      `Authorized JavaScript origins: ${origins.join(', ')}\n` +
-      `Authorized redirect URIs: ${redirects.join(', ')}`
+      `⚠️ Custom domain detected: ${config.hostname}\n` +
+      '📝 Required Firebase Console configuration:\n' +
+      '1. Go to Firebase Console → Authentication → Settings → Authorized domains\n' +
+      `2. Add "${config.hostname}" to the authorized domains list\n` +
+      '3. Ensure your domain uses HTTPS\n' +
+      '4. Save the configuration'
     );
+  }
+
+  // Info for Firebase hosting
+  if (config.isFirebaseHosting) {
+    console.info('✅ Firebase hosting domain detected - should work automatically');
+  }
+
+  // Info for localhost
+  if (config.isLocalhost) {
+    console.info('✅ Localhost detected - should work for development');
   }
 };
 

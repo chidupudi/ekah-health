@@ -1,53 +1,41 @@
-# Google Authentication Setup Guide
+# Firebase Authentication Setup Guide
 
 ## Issue Diagnosed
-The Google authentication is working on localhost but failing in production because the production domain is not properly configured in Google Cloud Console.
+The Google authentication is working on localhost but failing in production because your production domain is not authorized in Firebase Console.
 
 ## Root Cause
-1. **Domain Authorization Missing**: Your production domain needs to be added to Google Cloud Console's OAuth 2.0 configuration
-2. **Redirect URI Configuration**: The redirect URIs for your production domain are not set up
-3. **Firebase Auth Domain**: The authDomain in Firebase config points to `ekah-health.firebaseapp.com` but you're using a custom domain
+1. **Authorized Domains Missing**: Your production domain needs to be added to Firebase Console's authorized domains
+2. **Firebase Authentication Configuration**: You're using Firebase Auth (not direct GCP OAuth), so the configuration is in Firebase Console
+3. **Domain Verification**: Firebase needs to know which domains are allowed to use authentication
 
-## Required Google Cloud Console Configuration
+## Required Firebase Console Configuration
 
-### Step 1: Access Google Cloud Console
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Navigate to your `ekah-health` project
-3. Go to **APIs & Services** → **Credentials**
-4. Find your OAuth 2.0 Client ID (used by Firebase Auth)
+### Step 1: Access Firebase Console
+1. Go to [Firebase Console](https://console.firebase.google.com/)
+2. Select your `ekah-health` project
+3. Go to **Authentication** → **Settings** → **Authorized domains**
 
-### Step 2: Add Authorized JavaScript Origins
-Add these origins to your OAuth 2.0 client:
+### Step 2: Add Your Production Domain
+In the "Authorized domains" section, you should see:
+- `localhost` (for development)
+- `ekah-health.firebaseapp.com` (Firebase hosting)
+- `ekah-health.web.app` (Firebase hosting)
 
-**For localhost (development):**
-- `http://localhost:3000`
-- `http://127.0.0.1:3000`
+**You need to add your production domain:**
+1. Click "Add domain"
+2. Enter your production domain (e.g., `yourdomain.com`)
+3. Click "Add"
 
-**For production (replace `yourdomain.com` with your actual domain):**
-- `https://yourdomain.com`
-- `https://ekah-health.firebaseapp.com`
-- `https://ekah-health.web.app`
+### Step 3: Verify Domain Requirements
+1. **Use HTTPS**: Your production domain MUST use HTTPS (not HTTP)
+2. **No Subfolders**: Add only the root domain (e.g., `yourdomain.com`, not `yourdomain.com/app`)
+3. **No Protocols**: Don't include `https://` - just the domain name
+4. **Save Changes**: Click "Save" after adding the domain
 
-### Step 3: Add Authorized Redirect URIs
-Add these redirect URIs:
-
-**For localhost:**
-- `http://localhost:3000/signin`
-- `http://localhost:3000/__/auth/handler`
-
-**For production:**
-- `https://yourdomain.com/signin`
-- `https://yourdomain.com/__/auth/handler`
-- `https://ekah-health.firebaseapp.com/signin`
-- `https://ekah-health.firebaseapp.com/__/auth/handler`
-- `https://ekah-health.web.app/signin`
-- `https://ekah-health.web.app/__/auth/handler`
-
-### Step 4: Important Notes
-1. **Use HTTPS**: Production domains MUST use HTTPS for Google OAuth
-2. **No Wildcards**: Don't use wildcards in domain configuration
-3. **Exact Match**: The domains must match exactly what users see in their browser
-4. **Save Changes**: Make sure to save the configuration after adding domains
+### Step 4: Optional - Check Google Sign-in Provider
+1. Go to **Authentication** → **Sign-in method**
+2. Ensure **Google** provider is enabled
+3. If not enabled, click on Google and toggle it on
 
 ## Testing the Fix
 
@@ -60,43 +48,51 @@ After deploying the updated code, open your production site and check the browse
 
 ### Expected Behavior
 1. **Development**: Should work on `localhost:3000`
-2. **Production**: Should work on your custom domain
-3. **Firebase Hosting**: Should work on `*.firebaseapp.com` and `*.web.app`
+2. **Production**: Should work on your custom domain after adding it to authorized domains
+3. **Firebase Hosting**: Should work automatically on `*.firebaseapp.com` and `*.web.app`
 
 ## Common Issues & Solutions
 
 ### Issue: "unauthorized-domain" Error
-**Solution**: Add your domain to "Authorized JavaScript origins" in Google Cloud Console
+**Solution**: Add your domain to "Authorized domains" in Firebase Console → Authentication → Settings
 
-### Issue: "popup-blocked" Error
-**Solution**: The code now uses redirect instead of popup to avoid this issue
+### Issue: "operation-not-allowed" Error
+**Solution**: Enable Google sign-in provider in Firebase Console → Authentication → Sign-in method
 
-### Issue: User gets redirected but no login occurs
-**Solution**: Add your domain to "Authorized redirect URIs" in Google Cloud Console
+### Issue: User gets redirected but authentication fails
+**Solution**: Ensure your domain uses HTTPS and is exactly as entered in authorized domains
 
 ### Issue: Works on Firebase Hosting but not custom domain
-**Solution**: Ensure your custom domain is added to both origins and redirect URIs
+**Solution**: Add your custom domain to Firebase authorized domains list
 
 ## Verification Checklist
-- [ ] Added production domain to Authorized JavaScript origins
-- [ ] Added production domain redirect URIs
+- [ ] Added production domain to Firebase authorized domains
 - [ ] Ensured production domain uses HTTPS
+- [ ] Verified Google sign-in provider is enabled in Firebase
 - [ ] Tested login flow on production domain
 - [ ] Verified MyBookings page loads user data correctly
-- [ ] Checked browser console for any remaining errors
+- [ ] Checked browser console for configuration warnings
 
 ## Code Changes Made
-1. **Enhanced error handling** with domain-specific error messages
+1. **Enhanced Firebase Auth error handling** with specific Firebase Console instructions
 2. **Added domain validation** to detect configuration issues
 3. **Improved redirect handling** for better authentication flow
-4. **Added logging** to help debug configuration issues
+4. **Added Firebase-specific logging** to help debug configuration issues
 5. **Fixed authentication state persistence** after Google redirect
 
 ## Next Steps
-1. Update Google Cloud Console with your production domain
-2. Deploy the updated code
-3. Test the authentication flow
-4. Check browser console for any warnings
-5. Verify user can access MyBookings page after login
+1. **Add your production domain to Firebase Console:**
+   - Go to [Firebase Console](https://console.firebase.google.com/)
+   - Select your `ekah-health` project
+   - Go to Authentication → Settings → Authorized domains
+   - Click "Add domain" and enter your production domain
+   - Save the configuration
 
-The authentication system will now work correctly once the Google Cloud Console is properly configured with your production domain.
+2. **Deploy the updated code**
+
+3. **Test the authentication flow** - the browser console will show helpful Firebase configuration information
+
+4. **Verify user can access MyBookings page** after successful login
+
+## Quick Fix Summary
+The issue is simply that your production domain needs to be added to Firebase Console's authorized domains list. Unlike Google Cloud Console OAuth setup, Firebase makes this much simpler - just add your domain to the authorized list and it should work immediately.

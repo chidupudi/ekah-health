@@ -104,19 +104,22 @@ export const signInWithGoogle = async () => {
   } catch (error) {
     console.error('Google sign-in error:', error);
 
-    // Provide more specific error handling for common issues
+    // Provide more specific error handling for Firebase Auth
     if (error.code === 'auth/unauthorized-domain') {
       const domainConfig = getDomainConfig();
       throw new Error(
-        `This domain (${domainConfig.hostname}) is not authorized for Google sign-in. ` +
-        `Please add ${domainConfig.origin} to the authorized JavaScript origins in Google Cloud Console.`
+        `This domain (${domainConfig.hostname}) is not authorized for Firebase authentication. ` +
+        `Please add "${domainConfig.hostname}" to the authorized domains in Firebase Console: ` +
+        `Authentication → Settings → Authorized domains`
       );
     } else if (error.code === 'auth/operation-not-allowed') {
-      throw new Error('Google sign-in is not enabled. Please contact support.');
+      throw new Error('Google sign-in is not enabled in Firebase Console. Go to Authentication → Sign-in method and enable Google provider.');
     } else if (error.code === 'auth/popup-blocked') {
       throw new Error('Sign-in was blocked by your browser. Please allow popups and try again.');
     } else if (error.code === 'auth/network-request-failed') {
       throw new Error('Network error occurred. Please check your internet connection and try again.');
+    } else if (error.code === 'auth/configuration-not-found') {
+      throw new Error('Firebase configuration error. Please check your Firebase project settings.');
     }
 
     throw error;
