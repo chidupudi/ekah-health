@@ -23,6 +23,7 @@ import MainHeader from '../MainHeader';
 import Footer from '../Footer';
 import { useTheme } from '../ParticleBackground';
 import { useAuth } from '../../contexts/AuthContext';
+import { detectBrowserCompatibility } from '../../services/firebase/authConfig';
 
 const { Title, Text, Link } = Typography;
 
@@ -40,6 +41,10 @@ const AnimatedSignIn = () => {
   const { theme } = useTheme();
   const { login, loginWithGoogle, register, error, clearError, forgotPassword, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
+
+  // Check if user is in an embedded browser
+  const browserCheck = detectBrowserCompatibility();
+  const showBrowserWarning = browserCheck.isEmbeddedBrowser;
 
   useEffect(() => {
     setMounted(true);
@@ -490,6 +495,35 @@ const AnimatedSignIn = () => {
     try {
       setLoading(true);
 
+      // Check browser compatibility first
+      const browserCheck = detectBrowserCompatibility();
+      if (!browserCheck.isCompatible) {
+        if (browserCheck.isEmbeddedBrowser) {
+          message.error({
+            content: (
+              <div>
+                <div style={{ marginBottom: '8px', fontWeight: 'bold' }}>
+                  🚫 Google Sign-in Not Available
+                </div>
+                <div style={{ marginBottom: '8px' }}>
+                  You're using an in-app browser that Google blocks for security.
+                </div>
+                <div style={{ fontSize: '12px', color: '#666' }}>
+                  Please tap "Open in Browser" or copy the URL to open in Safari/Chrome/Firefox.
+                </div>
+              </div>
+            ),
+            duration: 8
+          });
+          setLoading(false);
+          return;
+        } else {
+          message.error('Please use a modern browser (Chrome, Firefox, Safari, Edge) to sign in with Google.');
+          setLoading(false);
+          return;
+        }
+      }
+
       // Store intended booking before redirect
       const intendedBooking = sessionStorage.getItem('intendedServiceBooking');
       if (intendedBooking) {
@@ -758,15 +792,59 @@ const AnimatedSignIn = () => {
                 OR
               </Divider>
               {/* Google Sign In */}
-              <Button
-                icon={<GoogleOutlined />}
-                className="signin-social-button"
-                style={{ ...styles.socialButton, width: '100%', marginBottom: '18px' }}
-                onClick={handleGoogleSignIn}
-                loading={loading}
-              >
-                Continue with Google
-              </Button>
+              {showBrowserWarning ? (
+                <div style={{
+                  padding: '16px',
+                  marginBottom: '18px',
+                  borderRadius: '12px',
+                  backgroundColor: theme === 'dark' ? 'rgba(251, 191, 36, 0.1)' : 'rgba(251, 191, 36, 0.1)',
+                  border: '2px solid rgba(251, 191, 36, 0.3)',
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    marginBottom: '8px',
+                    color: '#f59e0b',
+                    fontWeight: '600'
+                  }}>
+                    ⚠️ Google Sign-in Restricted
+                  </div>
+                  <Text style={{
+                    color: signInStyles.textSecondary,
+                    fontSize: '14px',
+                    lineHeight: '1.5'
+                  }}>
+                    You're using an in-app browser. For Google sign-in, please open this page in your default browser (Safari, Chrome, or Firefox).
+                  </Text>
+                  <Button
+                    type="link"
+                    style={{
+                      padding: '4px 0',
+                      height: 'auto',
+                      color: '#f59e0b',
+                      fontSize: '14px',
+                      fontWeight: '600'
+                    }}
+                    onClick={() => {
+                      navigator.clipboard?.writeText(window.location.href);
+                      message.success('URL copied! Open in your browser to sign in with Google.');
+                    }}
+                  >
+                    📋 Copy URL to open in browser
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  icon={<GoogleOutlined />}
+                  className="signin-social-button"
+                  style={{ ...styles.socialButton, width: '100%', marginBottom: '18px' }}
+                  onClick={handleGoogleSignIn}
+                  loading={loading}
+                >
+                  Continue with Google
+                </Button>
+              )}
               {/* Terms & Privacy (Sign Up Only) */}
               {!isLogin && (
                 <div style={{ textAlign: 'center', marginTop: '12px' }}>

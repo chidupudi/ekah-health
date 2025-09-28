@@ -10,7 +10,7 @@ import {
   onAuthStateChanged
 } from 'firebase/auth';
 import { auth } from './config';
-import { getDomainConfig, logDomainInfo, validateAuthDomain } from './authConfig';
+import { getDomainConfig, logDomainInfo, validateAuthDomain, detectBrowserCompatibility } from './authConfig';
 
 // Create a Google Auth Provider
 const googleProvider = new GoogleAuthProvider();
@@ -74,17 +74,23 @@ export const signInWithGoogle = async () => {
       return result.user;
     }
 
+    // Check browser compatibility first
+    const browserCheck = detectBrowserCompatibility();
+    if (!browserCheck.isCompatible) {
+      throw new Error(`Browser not supported: ${browserCheck.issues.join(', ')}`);
+    }
+
     // Validate current domain configuration
     const validation = validateAuthDomain();
     const domainConfig = getDomainConfig();
 
     if (!validation.isValid) {
-      console.error('Domain validation failed:', validation.issues);
+      console.error('Validation failed:', validation.issues);
       throw new Error(`Authentication setup error: ${validation.issues.join(', ')}`);
     }
 
     if (validation.warnings.length > 0) {
-      console.warn('Domain warnings:', validation.warnings);
+      console.warn('Validation warnings:', validation.warnings);
     }
 
     // Configure provider for current environment
@@ -120,6 +126,12 @@ export const signInWithGoogle = async () => {
       throw new Error('Network error occurred. Please check your internet connection and try again.');
     } else if (error.code === 'auth/configuration-not-found') {
       throw new Error('Firebase configuration error. Please check your Firebase project settings.');
+    } else if (error.message && error.message.includes('disallowed_useragent')) {
+      const browserCheck = detectBrowserCompatibility();
+      throw new Error(
+        `Google has blocked this browser/app for security reasons. ` +
+        `${browserCheck.isEmbeddedBrowser ? 'Please open this page in your default browser (Safari, Chrome, Firefox) instead of this app\'s browser.' : 'Please use a modern, secure browser.'}`
+      );
     }
 
     throw error;

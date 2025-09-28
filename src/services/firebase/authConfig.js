@@ -146,11 +146,49 @@ export const logDomainInfo = () => {
 };
 
 /**
+ * Detect browser user agent and potential Google Auth issues
+ * @returns {Object} Browser compatibility info
+ */
+export const detectBrowserCompatibility = () => {
+  const userAgent = navigator.userAgent || '';
+  const issues = [];
+  const warnings = [];
+
+  // Check for embedded browsers that Google blocks
+  const isEmbeddedBrowser = /Instagram|FBAN|FBAV|Twitter|LinkedIn|WhatsApp|Telegram|WeChat|Line|Snapchat|TikTok/i.test(userAgent);
+  const isWebView = /wv|WebView/i.test(userAgent);
+  const isOldBrowser = /MSIE|Trident/i.test(userAgent);
+
+  if (isEmbeddedBrowser) {
+    issues.push('Embedded browser detected - Google blocks authentication in social media in-app browsers');
+  }
+
+  if (isWebView) {
+    warnings.push('WebView detected - may cause authentication issues');
+  }
+
+  if (isOldBrowser) {
+    issues.push('Outdated browser detected - Google requires modern browsers for authentication');
+  }
+
+  return {
+    userAgent,
+    isEmbeddedBrowser,
+    isWebView,
+    isOldBrowser,
+    isCompatible: issues.length === 0,
+    issues,
+    warnings
+  };
+};
+
+/**
  * Validate if current domain is likely to work with Google Auth
  * @returns {Object} Validation result
  */
 export const validateAuthDomain = () => {
   const config = getDomainConfig();
+  const browser = detectBrowserCompatibility();
 
   const issues = [];
   const warnings = [];
@@ -162,7 +200,7 @@ export const validateAuthDomain = () => {
 
   // Check for common problematic patterns
   if (config.hostname.includes('ngrok') || config.hostname.includes('tunnel')) {
-    warnings.push('Tunnel domains may require special configuration in Google Cloud Console');
+    warnings.push('Tunnel domains may require special configuration in Firebase Console');
   }
 
   // Check for IP addresses in production
@@ -170,10 +208,15 @@ export const validateAuthDomain = () => {
     issues.push('IP addresses are not allowed for Google OAuth. Use a proper domain name.');
   }
 
+  // Add browser compatibility issues
+  issues.push(...browser.issues);
+  warnings.push(...browser.warnings);
+
   return {
     isValid: issues.length === 0,
     issues,
     warnings,
-    config
+    config,
+    browser
   };
 };

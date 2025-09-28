@@ -53,6 +53,14 @@ After deploying the updated code, open your production site and check the browse
 
 ## Common Issues & Solutions
 
+### Issue: "Error 403: disallowed_useragent"
+**This is your current issue!**
+**Cause**: You're using an in-app browser (like Instagram, Facebook, WhatsApp, etc.) that Google blocks for security
+**Solution**: Open the website in your default browser:
+1. Look for "Open in Browser" or "⋯" menu in the app
+2. Copy the URL and paste it into Safari, Chrome, or Firefox
+3. The app now detects this and shows a helpful warning
+
 ### Issue: "unauthorized-domain" Error
 **Solution**: Add your domain to "Authorized domains" in Firebase Console → Authentication → Settings
 
