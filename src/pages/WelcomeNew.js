@@ -4,12 +4,13 @@ import { Button, Card, Row, Col, Typography, Space } from 'antd';
 import { HeartOutlined, SafetyOutlined, TeamOutlined, CalendarOutlined } from '@ant-design/icons';
 import ScrollExpandMedia from '../components/blocks/scroll-expansion-hero';
 import { useTheme } from '../components/ParticleBackground';
+import ekahVideo from '../assets/ekah-health.mp4';
 
 const { Title, Paragraph } = Typography;
 
 const therapyMediaContent = {
   video: {
-    src: 'https://cdn.pixabay.com/video/2022/03/14/111094-688156026_large.mp4',
+    src: ekahVideo,
     poster: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?q=80&w=1280&auto=format&fit=crop',
     background: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=1920&auto=format&fit=crop',
     title: 'Healing Journey Begins',
