@@ -171,10 +171,21 @@ export const AuthProvider = ({ children }) => {
             lastLogin: new Date(),
             createdAt: new Date()
           }, { merge: true });
+
+          // Check for intended service booking after Google sign-in
+          const intendedBooking = localStorage.getItem('intendedServiceBooking');
+          if (intendedBooking) {
+            // Store for navigation after auth state is set
+            sessionStorage.setItem('postAuthBooking', intendedBooking);
+            localStorage.removeItem('intendedServiceBooking');
+          }
         }
       } catch (error) {
         console.error('Redirect result error:', error);
         setError(parseAuthError(error));
+
+        // Clear any stored auth tokens if redirect failed
+        tokenManager.clearTokens();
       }
     };
 

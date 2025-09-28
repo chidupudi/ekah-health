@@ -53,6 +53,24 @@ const AnimatedSignIn = () => {
   // Redirect if user is already authenticated
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
+      // Check for post-auth booking navigation
+      const postAuthBooking = sessionStorage.getItem('postAuthBooking');
+      if (postAuthBooking) {
+        sessionStorage.removeItem('postAuthBooking');
+        try {
+          const service = JSON.parse(postAuthBooking);
+          navigate('/booking', {
+            state: {
+              service: service,
+              selectedServices: [service]
+            }
+          });
+          return;
+        } catch (error) {
+          console.error('Error parsing post-auth booking:', error);
+        }
+      }
+
       // Check if there's a stored intended destination
       const intendedDestination = localStorage.getItem('intendedDestination');
       if (intendedDestination) {

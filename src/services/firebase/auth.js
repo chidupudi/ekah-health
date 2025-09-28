@@ -1,5 +1,5 @@
 // src/services/firebase/auth.js
-import { 
+import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signInWithPopup,
@@ -10,6 +10,7 @@ import {
   onAuthStateChanged
 } from 'firebase/auth';
 import { auth } from './config';
+import { getDomainConfig, logDomainInfo, validateAuthDomain } from './authConfig';
 
 // Create a Google Auth Provider
 const googleProvider = new GoogleAuthProvider();
@@ -17,6 +18,9 @@ googleProvider.setCustomParameters({
   prompt: 'select_account',
   hd: '', // Allow any domain
 });
+
+// Log domain configuration on module load
+logDomainInfo();
 
 /**
  * Register a new user with email and password
@@ -70,10 +74,51 @@ export const signInWithGoogle = async () => {
       return result.user;
     }
 
-    // Use redirect method directly to avoid COOP issues
+    // Validate current domain configuration
+    const validation = validateAuthDomain();
+    const domainConfig = getDomainConfig();
+
+    if (!validation.isValid) {
+      console.error('Domain validation failed:', validation.issues);
+      throw new Error(`Authentication setup error: ${validation.issues.join(', ')}`);
+    }
+
+    if (validation.warnings.length > 0) {
+      console.warn('Domain warnings:', validation.warnings);
+    }
+
+    // Configure provider for current environment
+    if (!domainConfig.isLocalhost) {
+      console.log('Configuring Google Auth for production domain:', domainConfig.origin);
+
+      // Update provider settings for production
+      googleProvider.setCustomParameters({
+        prompt: 'select_account',
+        hd: '', // Allow any domain
+      });
+    }
+
+    // Use redirect method to avoid COOP issues
     await signInWithRedirect(auth, googleProvider);
     return null; // Will redirect, so no immediate result
   } catch (error) {
+    console.error('Google sign-in error:', error);
+
+    // Provide more specific error handling for common issues
+    if (error.code === 'auth/unauthorized-domain') {
+      const domainConfig = getDomainConfig();
+      throw new Error(
+        `This domain (${domainConfig.hostname}) is not authorized for Google sign-in. ` +
+        `Please add ${domainConfig.origin} to the authorized JavaScript origins in Google Cloud Console.`
+      );
+    } else if (error.code === 'auth/operation-not-allowed') {
+      throw new Error('Google sign-in is not enabled. Please contact support.');
+    } else if (error.code === 'auth/popup-blocked') {
+      throw new Error('Sign-in was blocked by your browser. Please allow popups and try again.');
+    } else if (error.code === 'auth/network-request-failed') {
+      throw new Error('Network error occurred. Please check your internet connection and try again.');
+    }
+
     throw error;
   }
 };
