@@ -60,15 +60,10 @@ const MyBookings = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.log('MyBookings - Current user:', currentUser ? { email: currentUser.email, id: currentUser.id } : null);
-
     if (!currentUser) {
-      console.log('MyBookings - No user found, redirecting to signin');
       navigate('/signin');
       return;
     }
-
-    console.log('MyBookings - User found, loading bookings');
     loadUserBookings();
   }, [currentUser, navigate]);
 

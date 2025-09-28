@@ -10,7 +10,6 @@ import {
   onAuthStateChanged
 } from 'firebase/auth';
 import { auth } from './config';
-import { getDomainConfig, logDomainInfo, validateAuthDomain, detectBrowserCompatibility } from './authConfig';
 
 // Create a Google Auth Provider
 const googleProvider = new GoogleAuthProvider();
@@ -18,9 +17,6 @@ googleProvider.setCustomParameters({
   prompt: 'select_account',
   hd: '', // Allow any domain
 });
-
-// Log domain configuration on module load
-logDomainInfo();
 
 /**
  * Register a new user with email and password
@@ -66,74 +62,10 @@ export const signInWithEmail = async (email, password) => {
  */
 export const signInWithGoogle = async () => {
   try {
-    const { signInWithRedirect, getRedirectResult } = await import('firebase/auth');
-
-    // Check if we're returning from a redirect
-    const result = await getRedirectResult(auth);
-    if (result) {
-      return result.user;
-    }
-
-    // Check browser compatibility first
-    const browserCheck = detectBrowserCompatibility();
-    if (!browserCheck.isCompatible) {
-      throw new Error(`Browser not supported: ${browserCheck.issues.join(', ')}`);
-    }
-
-    // Validate current domain configuration
-    const validation = validateAuthDomain();
-    const domainConfig = getDomainConfig();
-
-    if (!validation.isValid) {
-      console.error('Validation failed:', validation.issues);
-      throw new Error(`Authentication setup error: ${validation.issues.join(', ')}`);
-    }
-
-    if (validation.warnings.length > 0) {
-      console.warn('Validation warnings:', validation.warnings);
-    }
-
-    // Configure provider for current environment
-    if (!domainConfig.isLocalhost) {
-      console.log('Configuring Google Auth for production domain:', domainConfig.origin);
-
-      // Update provider settings for production
-      googleProvider.setCustomParameters({
-        prompt: 'select_account',
-        hd: '', // Allow any domain
-      });
-    }
-
-    // Use redirect method to avoid COOP issues
-    await signInWithRedirect(auth, googleProvider);
-    return null; // Will redirect, so no immediate result
+    // Use popup method for better user experience on desktop
+    const result = await signInWithPopup(auth, googleProvider);
+    return result.user;
   } catch (error) {
-    console.error('Google sign-in error:', error);
-
-    // Provide more specific error handling for Firebase Auth
-    if (error.code === 'auth/unauthorized-domain') {
-      const domainConfig = getDomainConfig();
-      throw new Error(
-        `This domain (${domainConfig.hostname}) is not authorized for Firebase authentication. ` +
-        `Please add "${domainConfig.hostname}" to the authorized domains in Firebase Console: ` +
-        `Authentication → Settings → Authorized domains`
-      );
-    } else if (error.code === 'auth/operation-not-allowed') {
-      throw new Error('Google sign-in is not enabled in Firebase Console. Go to Authentication → Sign-in method and enable Google provider.');
-    } else if (error.code === 'auth/popup-blocked') {
-      throw new Error('Sign-in was blocked by your browser. Please allow popups and try again.');
-    } else if (error.code === 'auth/network-request-failed') {
-      throw new Error('Network error occurred. Please check your internet connection and try again.');
-    } else if (error.code === 'auth/configuration-not-found') {
-      throw new Error('Firebase configuration error. Please check your Firebase project settings.');
-    } else if (error.message && error.message.includes('disallowed_useragent')) {
-      const browserCheck = detectBrowserCompatibility();
-      throw new Error(
-        `Google has blocked this browser/app for security reasons. ` +
-        `${browserCheck.isEmbeddedBrowser ? 'Please open this page in your default browser (Safari, Chrome, Firefox) instead of this app\'s browser.' : 'Please use a modern, secure browser.'}`
-      );
-    }
-
     throw error;
   }
 };

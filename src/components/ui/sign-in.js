@@ -23,7 +23,6 @@ import MainHeader from '../MainHeader';
 import Footer from '../Footer';
 import { useTheme } from '../ParticleBackground';
 import { useAuth } from '../../contexts/AuthContext';
-import { detectBrowserCompatibility } from '../../services/firebase/authConfig';
 
 const { Title, Text, Link } = Typography;
 
@@ -42,10 +41,6 @@ const AnimatedSignIn = () => {
   const { login, loginWithGoogle, register, error, clearError, forgotPassword, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
 
-  // Check if user is in an embedded browser
-  const browserCheck = detectBrowserCompatibility();
-  const showBrowserWarning = browserCheck.isEmbeddedBrowser;
-
   useEffect(() => {
     setMounted(true);
 
@@ -58,24 +53,6 @@ const AnimatedSignIn = () => {
   // Redirect if user is already authenticated
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      // Check for post-auth booking navigation
-      const postAuthBooking = sessionStorage.getItem('postAuthBooking');
-      if (postAuthBooking) {
-        sessionStorage.removeItem('postAuthBooking');
-        try {
-          const service = JSON.parse(postAuthBooking);
-          navigate('/booking', {
-            state: {
-              service: service,
-              selectedServices: [service]
-            }
-          });
-          return;
-        } catch (error) {
-          console.error('Error parsing post-auth booking:', error);
-        }
-      }
-
       // Check if there's a stored intended destination
       const intendedDestination = localStorage.getItem('intendedDestination');
       if (intendedDestination) {
@@ -495,72 +472,34 @@ const AnimatedSignIn = () => {
     try {
       setLoading(true);
 
-      // Check browser compatibility first
-      const browserCheck = detectBrowserCompatibility();
-      if (!browserCheck.isCompatible) {
-        if (browserCheck.isEmbeddedBrowser) {
-          message.error({
-            content: (
-              <div>
-                <div style={{ marginBottom: '8px', fontWeight: 'bold' }}>
-                  🚫 Google Sign-in Not Available
-                </div>
-                <div style={{ marginBottom: '8px' }}>
-                  You're using an in-app browser that Google blocks for security.
-                </div>
-                <div style={{ fontSize: '12px', color: '#666' }}>
-                  Please tap "Open in Browser" or copy the URL to open in Safari/Chrome/Firefox.
-                </div>
-              </div>
-            ),
-            duration: 8
-          });
-          setLoading(false);
-          return;
-        } else {
-          message.error('Please use a modern browser (Chrome, Firefox, Safari, Edge) to sign in with Google.');
-          setLoading(false);
-          return;
-        }
-      }
-
-      // Store intended booking before redirect
-      const intendedBooking = sessionStorage.getItem('intendedServiceBooking');
-      if (intendedBooking) {
-        localStorage.setItem('intendedServiceBooking', intendedBooking);
-        sessionStorage.removeItem('intendedServiceBooking');
-      }
-
-      // Show a message about redirect
-      message.info('Redirecting to Google Sign-in...', 2);
-
       const result = await loginWithGoogle();
 
-      // If result is null, redirect was initiated
-      if (result === null) {
-        // Redirect is happening, don't call setLoading(false)
-        return;
-      }
+      if (result) {
+        message.success('Signed in with Google successfully!');
 
-      // This code will only run if popup was used instead of redirect
-      message.success('Signed in with Google successfully!');
-
-      // Check for intended service booking
-      const storedBooking = localStorage.getItem('intendedServiceBooking');
-      if (storedBooking) {
-        localStorage.removeItem('intendedServiceBooking');
-        const service = JSON.parse(storedBooking);
-        navigate('/booking', {
-          state: {
-            service: service,
-            selectedServices: [service]
+        // Check for intended service booking
+        const intendedBooking = sessionStorage.getItem('intendedServiceBooking');
+        if (intendedBooking) {
+          sessionStorage.removeItem('intendedServiceBooking');
+          try {
+            const service = JSON.parse(intendedBooking);
+            navigate('/booking', {
+              state: {
+                service: service,
+                selectedServices: [service]
+              }
+            });
+          } catch (error) {
+            console.error('Error parsing intended booking:', error);
+            navigate('/');
           }
-        });
-      } else {
-        navigate('/');
+        } else {
+          navigate('/');
+        }
       }
     } catch (error) {
       message.error(error.message || 'An error occurred during Google sign-in');
+    } finally {
       setLoading(false);
     }
   };
@@ -792,59 +731,15 @@ const AnimatedSignIn = () => {
                 OR
               </Divider>
               {/* Google Sign In */}
-              {showBrowserWarning ? (
-                <div style={{
-                  padding: '16px',
-                  marginBottom: '18px',
-                  borderRadius: '12px',
-                  backgroundColor: theme === 'dark' ? 'rgba(251, 191, 36, 0.1)' : 'rgba(251, 191, 36, 0.1)',
-                  border: '2px solid rgba(251, 191, 36, 0.3)',
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    marginBottom: '8px',
-                    color: '#f59e0b',
-                    fontWeight: '600'
-                  }}>
-                    ⚠️ Google Sign-in Restricted
-                  </div>
-                  <Text style={{
-                    color: signInStyles.textSecondary,
-                    fontSize: '14px',
-                    lineHeight: '1.5'
-                  }}>
-                    You're using an in-app browser. For Google sign-in, please open this page in your default browser (Safari, Chrome, or Firefox).
-                  </Text>
-                  <Button
-                    type="link"
-                    style={{
-                      padding: '4px 0',
-                      height: 'auto',
-                      color: '#f59e0b',
-                      fontSize: '14px',
-                      fontWeight: '600'
-                    }}
-                    onClick={() => {
-                      navigator.clipboard?.writeText(window.location.href);
-                      message.success('URL copied! Open in your browser to sign in with Google.');
-                    }}
-                  >
-                    📋 Copy URL to open in browser
-                  </Button>
-                </div>
-              ) : (
-                <Button
-                  icon={<GoogleOutlined />}
-                  className="signin-social-button"
-                  style={{ ...styles.socialButton, width: '100%', marginBottom: '18px' }}
-                  onClick={handleGoogleSignIn}
-                  loading={loading}
-                >
-                  Continue with Google
-                </Button>
-              )}
+              <Button
+                icon={<GoogleOutlined />}
+                className="signin-social-button"
+                style={{ ...styles.socialButton, width: '100%', marginBottom: '18px' }}
+                onClick={handleGoogleSignIn}
+                loading={loading}
+              >
+                Continue with Google
+              </Button>
               {/* Terms & Privacy (Sign Up Only) */}
               {!isLogin && (
                 <div style={{ textAlign: 'center', marginTop: '12px' }}>

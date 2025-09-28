@@ -78,15 +78,15 @@ const Profile = () => {
   const fetchUserData = async () => {
     try {
       if (user?.id) {
-        const userDocRef = doc(db, 'users', user.id);
+        const userDocRef = doc(db, 'users', user?.id);
         const userDoc = await getDoc(userDocRef);
 
         if (userDoc.exists()) {
           const userData = userDoc.data();
           setProfileData(userData);
           form.setFieldsValue({
-            name: userData.name || user.name,
-            email: userData.email || user.email,
+            name: userData.name || user?.name,
+            email: userData.email || user?.email,
             phone: userData.phone || '',
             address: userData.address || '',
             bio: userData.bio || '',
@@ -105,7 +105,7 @@ const Profile = () => {
         // Fetch user bookings
         const bookingsQuery = query(
           collection(db, 'bookings'),
-          where('userId', '==', user.id),
+          where('userId', '==', user?.id),
           orderBy('createdAt', 'desc')
         );
 
@@ -133,7 +133,7 @@ const Profile = () => {
           totalBookings,
           completedSessions,
           upcomingSessions,
-          joinDate: user.createdAt || profileData.createdAt
+          joinDate: user?.createdAt || profileData.createdAt
         });
       }
     } catch (error) {
@@ -141,12 +141,12 @@ const Profile = () => {
     }
   };
 
-  const themeStyles = getThemeStyles();
+  const themeStyles = getThemeStyles() || {};
 
   const handleSaveProfile = async (values) => {
     setLoading(true);
     try {
-      const userDocRef = doc(db, 'users', user.id);
+      const userDocRef = doc(db, 'users', user?.id);
       await updateDoc(userDocRef, {
         ...values,
         updatedAt: new Date()
@@ -166,11 +166,11 @@ const Profile = () => {
   const handlePhotoUpload = async (file) => {
     setUploading(true);
     try {
-      const photoRef = ref(storage, `profile-photos/${user.id}_${Date.now()}_${file.name}`);
+      const photoRef = ref(storage, `profile-photos/${user?.id}_${Date.now()}_${file.name}`);
       const snapshot = await uploadBytes(photoRef, file);
       const downloadURL = await getDownloadURL(snapshot.ref);
 
-      const userDocRef = doc(db, 'users', user.id);
+      const userDocRef = doc(db, 'users', user?.id);
       await updateDoc(userDocRef, {
         photoURL: downloadURL,
         updatedAt: new Date()
@@ -187,7 +187,7 @@ const Profile = () => {
   };
 
   const getAccountAge = () => {
-    const joinDate = userStats.joinDate || user.createdAt;
+    const joinDate = userStats.joinDate || user?.createdAt;
     if (joinDate) {
       const duration = moment.duration(moment().diff(moment(joinDate)));
       const days = Math.floor(duration.asDays());
@@ -209,7 +209,7 @@ const Profile = () => {
   return (
     <div style={{
       minHeight: '100vh',
-      background: themeStyles.background,
+      background: themeStyles.background || '#fff',
       padding: '20px'
     }}>
       <div style={{
@@ -221,9 +221,9 @@ const Profile = () => {
           <Title
             level={1}
             style={{
-              color: themeStyles.textPrimary,
+              color: themeStyles.textPrimary || '#000',
               marginBottom: '8px',
-              background: `linear-gradient(135deg, ${themeStyles.accentPrimary} 0%, ${themeStyles.accentSecondary} 100%)`,
+              background: `linear-gradient(135deg, ${themeStyles.accentPrimary || '#007bff'} 0%, ${themeStyles.accentSecondary || '#6c757d'} 100%)`,
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text'
@@ -231,7 +231,7 @@ const Profile = () => {
           >
             My Profile
           </Title>
-          <Text style={{ color: themeStyles.textSecondary, fontSize: '16px' }}>
+          <Text style={{ color: themeStyles.textSecondary || '#666', fontSize: '16px' }}>
             Manage your personal information and preferences
           </Text>
         </div>
@@ -243,7 +243,7 @@ const Profile = () => {
             <Card
               style={{
                 background: themeStyles.cardBg,
-                border: `1px solid ${themeStyles.borderColor}`,
+                border: `1px solid ${themeStyles.borderColor || '#ddd'}`,
                 borderRadius: '16px',
                 marginBottom: '24px',
                 backdropFilter: 'blur(20px)',
@@ -254,16 +254,16 @@ const Profile = () => {
               <div style={{ position: 'relative', display: 'inline-block', marginBottom: '24px' }}>
                 <Avatar
                   size={120}
-                  src={profileData.photoURL || user.photoURL}
+                  src={profileData.photoURL || user?.photoURL}
                   style={{
                     backgroundColor: themeStyles.accentPrimary,
-                    border: `4px solid ${themeStyles.borderColor}`,
+                    border: `4px solid ${themeStyles.borderColor || '#ddd'}`,
                     boxShadow: `0 8px 32px ${themeStyles.shadowColor || 'rgba(0, 0, 0, 0.3)'}`
                   }}
                 >
-                  {!profileData.photoURL && !user.photoURL && (
+                  {!profileData.photoURL && !user?.photoURL && (
                     <span style={{ fontSize: '48px', fontWeight: 'bold' }}>
-                      {(profileData.name || user.name || user.email)?.charAt(0)?.toUpperCase()}
+                      {(profileData.name || user?.name || user?.email || 'U')?.charAt(0)?.toUpperCase()}
                     </span>
                   )}
                 </Avatar>
@@ -290,22 +290,22 @@ const Profile = () => {
                 </Upload>
               </div>
 
-              <Title level={3} style={{ color: themeStyles.textPrimary, marginBottom: '8px' }}>
-                {profileData.name || user.name || 'No name set'}
+              <Title level={3} style={{ color: themeStyles.textPrimary || '#000', marginBottom: '8px' }}>
+                {typeof profileData.name === 'object' ? 'No name set' : (profileData.name || user?.name || 'No name set')}
               </Title>
 
-              <Text style={{ color: themeStyles.textSecondary, fontSize: '16px' }}>
-                {profileData.email || user.email}
+              <Text style={{ color: themeStyles.textSecondary || '#666', fontSize: '16px' }}>
+                {typeof profileData.email === 'object' ? 'No email set' : (profileData.email || user?.email)}
               </Text>
 
               <div style={{ marginTop: '16px' }}>
                 <Space wrap>
                   <Tag
                     icon={<SafetyCertificateOutlined />}
-                    color={user.photoURL ? 'red' : 'blue'}
+                    color={user?.photoURL ? 'red' : 'blue'}
                     style={{ fontSize: '12px' }}
                   >
-                    {user.photoURL ? 'Google Account' : 'Email Account'}
+                    {user?.photoURL ? 'Google Account' : 'Email Account'}
                   </Tag>
                   <Tag
                     icon={<CalendarOutlined />}
@@ -317,17 +317,17 @@ const Profile = () => {
                 </Space>
               </div>
 
-              {profileData.bio && (
+              {profileData.bio && typeof profileData.bio !== 'object' && (
                 <div style={{ marginTop: '20px' }}>
                   <Paragraph
                     style={{
-                      color: themeStyles.textSecondary,
+                      color: themeStyles.textSecondary || '#666',
                       fontSize: '14px',
                       margin: 0,
                       fontStyle: 'italic'
                     }}
                   >
-                    "{profileData.bio}"
+                    "{typeof profileData.bio === 'object' ? 'Bio contains invalid data' : profileData.bio}"
                   </Paragraph>
                 </div>
               )}
@@ -336,7 +336,7 @@ const Profile = () => {
             {/* Stats Card */}
             <Card
               title={
-                <Space style={{ color: themeStyles.textPrimary }}>
+                <Space style={{ color: themeStyles.textPrimary || '#000' }}>
                   <HeartOutlined />
                   <span>My Health Journey</span>
                 </Space>
@@ -350,7 +350,7 @@ const Profile = () => {
               styles={{
                 header: {
                   borderBottom: `1px solid ${themeStyles.cardBorder}`,
-                  color: themeStyles.textPrimary
+                  color: themeStyles.textPrimary || '#000'
                 }
               }}
             >
@@ -381,7 +381,7 @@ const Profile = () => {
                 </Col>
                 <Col span={12}>
                   <div>
-                    <Text style={{ color: themeStyles.textSecondary, fontSize: '14px' }}>
+                    <Text style={{ color: themeStyles.textSecondary || '#666', fontSize: '14px' }}>
                       Progress
                     </Text>
                     <div style={{ marginTop: '4px' }}>
@@ -406,7 +406,7 @@ const Profile = () => {
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  color: themeStyles.textPrimary
+                  color: themeStyles.textPrimary || '#000'
                 }}>
                   <Space>
                     <SettingOutlined />
@@ -436,7 +436,7 @@ const Profile = () => {
                         style={{
                           background: themeStyles.listItemHover,
                           borderColor: themeStyles.cardBorder,
-                          color: themeStyles.textPrimary
+                          color: themeStyles.textPrimary || '#000'
                         }}
                       >
                         Cancel
@@ -467,7 +467,7 @@ const Profile = () => {
               styles={{
                 header: {
                   borderBottom: `1px solid ${themeStyles.cardBorder}`,
-                  color: themeStyles.textPrimary
+                  color: themeStyles.textPrimary || '#000'
                 },
                 body: { padding: '32px' }
               }}
@@ -477,23 +477,23 @@ const Profile = () => {
                   form={form}
                   layout="vertical"
                   onFinish={handleSaveProfile}
-                  style={{ color: themeStyles.textPrimary }}
+                  style={{ color: themeStyles.textPrimary || '#000' }}
                 >
                   <Row gutter={[24, 16]}>
                     <Col xs={24} md={12}>
                       <Form.Item
                         name="name"
-                        label={<span style={{ color: themeStyles.textPrimary }}>Full Name</span>}
+                        label={<span style={{ color: themeStyles.textPrimary || '#000' }}>Full Name</span>}
                         rules={[{ required: true, message: 'Please enter your full name' }]}
                       >
                         <Input
-                          prefix={<UserOutlined style={{ color: themeStyles.textSecondary }} />}
+                          prefix={<UserOutlined style={{ color: themeStyles.textSecondary || '#666' }} />}
                           placeholder="Enter your full name"
                           style={{
                             background: themeStyles.cardBg,
-                            border: `1px solid ${themeStyles.borderColor}`,
+                            border: `1px solid ${themeStyles.borderColor || '#ddd'}`,
                             borderRadius: '8px',
-                            color: themeStyles.textPrimary
+                            color: themeStyles.textPrimary || '#000'
                           }}
                         />
                       </Form.Item>
@@ -502,21 +502,21 @@ const Profile = () => {
                     <Col xs={24} md={12}>
                       <Form.Item
                         name="email"
-                        label={<span style={{ color: themeStyles.textPrimary }}>Email Address</span>}
+                        label={<span style={{ color: themeStyles.textPrimary || '#000' }}>Email Address</span>}
                         rules={[
                           { required: true, message: 'Please enter your email' },
                           { type: 'email', message: 'Please enter a valid email' }
                         ]}
                       >
                         <Input
-                          prefix={<MailOutlined style={{ color: themeStyles.textSecondary }} />}
+                          prefix={<MailOutlined style={{ color: themeStyles.textSecondary || '#666' }} />}
                           placeholder="Enter your email"
                           disabled
                           style={{
                             background: themeStyles.listItemHover,
-                            border: `1px solid ${themeStyles.borderColor}`,
+                            border: `1px solid ${themeStyles.borderColor || '#ddd'}`,
                             borderRadius: '8px',
-                            color: themeStyles.textSecondary
+                            color: themeStyles.textSecondary || '#666'
                           }}
                         />
                       </Form.Item>
@@ -525,16 +525,16 @@ const Profile = () => {
                     <Col xs={24} md={12}>
                       <Form.Item
                         name="phone"
-                        label={<span style={{ color: themeStyles.textPrimary }}>Phone Number</span>}
+                        label={<span style={{ color: themeStyles.textPrimary || '#000' }}>Phone Number</span>}
                       >
                         <Input
-                          prefix={<PhoneOutlined style={{ color: themeStyles.textSecondary }} />}
+                          prefix={<PhoneOutlined style={{ color: themeStyles.textSecondary || '#666' }} />}
                           placeholder="Enter your phone number"
                           style={{
                             background: themeStyles.cardBg,
-                            border: `1px solid ${themeStyles.borderColor}`,
+                            border: `1px solid ${themeStyles.borderColor || '#ddd'}`,
                             borderRadius: '8px',
-                            color: themeStyles.textPrimary
+                            color: themeStyles.textPrimary || '#000'
                           }}
                         />
                       </Form.Item>
@@ -543,16 +543,16 @@ const Profile = () => {
                     <Col xs={24} md={12}>
                       <Form.Item
                         name="emergencyContact"
-                        label={<span style={{ color: themeStyles.textPrimary }}>Emergency Contact</span>}
+                        label={<span style={{ color: themeStyles.textPrimary || '#000' }}>Emergency Contact</span>}
                       >
                         <Input
-                          prefix={<PhoneOutlined style={{ color: themeStyles.textSecondary }} />}
+                          prefix={<PhoneOutlined style={{ color: themeStyles.textSecondary || '#666' }} />}
                           placeholder="Emergency contact number"
                           style={{
                             background: themeStyles.cardBg,
-                            border: `1px solid ${themeStyles.borderColor}`,
+                            border: `1px solid ${themeStyles.borderColor || '#ddd'}`,
                             borderRadius: '8px',
-                            color: themeStyles.textPrimary
+                            color: themeStyles.textPrimary || '#000'
                           }}
                         />
                       </Form.Item>
@@ -561,17 +561,17 @@ const Profile = () => {
                     <Col xs={24}>
                       <Form.Item
                         name="address"
-                        label={<span style={{ color: themeStyles.textPrimary }}>Address</span>}
+                        label={<span style={{ color: themeStyles.textPrimary || '#000' }}>Address</span>}
                       >
                         <TextArea
-                          prefix={<HomeOutlined style={{ color: themeStyles.textSecondary }} />}
+                          prefix={<HomeOutlined style={{ color: themeStyles.textSecondary || '#666' }} />}
                           placeholder="Enter your address"
                           rows={3}
                           style={{
                             background: themeStyles.cardBg,
-                            border: `1px solid ${themeStyles.borderColor}`,
+                            border: `1px solid ${themeStyles.borderColor || '#ddd'}`,
                             borderRadius: '8px',
-                            color: themeStyles.textPrimary
+                            color: themeStyles.textPrimary || '#000'
                           }}
                         />
                       </Form.Item>
@@ -580,7 +580,7 @@ const Profile = () => {
                     <Col xs={24}>
                       <Form.Item
                         name="bio"
-                        label={<span style={{ color: themeStyles.textPrimary }}>Bio</span>}
+                        label={<span style={{ color: themeStyles.textPrimary || '#000' }}>Bio</span>}
                       >
                         <TextArea
                           placeholder="Tell us about yourself (optional)"
@@ -589,9 +589,9 @@ const Profile = () => {
                           showCount
                           style={{
                             background: themeStyles.cardBg,
-                            border: `1px solid ${themeStyles.borderColor}`,
+                            border: `1px solid ${themeStyles.borderColor || '#ddd'}`,
                             borderRadius: '8px',
-                            color: themeStyles.textPrimary
+                            color: themeStyles.textPrimary || '#000'
                           }}
                         />
                       </Form.Item>
@@ -601,74 +601,74 @@ const Profile = () => {
               ) : (
                 <Descriptions
                   column={{ xs: 1, sm: 1, md: 2 }}
-                  style={{ color: themeStyles.textPrimary }}
+                  style={{ color: themeStyles.textPrimary || '#000' }}
                 >
                   <Descriptions.Item
-                    label={<span style={{ color: themeStyles.textSecondary }}>Full Name</span>}
+                    label={<span style={{ color: themeStyles.textSecondary || '#666' }}>Full Name</span>}
                   >
-                    <span style={{ color: themeStyles.textPrimary }}>
-                      {profileData.name || user.name || 'Not set'}
+                    <span style={{ color: themeStyles.textPrimary || '#000' }}>
+                      {typeof profileData.name === 'object' ? 'Not set' : (profileData.name || user?.name || 'Not set')}
                     </span>
                   </Descriptions.Item>
 
                   <Descriptions.Item
-                    label={<span style={{ color: themeStyles.textSecondary }}>Email</span>}
+                    label={<span style={{ color: themeStyles.textSecondary || '#666' }}>Email</span>}
                   >
-                    <span style={{ color: themeStyles.textPrimary }}>
-                      {profileData.email || user.email}
+                    <span style={{ color: themeStyles.textPrimary || '#000' }}>
+                      {typeof profileData.email === 'object' ? 'Not set' : (profileData.email || user?.email || 'Not set')}
                     </span>
                   </Descriptions.Item>
 
                   <Descriptions.Item
-                    label={<span style={{ color: themeStyles.textSecondary }}>Phone</span>}
+                    label={<span style={{ color: themeStyles.textSecondary || '#666' }}>Phone</span>}
                   >
-                    <span style={{ color: themeStyles.textPrimary }}>
-                      {profileData.phone || 'Not set'}
+                    <span style={{ color: themeStyles.textPrimary || '#000' }}>
+                      {typeof profileData.phone === 'object' ? 'Not set' : (profileData.phone || 'Not set')}
                     </span>
                   </Descriptions.Item>
 
                   <Descriptions.Item
-                    label={<span style={{ color: themeStyles.textSecondary }}>Emergency Contact</span>}
+                    label={<span style={{ color: themeStyles.textSecondary || '#666' }}>Emergency Contact</span>}
                   >
-                    <span style={{ color: themeStyles.textPrimary }}>
-                      {profileData.emergencyContact || 'Not set'}
+                    <span style={{ color: themeStyles.textPrimary || '#000' }}>
+                      {typeof profileData.emergencyContact === 'object' ? 'Not set' : (profileData.emergencyContact || 'Not set')}
                     </span>
                   </Descriptions.Item>
 
                   <Descriptions.Item
-                    label={<span style={{ color: themeStyles.textSecondary }}>Address</span>}
+                    label={<span style={{ color: themeStyles.textSecondary || '#666' }}>Address</span>}
                     span={2}
                   >
-                    <span style={{ color: themeStyles.textPrimary }}>
-                      {profileData.address || 'Not set'}
+                    <span style={{ color: themeStyles.textPrimary || '#000' }}>
+                      {typeof profileData.address === 'object' ? 'Not set' : (profileData.address || 'Not set')}
                     </span>
                   </Descriptions.Item>
 
                   <Descriptions.Item
-                    label={<span style={{ color: themeStyles.textSecondary }}>Bio</span>}
+                    label={<span style={{ color: themeStyles.textSecondary || '#666' }}>Bio</span>}
                     span={2}
                   >
-                    <span style={{ color: themeStyles.textPrimary }}>
-                      {profileData.bio || 'No bio added yet'}
+                    <span style={{ color: themeStyles.textPrimary || '#000' }}>
+                      {typeof profileData.bio === 'object' ? 'No bio added yet' : (profileData.bio || 'No bio added yet')}
                     </span>
                   </Descriptions.Item>
 
                   <Descriptions.Item
-                    label={<span style={{ color: themeStyles.textSecondary }}>Member Since</span>}
+                    label={<span style={{ color: themeStyles.textSecondary || '#666' }}>Member Since</span>}
                   >
-                    <span style={{ color: themeStyles.textPrimary }}>
+                    <span style={{ color: themeStyles.textPrimary || '#000' }}>
                       {userStats.joinDate ? moment(userStats.joinDate).format('MMMM DD, YYYY') : 'Recently joined'}
                     </span>
                   </Descriptions.Item>
 
                   <Descriptions.Item
-                    label={<span style={{ color: themeStyles.textSecondary }}>Account Type</span>}
+                    label={<span style={{ color: themeStyles.textSecondary || '#666' }}>Account Type</span>}
                   >
                     <Tag
-                      icon={user.photoURL ? <GoogleOutlined /> : <MailOutlined />}
-                      color={user.photoURL ? 'red' : 'blue'}
+                      icon={user?.photoURL ? <GoogleOutlined /> : <MailOutlined />}
+                      color={user?.photoURL ? 'red' : 'blue'}
                     >
-                      {user.photoURL ? 'Google Account' : 'Email Account'}
+                      {user?.photoURL ? 'Google Account' : 'Email Account'}
                     </Tag>
                   </Descriptions.Item>
                 </Descriptions>
@@ -679,7 +679,7 @@ const Profile = () => {
             {bookings.length > 0 && (
               <Card
                 title={
-                  <Space style={{ color: themeStyles.textPrimary }}>
+                  <Space style={{ color: themeStyles.textPrimary || '#000' }}>
                     <CalendarOutlined />
                     <span>Recent Bookings</span>
                   </Space>
@@ -694,7 +694,7 @@ const Profile = () => {
                 styles={{
                   header: {
                     borderBottom: `1px solid ${themeStyles.cardBorder}`,
-                    color: themeStyles.textPrimary
+                    color: themeStyles.textPrimary || '#000'
                   }
                 }}
               >
@@ -711,12 +711,12 @@ const Profile = () => {
                       }}
                     >
                       <div>
-                        <Text strong style={{ color: themeStyles.textPrimary }}>
-                          {booking.selectedServices?.map(s => s.title).join(', ') || 'Health Consultation'}
+                        <Text strong style={{ color: themeStyles.textPrimary || '#000' }}>
+                          {booking.selectedServices?.map(s => s?.title || 'Service').join(', ') || 'Health Consultation'}
                         </Text>
                         <br />
-                        <Text style={{ color: themeStyles.textSecondary, fontSize: '12px' }}>
-                          {booking.preferredDate ? moment(booking.preferredDate).format('MMM DD, YYYY') : 'Date TBD'}
+                        <Text style={{ color: themeStyles.textSecondary || '#666', fontSize: '12px' }}>
+                          {booking.preferredDate ? moment(booking.preferredDate).format('MMM DD, YYYY') || 'Date TBD' : 'Date TBD'}
                         </Text>
                       </div>
                       <Tag
@@ -726,7 +726,7 @@ const Profile = () => {
                           booking.status === 'pending' ? 'orange' : 'red'
                         }
                       >
-                        {booking.status?.toUpperCase()}
+                        {booking.status?.toUpperCase() || 'PENDING'}
                       </Tag>
                     </div>
                   ))}
